@@ -1,4 +1,6 @@
+#include <vector>
 #include <gtest/gtest.h>
+#include <string>
 
 #include <optix_runner.hpp>
 #include <simulation_data.hpp>
