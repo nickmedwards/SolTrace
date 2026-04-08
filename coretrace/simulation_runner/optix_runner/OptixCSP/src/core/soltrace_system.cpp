@@ -137,6 +137,8 @@ void SolTraceSystem::initialize()
 
     // set up input related to sun
     Vector3d sun_vec = m_sun->get_position();
+    std::cout << "get sun              : " << sun_vec << std::endl;
+
     Vector3d sun_vec_norm = sun_vec;
     sun_vec_norm.make_unit();
 
