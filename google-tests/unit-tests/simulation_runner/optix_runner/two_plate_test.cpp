@@ -1,4 +1,6 @@
+#include <vector>
 #include <gtest/gtest.h>
+#include <string>
 
 #include <optical_properties.hpp>
 #include <optix_runner.hpp>
