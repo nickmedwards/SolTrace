@@ -579,7 +579,7 @@ TEST(TwoPlateOptix, NSTTF_test)
 
 	// std::string fname = 
 
-	sd.import_json_file("C:\\Users\\nicke\\Desktop\\esolab\\NSTTF_heliostat_scripting\\json\\NSTTF_2025_03_31_11_15_00.json");
+	sd.import_json_file("C:\\Users\\nicke\\Desktop\\esolab\\NSTTF_heliostat_scripting\\json\\test_NSTTF.json");
 	// make_NSTTF(sd);
 	OptixRunner runner;
 
