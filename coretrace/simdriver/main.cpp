@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
 
         std::cout << "Setting up simulation...\n";
         auto t_setup_start = std::chrono::steady_clock::now();
+        runner.disable_stages();
         sts = runner.setup_simulation(&simData);
         auto t_setup_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
