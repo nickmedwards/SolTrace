@@ -326,6 +326,9 @@ void SolTraceSystem::run()
     m_n_depth_exceeded_rays = 0;
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
+    uint_fast64_t N_loops = 0;
+
+    m_timer_trace.start();
 
     m_timer_trace.reset();
     m_timer_trace.start();
