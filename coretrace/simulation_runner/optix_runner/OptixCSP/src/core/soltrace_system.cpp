@@ -257,6 +257,9 @@ void SolTraceSystem::run()
     m_hit_type_vec.clear();
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
+    uint_fast64_t N_loops = 0;
+
+    m_timer_trace.start();
 
     while (N_ray_hit < m_number_of_rays && N_ray_gen < m_max_number_of_rays)
     {
@@ -276,7 +279,6 @@ void SolTraceSystem::run()
         if(m_verbose)
             std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 
-        m_timer_trace.start();
         // Launch the simulation.
         OPTIX_CHECK(optixLaunch(
             m_state.pipeline,
@@ -294,6 +296,7 @@ void SolTraceSystem::run()
                            m_sunraynumber_vec);
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
+        ++N_loops;
     }
 
     // Trim excess rays
@@ -310,6 +313,7 @@ void SolTraceSystem::run()
     }
 
     m_timer_trace.stop();
+    std::cout << "Number of loops to trace " << N_ray_hit << " rays: " << N_loops << std::endl;
 }
 
 void SolTraceSystem::update()
