@@ -177,15 +177,6 @@ void pipelineManager::createPipeline()
     OptixPipelineLinkOptions pipeline_link_options = {};
     pipeline_link_options.maxTraceDepth = m_max_trace_depth; // Maximum recursion depth for ray tracing.
 
-
-    for (const auto& v : m_program_groups) {
-        std::cout << v << " " << typeid(v).name() << " " << sizeof(v) << std::endl;
-    }
-    std::cout << std::endl;
-    // std::cout << "addr 2 - 1: " << m_program_groups.data()[2] - m_program_groups.data()[1] << std::endl;
-
-
-
     // Create the OptiX pipeline by linking the program groups.
     LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixPipelineCreate(
@@ -238,10 +229,6 @@ void pipelineManager::createHitGroupProgram(OptixProgramGroup &group,
                                             OptixModule intersectionModule, const char *intersectionFunc,
                                             OptixModule closestHitModule, const char *closestHitFunc)
 {
-    // std::cout << "moduleCH: " << closestHitModule << " " << sizeof(closestHitModule) << std::endl
-    //     	  << "moduleIS: " << intersectionModule << " " << sizeof(intersectionModule) << std::endl;
-    std::cout << closestHitModule << " " << typeid(closestHitModule).name() << " " << sizeof(closestHitModule) << std::endl;
-    std::cout << intersectionModule << " " << typeid(intersectionModule).name() << " " << sizeof(intersectionModule) << std::endl;
     OptixProgramGroupOptions options = {};
     OptixProgramGroupDesc desc = {};
     desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
