@@ -43,6 +43,7 @@ namespace OptixCSP {
 
         /// Execute the ray tracing simulation
         void run();
+        void run_one_shot();
 
         /// Update launch params
         void update();
@@ -183,6 +184,7 @@ namespace OptixCSP {
 
         Timer m_timer_setup;
         Timer m_timer_trace;
+        Timer m_timer_fetch;
 
         // memory usage
         size_t m_mem_free_before;

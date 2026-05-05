@@ -117,6 +117,7 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
         m_aabb_list_H[i] = aabb;       // Store the AABB in the list
         m_sbt_index_H[i] = sbt_offset; // Store the SBT index
         m_geometry_data_array_H[i] = element->toDeviceGeometryData();
+        m_aabb_area += (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY); 
 
         // now we set the material data for each element, use placeholder values for now
         m_material_data_array_front_H[i] = element->toDeviceMaterialDataFront();
@@ -124,10 +125,6 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
     }
 
     // print out computed minimum distance
-    if (m_verbose)
-    {
-        std::cout << "Minimum distance to sun plane: " << m_sun_plane_distance << std::endl;
-    }
     if(m_verbose)
         std::cout << "Minimum distance to sun plane: " << m_sun_plane_distance << std::endl;
 }

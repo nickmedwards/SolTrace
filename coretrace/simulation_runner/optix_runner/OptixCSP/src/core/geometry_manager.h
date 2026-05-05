@@ -44,6 +44,8 @@ namespace OptixCSP {
 		/// return the list of material data array 
 		std::vector<MaterialData>& get_material_data_array_front() { return m_material_data_array_front_H; }
 		std::vector<MaterialData>& get_material_data_array_back() { return m_material_data_array_back_H; }
+		
+		float get_aabb_area() { return m_aabb_area; }
 
 		// compute sun plane 
 		void compute_sun_plane_H(LaunchParams& params);
@@ -56,6 +58,7 @@ namespace OptixCSP {
 		SoltraceState& m_state;
 		float m_sun_plane_distance = -1.0f; // distance of the sun plane from the origin
 		uint32_t m_obj_counts;
+		float m_aabb_area = 0;
 
 		// data related to the geometry and material of each element on the host side
 		std::vector<OptixAabb>      m_aabb_list_H;           // aabb list

@@ -76,6 +76,7 @@ SolTraceSystem::SolTraceSystem()
       m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
+      m_timer_fetch(),
       geometry_manager(std::make_shared<GeometryManager>(m_state, m_verbose)),
       data_manager(std::make_shared<dataManager>()),
       pipeline_manager(std::make_shared<pipelineManager>(m_state)),
@@ -257,28 +258,28 @@ void SolTraceSystem::run()
     m_hit_type_vec.clear();
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
-    uint_fast64_t N_loops = 0;
+    int N_loops = 0;
 
-    m_timer_trace.start();
-
+    
     while (N_ray_hit < m_number_of_rays && N_ray_gen < m_max_number_of_rays)
     {
         // Update ray offset (pushed to device in setup_device_buffer)
         data_manager->launch_params_H.ray_offset = N_ray_gen;
-
+        
         // Allocate buffer (sets data_manager->launch_params_H buffer)
         setup_device_buffer();
-
+        
         int width = data_manager->launch_params_H.width;
         int height = data_manager->launch_params_H.height;
-
+        
         size_t m_mem_free_after;
 	    size_t mem_total;
         cudaMemGetInfo(&m_mem_free_after, &mem_total);
-
-        if(m_verbose)
-            std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
-
+        
+        // if(m_verbose)
+        std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
+        
+        m_timer_trace.start();
         // Launch the simulation.
         OPTIX_CHECK(optixLaunch(
             m_state.pipeline,
@@ -290,10 +291,14 @@ void SolTraceSystem::run()
             height,
             1));
         CUDA_SYNC_CHECK();
+        m_timer_trace.stop();
 
         // Collect results
+        m_timer_fetch.start();
         get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
-                           m_sunraynumber_vec);
+            m_sunraynumber_vec);
+        m_timer_fetch.stop();
+
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
         ++N_loops;
@@ -312,8 +317,55 @@ void SolTraceSystem::run()
         }
     }
 
-    m_timer_trace.stop();
+    // if(m_verbose)
     std::cout << "Number of loops to trace " << N_ray_hit << " rays: " << N_loops << std::endl;
+    std::cout << "time to trace rays: " << m_timer_trace.get_time_sec() << " seconds" << std::endl;
+    std::cout << "time to fetch results: " << m_timer_fetch.get_time_sec() << " seconds" << std::endl;
+}
+
+void SolTraceSystem::run_one_shot()
+{
+    
+    // initialize results vectors
+    m_hp_vec.clear();
+    m_raynumber_vec.clear();
+    m_element_id_vec.clear();
+    m_hit_type_vec.clear();
+    
+    // Allocate buffer (sets data_manager->launch_params_H buffer)
+    setup_device_buffer();
+    
+    int width = data_manager->launch_params_H.width;
+    int height = data_manager->launch_params_H.height;
+    
+    size_t m_mem_free_after;
+    size_t mem_total;
+    cudaMemGetInfo(&m_mem_free_after, &mem_total);
+    
+    // if(m_verbose)
+    std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
+    
+    m_timer_trace.start();
+    // Launch the simulation.
+    OPTIX_CHECK(optixLaunch(
+        m_state.pipeline,
+        m_state.stream, // Assume this stream is properly created.
+        reinterpret_cast<CUdeviceptr>(data_manager->getDeviceLaunchParams()),
+        sizeof(OptixCSP::LaunchParams),
+        &m_state.sbt, // Shader Binding Table.
+        width,        // Launch dimensions
+        height,
+        1));
+    CUDA_SYNC_CHECK();
+    m_timer_trace.stop();
+
+    // Collect results
+    m_timer_fetch.start();
+    get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
+        m_sunraynumber_vec);
+    m_timer_fetch.stop();
+    std::cout << "time to trace rays: " << m_timer_trace.get_time_sec() << " seconds" << std::endl;
+    std::cout << "time to fetch results: " << m_timer_fetch.get_time_sec() << " seconds" << std::endl;
 }
 
 void SolTraceSystem::update()
@@ -616,8 +668,21 @@ void SolTraceSystem::create_shader_binding_table()
 
 void SolTraceSystem::setup_device_buffer()
 {
-    // Initialize launch params
-    data_manager->launch_params_H.width = m_number_of_rays;
+    // get geometric information about element bounding boxes and sun plane
+    float aabb_area = geometry_manager->get_aabb_area();
+
+    LaunchParams params = data_manager->launch_params_H;
+
+    float3 sun_box_a = params.sun_v0 - params.sun_v1;
+    float3 sun_box_b = params.sun_v1 - params.sun_v2;
+
+    float sun_box_edge_a = sqrtf(sun_box_a.x * sun_box_a.x + sun_box_a.y * sun_box_a.y + sun_box_a.z * sun_box_a.z);
+    float sun_box_edge_b = sqrtf(sun_box_b.x * sun_box_b.x + sun_box_b.y * sun_box_b.y + sun_box_b.z * sun_box_b.z);
+
+    float sun_box_area = sun_box_edge_a * sun_box_edge_b;
+
+    // Initialize launch params, modify number of rays launched to account for missible area
+    data_manager->launch_params_H.width = m_number_of_rays; // * (int) (sun_box_area / aabb_area + 1);
     data_manager->launch_params_H.height = 1;
     data_manager->launch_params_H.max_depth = MAX_TRACE_DEPTH;
 
@@ -678,6 +743,10 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
                                         std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
                                         std::vector<uint_fast64_t> &sunraynumber_vec)
 {
+    Timer m_timer_results_buffer;
+    Timer m_timer_results_loop;
+    m_timer_results_buffer();
+    m_timer_results_loop();
     const int max_depth = data_manager->launch_params_H.max_depth;
     const int num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
     const int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
@@ -688,12 +757,15 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
         m_element_id_buffer_host.resize(output_size);
     if (static_cast<int>(m_hit_type_buffer_host.size()) != output_size)
         m_hit_type_buffer_host.resize(output_size);
-
+        
+    m_timer_results_buffer.start();
     CUDA_CHECK(cudaMemcpy(m_hp_output_buffer_host.data(), data_manager->launch_params_H.hit_point_buffer, output_size * sizeof(float4), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(m_element_id_buffer_host.data(), data_manager->launch_params_H.element_id_buffer, output_size * sizeof(int32_t), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(m_hit_type_buffer_host.data(), data_manager->launch_params_H.hit_type_buffer, output_size * sizeof(uint8_t), cudaMemcpyDeviceToHost));
-
+    m_timer_results_buffer.stop();
+    
     // Loop through each buffer slot
+    m_timer_results_loop.start();
     uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
     uint_fast64_t sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
     for (int i = 0; i < output_size; ++i)
@@ -701,13 +773,13 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
 
         // Get hit type
         const uint8_t &hit_type = m_hit_type_buffer_host[i];
-
+        
         // Skip if empty
         if (hit_type < HitType::HIT_CREATE || hit_type > HitType::HIT_EXIT)
         {
             continue;
         }
-
+        
         // If new ray, check if previous ray hit anything
         if (hit_type == HitType::HIT_CREATE)
         {
@@ -721,18 +793,18 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
                 sunraynumber_vec.pop_back();
                 ray_number--;
             }
-
+            
             // New ray
             ray_number++;
-
+            
             // Sun ray number always increments, even if no hit
             sunray_number++;
         }
-
+        
         // Get hit record, element_id
         const float4 &hit_record = m_hp_output_buffer_host[i]; // [depth, pos x, pos y, pos z]
         const int32_t &element_id = m_element_id_buffer_host[i];
-
+        
         // Collect results
         hp_vec.push_back(hit_record);
         raynumber_vec.push_back(ray_number);
@@ -740,6 +812,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
         element_id_vec.push_back(element_id);
         sunraynumber_vec.push_back(sunray_number);
     }
+    m_timer_results_loop.stop();
 
     // Remove last ray if it is only CREATE
     if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE)
@@ -750,6 +823,8 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
         hit_type_vec.pop_back();
         sunraynumber_vec.pop_back();
     }
+    std::cout << "time to copy buffers: " << m_timer_results_buffer.get_time_sec() << " seconds" << std::endl;
+    std::cout << "time to loop thru buffers: " << m_timer_results_loop.get_time_sec() << " seconds" << std::endl;
 
     return;
 }
