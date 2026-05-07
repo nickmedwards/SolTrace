@@ -1,5 +1,10 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "C:/ProgramData/NVIDIA Corporation/OptiX SDK 9.1.0/**",
+        "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.9/**"
+    ]
 }

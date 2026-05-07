@@ -97,6 +97,13 @@ public:
         this->optics_back = op;
     }*/
 
+    virtual int8_t get_group() const { return this->group; }
+    virtual void set_group(int8_t group)
+    {
+        this->group = group;
+        return;
+    }
+
     virtual void enforce_user_fields_set() const override;
 
     virtual void write_json(nlohmann::ordered_json& jnode) const override;

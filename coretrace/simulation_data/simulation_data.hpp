@@ -294,6 +294,16 @@ public:
         return this->my_parameters;
     }
 
+    int8_t get_current_group() const
+    {
+        return this->current_group;
+    }
+
+    std::vector<uint_fast64_t> get_groups() const
+    {
+        return this->my_groups;
+    }
+
     int update_simulation_positions();
     int update_simulation_positions(const Time &);
     int update_simulation_positions(const Date &);
@@ -323,6 +333,10 @@ private:
     // mutable element_id next_element_id;
 
     uint_fast64_t number_of_elements;
+    // index is the group number and the value is the last index of that group in my_elements
+    // if groups are used they must be added at the beginning of the JSON, all ungrouped elements are added at the end
+    std::vector<uint_fast64_t> my_groups;
+    int8_t current_group;
 
     ElementContainer my_elements;
     RaySourceContainer my_sources;

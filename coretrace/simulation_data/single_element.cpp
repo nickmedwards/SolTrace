@@ -29,6 +29,14 @@ SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
 
     const optics_id opt_id = jnode.at("opt_id").get<optics_id>();
     this->set_optical_property_set(resolve_optics(opt_id));
+
+    // don't need to require every element have a group
+    if (jnode.contains("group"))
+    {
+        this->group = jnode.at("group").get<int8_t>();
+    } else {
+        this->group = -1;
+    }
 }
 
 SingleElement::~SingleElement()

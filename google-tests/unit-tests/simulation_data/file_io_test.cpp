@@ -26,6 +26,43 @@ void get_default_element_base(nlohmann::ordered_json& jnode)
     jnode["zrot"] = 0;
 }
 
+void get_default_single_element(nlohmann::ordered_json& jnode)
+{
+    get_default_element_base(jnode);
+    jnode["is_single"] = true;
+    // TODO: get rid of Vector3d
+    jnode["aim"] = Vector3d(0, 1, 0).data;
+
+    nlohmann::ordered_json jrectangle;
+    jrectangle["aperture_type"] = SolTrace::Data::ApertureTypeMap.at(ApertureType::RECTANGLE);
+    jrectangle["x_length"] = 4;
+    jrectangle["y_length"] = 5;
+    jrectangle["x_coord"] = -2;
+    jrectangle["y_coord"] = -2.5;
+    jnode["aperture"] = jrectangle;
+
+    nlohmann::ordered_json jpara;
+    jpara["surface_type"] = SolTrace::Data::SurfaceTypeMap.at(SolTrace::Data::PARABOLA);
+    jpara["focal_length_x"] = 3;
+    jpara["focal_length_y"] = 4;
+
+    jnode["surface"] = jpara;
+
+    nlohmann::ordered_json jop;
+    jop["my_type"]                 = SolTrace::Data::InteractionTypeMap.at(SolTrace::Data::InteractionType::REFLECTION);
+    jop["error_distribution_type"] = SolTrace::Data::DistributionTypeMap.at(SolTrace::Data::DistributionType::GAUSSIAN);
+    jop["transmissivity"]          = 0.0;
+    jop["reflectivity"]            = 0.0;
+    jop["slope_error"]             = 0.0;
+    jop["specularity_error"]       = 0.0;
+    jop["refraction_index_front"]  = 0.0;
+    jop["refraction_index_back"]   = 0.0;
+
+    jnode["optics_front"] = jop;
+    jnode["optics_back"] = jop;
+}
+
+
 TEST(io_json, json_round_trip)
 {
     namespace fs = std::filesystem;
@@ -763,5 +800,60 @@ TEST(io_json, stage_read_fail)
 
     // Try to make stage
     EXPECT_THROW(make_stage(jstage, nullptr), std::invalid_argument);
+
+}
+
+TEST(io_json, element_groups)
+{
+    // namespace fs = std::filesystem;
+    using json = nlohmann::ordered_json;
+    // const fs::path project_root(PROJECT_DIR);
+
+    
+    // emulating SolTrace::Data::load_json_file
+    SimulationData sd;
+
+    // test an element with no group
+    json j_no_group;
+    get_default_single_element(j_no_group);
+    auto e_no_group = SolTrace::Data::make_element<SingleElement>(j_no_group);
+
+    ASSERT_EQ(e_no_group->get_group(), -1);
+    
+    sd.add_element(e_no_group);
+    ASSERT_EQ(sd.get_current_group(), 0);
+
+    json j_group_0;
+    get_default_single_element(j_group_0);
+    j_group_0["group"] = 0;
+    auto e_group_0 = SolTrace::Data::make_element<SingleElement>(j_group_0);
+    ASSERT_EQ(e_group_0->get_group(), 0);
+
+    EXPECT_THROW(sd.add_element(e_group_0), std::runtime_error);
+
+    // test that sd.clear() actually clears
+    sd.clear();
+    ASSERT_EQ(sd.get_current_group(), 0);
+
+    // test 2 elements with a group 0
+    json j_group_0_1;
+    get_default_single_element(j_group_0_1);
+    j_group_0_1["group"] = 0;
+    auto e_group_0_1 = SolTrace::Data::make_element<SingleElement>(j_group_0_1);
+    ASSERT_EQ(e_group_0_1->get_group(), 0);
+
+    sd.add_element(e_group_0_1);
+    ASSERT_EQ(sd.get_current_group(), 0);
+
+    std::vector<uint_fast64_t> groups = sd.get_groups();
+
+    json j_group_0_2;
+    get_default_single_element(j_group_0_2);
+    j_group_0_2["group"] = 0;
+    auto e_group_0_2 = SolTrace::Data::make_element<SingleElement>(j_group_0_2);
+    ASSERT_EQ(e_group_0_2->get_group(), 0);
+
+    sd.add_element(e_group_0_2);
+    ASSERT_EQ(sd.get_current_group(), 0);
 
 }

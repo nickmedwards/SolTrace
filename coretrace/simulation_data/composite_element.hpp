@@ -194,6 +194,9 @@ namespace SolTrace::Data
         {
             return this->my_elements.is_at_end(citer);
         }
+        
+        // only single elements have groups
+        virtual int8_t get_group() const override { return this->group; }
 
         virtual void enforce_user_fields_set() const override;
 
