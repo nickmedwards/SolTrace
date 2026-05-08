@@ -51,6 +51,8 @@ element_id SimulationData::add_element(element_ptr el)
             }
             else
             {
+                this->number_of_elements++;
+
                 // only check groups on single elements
                 // enforce that the groups are added in order
                 int8_t group = el->get_group();
@@ -65,29 +67,32 @@ element_id SimulationData::add_element(element_ptr el)
                         << ") which was closed with element (" << this->my_groups[group] << ")";
                     throw std::runtime_error(ss.str());
                 }
-                else if (group > -1 && this->current_group == -1 && this->my_groups.size() > 0)
+                else if (group == -1 && this->current_group > -1 && this->my_groups.size() > 0)
                 {
                     // TODO: how should i handle errors like this?
-                    // tried to add groups after ungrouped elements were added
+                    // tried to add ungrouped elements after groups were added
+                    std::stringstream ss;
+                    ss << "Tried to add ungrouped element (" << id 
+                        << ") after grouped elements were added. "
+                        << "Please add all ungrouped elements before grouped elements.";           
+                    throw std::runtime_error(ss.str());
+                }
+                else if (group > -1 && group > this->current_group + 1)
+                {
+                    // tried to add group before previous group was added
+                    // ie tried to add group 2 before adding any group 1 elements
                     std::stringstream ss;
                     ss << "Tried to add element (" << id 
                         << ") to group (" << (int)group
-                        << ") after ungrouped elements were added. "
-                        << "Please add grouped elements in a coherent block.";           
+                        << ") currently on group (" << (int)this->current_group
+                        << "). Please add groups labeled 0 to N in order.";           
                     throw std::runtime_error(ss.str());
-                } 
-                else if (group > -1 && group > this->current_group)
+                }
+                else if (group > -1 && group == this->current_group + 1)
                 {
-                    this->my_groups.push_back(this->number_of_elements);
+                    this->my_groups.push_back(id);
                     ++this->current_group;
                 }
-                else if (group == -1 && this->current_group > -1)
-                {
-                    this->my_groups.push_back(this->number_of_elements);
-                    this->current_group = -1;
-                }
-                
-                this->number_of_elements++;
             }
         }
         else

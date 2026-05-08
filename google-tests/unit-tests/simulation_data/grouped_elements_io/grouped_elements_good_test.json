@@ -152,9 +152,11 @@
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
                     "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 }
+                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
+                    "group": 2
                 }
             ]
         }
-    ]
+    ],
+    "number_of_elements": 1
 }
