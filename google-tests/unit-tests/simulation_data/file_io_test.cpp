@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <functional>
+#include <algorithm>
 
 #include <aperture.hpp>
 #include <surface.hpp>
