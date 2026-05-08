@@ -33,8 +33,12 @@ void get_default_single_element(nlohmann::ordered_json& jnode, uint64_t opt_id)
     get_default_element_base(jnode);
     jnode["is_single"] = true;
     jnode["aim"] = SolTrace::Data::to_array(glm::dvec3(0, 1, 0));
+<<<<<<< HEAD
     jnode["opt_id"] = opt_id;
     
+=======
+
+>>>>>>> 88ec0e8e (finished group tests)
     nlohmann::ordered_json jrectangle;
     jrectangle["aperture_type"] = SolTrace::Data::ApertureTypeMap.at(ApertureType::RECTANGLE);
     jrectangle["x_length"] = 4;
