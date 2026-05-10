@@ -69,7 +69,7 @@ static void print_usage(const char *prog)
         << "  --optix         Use OptiX runner instead of the native runner\n"
         << "                  (requires SOLTRACE_BUILD_OPTIX_SUPPORT=ON at build time)\n"
 #endif
-        << "  --verbose       Enable verbose logging in the OptiX runner\n"
+        << "  -v, --verbose   Enable verbose logging in the OptiX runner\n"
         ;
 }
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
         {
             use_optix = true;
         }
-        else if (arg == "--verbose")
+        else if (arg == "-v" || arg == "--verbose")
         {
             verbose = true;
         }
