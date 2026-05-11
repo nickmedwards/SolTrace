@@ -7,24 +7,33 @@ include_directories(
     ${TEST_INPUT_DIR}
     ../../../coretrace/simulation_results
     ../../../coretrace/simulation_data
+    ../../../coretrace/simulation_runner
+	../../../coretrace/simulation_runner/optix_runner
 )
 
 # Add test files for simulation_results
 set(SIMULATION_RESULTS_TEST_SRC
     ../common/common.cpp
     simulation_result_test.cpp
+    grouped_results_test.cpp
 )
 
 add_executable(SimulationResultsUnitTests
     ${SIMULATION_RESULTS_TEST_SRC}
 )
 
-target_link_libraries(
-    SimulationResultsUnitTests
+set(RES_LIBS
     simdata
     simresult
     GTest::gtest_main
 )
+
+# Conditionally link OptiX runner
+if(SOLTRACE_BUILD_OPTIX_SUPPORT)
+	list(APPEND RES_LIBS optix_runner)
+endif()
+
+target_link_libraries(SimulationResultsUnitTests ${RES_LIBS})
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_options(SimulationResultsUnitTests PRIVATE --coverage)

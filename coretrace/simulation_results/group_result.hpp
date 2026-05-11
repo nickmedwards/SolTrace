@@ -1,0 +1,53 @@
+#ifndef SOLTRACE_GROUP_RESULT_H
+#define SOLTRACE_GROUP_RESULT_H
+
+#include <cstdint>
+#include <map>
+#include <string>
+#include <vector>
+
+// #include "element.hpp"
+
+// #include <../../hpvm.h>
+
+// SimulationResult headers
+#include "records.hpp"
+
+namespace SolTrace::Result
+{
+    struct GroupResult
+    {
+        int8_t group_id;
+        // counts for each ray event type
+        uint_fast64_t absorb_count, reflect_count, transmit_count, virtual_count;
+        // counts for ray events where the previous event was the sun
+        uint_fast64_t absorb_sun_previous, reflect_sun_previous, transmit_sun_previous, virtual_sun_previous;
+        // counts for ray events for based on the previous element's group
+        // vector index is group number of previous element
+        std::vector<uint_fast64_t> absorb_previous_group, reflect_previous_group, transmit_previous_group, virtual_previous_group;
+
+        // probably add flux maps to groups
+        /*
+        HPM2D fluxGrid;
+        std::vector<double> xValues, yValues;
+        double binszx, binszy;
+        double PeakFlux, PeakFluxUncertainty;
+        double AveFlux, AveFluxUncertainty;
+        double MinFlux, SigmaFlux, Uniformity;
+        glm::dvec3 Centroid;
+        double zScale;
+        size_t NumberOfRays;
+        int NotBinned;
+        double max_neg_x_flux_err = 0;
+        double max_pos_x_flux_err = 0;
+        */
+        GroupResult() : 
+            group_id(-1),
+            absorb_count(0), reflect_count(0), transmit_count(0), virtual_count(0),
+            absorb_sun_previous(0), reflect_sun_previous(0), transmit_sun_previous(0), virtual_sun_previous(0)
+        {};
+        GroupResult(int8_t group_id, size_t n_groups);
+    };
+}// namespace SolTrace::Result
+
+#endif // SOLTRACE_GROUP_RESULT_H

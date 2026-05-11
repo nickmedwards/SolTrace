@@ -1,5 +1,7 @@
 #include "simulation_runner/optix_runner/optix_runner.hpp"
 #include "simulation_data/simulation_data_export.hpp"
+#include "simulation_results/simulation_result_export.hpp"
+
 
 #include <iostream>
 #include <optical_properties.hpp>
@@ -8,8 +10,10 @@
 
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::Runner::SimulationRunner;
+using SolTrace::Runner::RunnerStatistics;
 
 using SolTrace::Result::SimulationResult;
+using SolTrace::Result::GroupResult;
 
 using SolTrace::Data::optics_id;
 
@@ -158,6 +162,11 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
 
 RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 {
+    // set groups
+    std::vector<uint_fast64_t> from_data = data->get_groups();
+    std::vector<int32_t> groups(from_data.begin(), from_data.end());
+    m_sys.set_groups(groups);
+
     for (auto iter = data->get_const_iterator();
          !data->is_at_end(iter);
          ++iter)
@@ -468,6 +477,12 @@ SolTrace::Result::RayEvent hit_type_to_ray_event(OptixCSP::HitType hit_type)
 RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
                                             int level)
 {
+    // check groups exist if grouped statistics are requested
+    size_t num_groups = this->m_sys.get_num_groups();
+    if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && num_groups == 0)
+    {
+        return RunnerStatus::ERROR;
+    }
     // Declare results
     RunnerStatus retval = RunnerStatus::SUCCESS;
     std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
@@ -495,6 +510,12 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
     SolTrace::Result::interaction_ptr intr = nullptr;
+    std::vector<GroupResult> grouped_results(num_groups);
+    for (int8_t group_id = 0; group_id < (int8_t)num_groups; ++group_id)
+    {
+        grouped_results.emplace_back(group_id, num_groups);
+    }
+    
     for (size_t ii = 0; ii < ndata; ++ii)
     {
         // Collect results for record

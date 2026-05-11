@@ -980,7 +980,7 @@ TEST(io_json, element_groups_file) {
 
     // Build paths
     const fs::path project_root(PROJECT_DIR);
-    const std::string input_str = project_root.string() + "/grouped_elements_good_test.json";
+    const std::string input_str = project_root.string() + "/good_test.json";
 
     SimulationData sd;
     ASSERT_NO_THROW(sd.import_json_file(input_str));
@@ -1006,7 +1006,7 @@ TEST(io_json, element_groups_file_after_closed) {
 
     // Build paths
     const fs::path project_root(PROJECT_DIR);
-    const std::string input_str = project_root.string() + "/grouped_elements_after_closed_test.json";
+    const std::string input_str = project_root.string() + "/after_closed_test.json";
 
     SimulationData sd;
     EXPECT_THROW(sd.import_json_file(input_str), std::runtime_error);
@@ -1017,7 +1017,7 @@ TEST(io_json, element_groups_file_out_of_order) {
 
     // Build paths
     const fs::path project_root(PROJECT_DIR);
-    const std::string input_str = project_root.string() + "/grouped_elements_out_of_order_test.json";
+    const std::string input_str = project_root.string() + "/out_of_order_test.json";
 
     SimulationData sd;
     EXPECT_THROW(sd.import_json_file(input_str), std::runtime_error);
