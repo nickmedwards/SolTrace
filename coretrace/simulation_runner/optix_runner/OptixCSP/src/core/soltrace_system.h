@@ -143,6 +143,8 @@ namespace OptixCSP
         /// exactly m_number_of_rays hit rays are returned.  Enabled by default.
         void set_trim_excess_rays(bool trim) { m_trim_excess_rays = trim; }
         bool get_trim_excess_rays() const { return m_trim_excess_rays; }
+        void set_groups(const std::vector<int32_t>& groups) { my_groups = groups; }
+        size_t get_num_groups() const { return my_groups.size(); }
 
     private:
         // could use FRIEND_TEST macro, however to avoid linking gtest to prod, forward declare test class and make it a friend
