@@ -48,6 +48,8 @@ namespace SolTrace::Result
             absorb_sun_previous(0), reflect_sun_previous(0), transmit_sun_previous(0), virtual_sun_previous(0)
         {};
         GroupResult(int8_t group_id, size_t n_groups);
+
+        void write_json(nlohmann::ordered_json& jnode) const;
     };
 }// namespace SolTrace::Result
 
