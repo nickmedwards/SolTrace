@@ -52,7 +52,10 @@ using SolTrace::Runner::RunnerStatus;
 static void print_usage(const char *prog)
 {
     std::cerr
-        << "Usage: " << prog << " <input.json|input.stinput> [<output.csv>] [options]\n"
+        << "Usage: " << prog << " <input.json|input.stinput> [<output_filename>] [options]\n"
+        << "Please include the .json extension for the input.json argument, while"
+        << " excluding a file extension for the output filename. The output file "
+        << "extension will be determined based on the level specified (see below).\n"
         << "\n"
         << "Options:\n"
         << "  --threads <n>   Number of threads (default: 1)\n"
@@ -61,6 +64,7 @@ static void print_usage(const char *prog)
         << "                  (output file argument not required with this flag)\n"
         << "  --no-csv        Retrieve results but skip writing the CSV file\n"
         << "                  (output file argument not required with this flag)\n"
+        << "  --level <n>     Runner reporting level (default: 0, see SolTrace::Runner::RunnerStatistics for available levels)\n"
 #ifdef SOLTRACE_EMBREE_SUPPORT
         << "  --embree        Use Embree runner instead of the native runner\n"
         << "                  (requires SOLTRACE_BUILD_EMBREE_SUPPORT=ON at build time)\n"
@@ -112,6 +116,7 @@ int main(int argc, char *argv[])
 
     int num_threads = 1;
     long long num_rays_override = -1; // -1 means use what the JSON specifies
+    int level = 0;
     bool use_embree = false;
     bool use_optix = false;
     bool verbose = false;
@@ -166,6 +171,28 @@ int main(int argc, char *argv[])
         else if (arg == "--no-output" || arg == "--no-csv")
         {
             // already handled in pre-scan; skip here
+        }
+        else if (arg == "--level")
+        {
+            if (i + 1 >= argc)
+            {
+                std::cerr << "Error: --level requires an argument\n";
+                return EXIT_FAILURE;
+            }
+            try
+            {
+                level = std::stoll(argv[++i]);
+            }
+            catch (...)
+            {
+                std::cerr << "Error: invalid level '" << argv[i] << "'\n";
+                return EXIT_FAILURE;
+            }
+            if (level < SolTrace::Runner::RunnerStatistics::RAY_RECORDS || level > SolTrace::Runner::RunnerStatistics::ALL)
+            {
+                std::cerr << "Error: level must map to SolTrace::Runner::RunnerStatistics\n";
+                return EXIT_FAILURE;
+            }
         }
         else if (arg == "--embree")
         {
