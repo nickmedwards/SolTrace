@@ -12,6 +12,7 @@
 
 // SimulationResult headers
 #include "records.hpp"
+#include "group_result.hpp"
 
 namespace SolTrace::Result
 {
@@ -77,6 +78,9 @@ public:
                                 uint_fast64_t sun_ray_count);
     void set_sun_sampling_stats(double sun_A_box, uint_fast64_t sun_ray_count);
 
+    void set_grouped_results(const std::vector<GroupResult>& grouped_results) { this->grouped_results = grouped_results; }
+    std::vector<GroupResult> get_grouped_results() const { return this->grouped_results; }
+
 private:
     RayRecordContainer     ray_history;
     ElementRecordContainer element_view;
@@ -89,6 +93,9 @@ private:
     double        sun_height      = -1.0;
     double        A_sun_box       = -1.0;
     double        ray_area_weight = -1.0;
+
+    std::vector<GroupResult> grouped_results;
+
 };
 
 } // namespace SolTrace::Result

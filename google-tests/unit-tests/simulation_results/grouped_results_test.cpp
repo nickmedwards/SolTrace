@@ -50,18 +50,29 @@ TEST(grouped_results, counts_test) {
 
     SimulationResult result;
     sts = runner.report_simulation(&result, SolTrace::Runner::RunnerStatistics::GROUPED_COUNTS);
+    std::vector<GroupResult> grouped_results = result.get_grouped_results();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.report_simulation() failed";
 
-
-
-    // EXPECT_EQ(groups[0], 4);
-    // EXPECT_EQ(groups[1], 6);
-    // EXPECT_EQ(groups[2], 8);
-    // EXPECT_EQ(sd.get_number_of_elements(), 7);
-
-    // auto group_0 = sd.get_element(groups[0]);
-    // auto group_1 = sd.get_element(groups[1]);
-    // auto group_2 = sd.get_element(groups[2]);
-    // EXPECT_EQ(group_0->get_group(), 0);
-    // EXPECT_EQ(group_1->get_group(), 1);
-    // EXPECT_EQ(group_2->get_group(), 2);
+    // these are the counts that i got, they seem reasonable, its kinda weird that each heliostat
+    // recieved the same number of hits but that might be a halton distribution thing. i'm putting
+    // the test in for now to make sure the behavior stays the same
+    ASSERT_EQ(grouped_results[0].absorb_count, 0);
+    ASSERT_EQ(grouped_results[0].reflect_count, 15);
+    
+    ASSERT_EQ(grouped_results[1].absorb_count, 1);
+    ASSERT_EQ(grouped_results[1].reflect_count, 14);
+    
+    ASSERT_EQ(grouped_results[2].absorb_count, 2);
+    ASSERT_EQ(grouped_results[2].reflect_count, 13);
+    
+    ASSERT_EQ(grouped_results[3].absorb_count, 4);
+    ASSERT_EQ(grouped_results[3].reflect_count, 11);
+    
+    ASSERT_EQ(grouped_results[4].reflect_count, 0);
+    ASSERT_EQ(grouped_results[4].absorb_count, 90);
+    ASSERT_EQ(grouped_results[4].absorb_sun_previous, 22);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[0], 15);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[1], 14);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[2], 13);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[3], 11);
 }

@@ -589,6 +589,9 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // Attach other results
     result->set_sun_sampling_stats(this->get_sun_plane_area(), this->get_N_sun_rays());
 
+    // attach grouped results
+    result->set_grouped_results(grouped_results);
+
     return RunnerStatus::SUCCESS;
 }
 
