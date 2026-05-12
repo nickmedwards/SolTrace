@@ -41,12 +41,15 @@ TEST(grouped_results, counts_test) {
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.setup_simulation() failed";
     OptixCSP::SolTraceSystem *sys = runner.get_optix_system();
     ASSERT_EQ(sys->get_num_groups(), 5) << "Number of groups in system does not match expected";
+    ASSERT_EQ(sys->get_group(26), -1) << "Element 26 should be ungrouped";
+    ASSERT_EQ(sys->get_group(27), 0) << "Element 27 should be in group 0";
+    ASSERT_EQ(sys->get_group(127), 4) << "Element 127 should be in group 4";
 
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.run_simulation() failed";
 
     SimulationResult result;
-    sts = runner.report_simulation(&result, 0);
+    sts = runner.report_simulation(&result, SolTrace::Runner::RunnerStatistics::GROUPED_COUNTS);
 
 
 
