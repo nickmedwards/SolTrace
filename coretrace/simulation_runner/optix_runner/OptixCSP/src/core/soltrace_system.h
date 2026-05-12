@@ -140,6 +140,9 @@ namespace OptixCSP
         bool get_trim_excess_rays() const { return m_trim_excess_rays; }
         void set_groups(const std::vector<int32_t>& groups) { my_groups = groups; }
         size_t get_num_groups() const { return my_groups.size(); }
+        void set_groups(const std::vector<int32_t>& groups) { m_groups = groups; }
+        size_t get_num_groups() const { return m_groups.size(); }
+        int8_t get_group(int32_t element_id);
 
     private:
         // m_verbose and m_state must be declared before the shared_ptr managers so
@@ -196,7 +199,7 @@ namespace OptixCSP
         CompactionTimings m_compaction_timings;
 
         std::vector<std::shared_ptr<CspElement>> m_element_list;
-        std::vector<int32_t> my_groups;
+        std::vector<int32_t> m_groups;
 
         void create_shader_binding_table();
         void allocate_device_buffers();

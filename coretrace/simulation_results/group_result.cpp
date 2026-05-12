@@ -23,6 +23,7 @@ namespace SolTrace::Result
         transmit_sun_previous(0),
         virtual_sun_previous(0)
     {
+        // need extra spots in the vectors for ungrouped elements and the sun.
         absorb_previous_group.resize(n_groups);
         reflect_previous_group.resize(n_groups);
         transmit_previous_group.resize(n_groups);

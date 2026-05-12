@@ -510,11 +510,14 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
     SolTrace::Result::interaction_ptr intr = nullptr;
-    std::vector<GroupResult> grouped_results(num_groups);
+
+    // set up grouped results
+    // SolTrace::Result::RayEvent prev_rev;
+    int32_t group, prev_group = -2; // use -2 as sun
+    std::vector<GroupResult> grouped_results;
     for (int8_t group_id = 0; group_id < (int8_t)num_groups; ++group_id)
-    {
         grouped_results.emplace_back(group_id, num_groups);
-    }
+    
     
     for (size_t ii = 0; ii < ndata; ++ii)
     {
@@ -525,24 +528,62 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         int32_t element_id = element_id_vec[ii];
         uint8_t hit_type = hit_type_vec[ii];
         SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
+        group = rev == SolTrace::Result::RayEvent::CREATE ? -2 : this->m_sys.get_group(element_id);
 
-        // Make new ray record if necessary
-        iter = ray_records.find(raynum);
-        if (iter == ray_records.end())
+        if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && group >= 0)
         {
-            rec = SolTrace::Result::make_ray_record(raynum);
-            result->add_ray_record(rec);
-            ray_records[raynum] = rec;
-            assert(rev == SolTrace::Result::RayEvent::CREATE);
+            switch (rev)
+            {
+            case SolTrace::Result::RayEvent::ABSORB:
+                ++grouped_results[group].absorb_count;
+                if (prev_group == -2) ++grouped_results[group].absorb_sun_previous;
+                if (prev_group >= 0) ++grouped_results[group].absorb_previous_group[prev_group];
+                break;
+            case SolTrace::Result::RayEvent::REFLECT:
+                ++grouped_results[group].reflect_count;
+                if (prev_group == -2) ++grouped_results[group].reflect_sun_previous;
+                if (prev_group >= 0) ++grouped_results[group].reflect_previous_group[prev_group];
+                break;
+            case SolTrace::Result::RayEvent::TRANSMIT:
+                ++grouped_results[group].transmit_count;
+                if (prev_group == -2) ++grouped_results[group].transmit_sun_previous;
+                if (prev_group >= 0) ++grouped_results[group].transmit_previous_group[prev_group];
+                break;
+            case SolTrace::Result::RayEvent::VIRTUAL:
+                ++grouped_results[group].virtual_count;
+                if (prev_group == -2) ++grouped_results[group].virtual_sun_previous;
+                if (prev_group >= 0) ++grouped_results[group].virtual_previous_group[prev_group];
+                break;
+            default:
+                break;
+            }
         }
-        else
-        {
-            rec = iter->second;
+        
+        if (level == RunnerStatistics::RAY_RECORDS || level == RunnerStatistics::ALL) {
+            raynum = raynumber_vec[ii];
+            glm::dvec3 pos(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
+            glm::dvec3 cos(0.0);                                  // TODO: calculate directions
+            
+            // Make new ray record if necessary
+            iter = ray_records.find(raynum);
+            if (iter == ray_records.end())
+            {
+                rec = SolTrace::Result::make_ray_record(raynum);
+                result->add_ray_record(rec);
+                ray_records[raynum] = rec;
+                assert(rev == SolTrace::Result::RayEvent::CREATE);
+            }
+            else
+            {
+                rec = iter->second;
+            }
+            
+            // Make interaction record
+            intr = SolTrace::Result::make_interaction_record(element_id, rev, pos, cos);
+            rec->add_interaction_record(intr);
         }
 
-        // Make interaction record
-        intr = SolTrace::Result::make_interaction_record(element_id, rev, pos, cos);
-        rec->add_interaction_record(intr);
+        prev_group = group;
     }
 
     // Attach other results
