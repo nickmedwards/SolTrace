@@ -79,7 +79,9 @@ static void print_usage(const char *prog)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
+    using SolTrace::Runner::RunnerStatistics;
+    // double check that this works with no-output/no-csv flags
+    if (argc < 3)
     {
         print_usage(argv[0]);
         return EXIT_FAILURE;
@@ -181,14 +183,14 @@ int main(int argc, char *argv[])
             }
             try
             {
-                level = std::stoll(argv[++i]);
+                level = std::stoi(argv[++i]);
             }
             catch (...)
             {
                 std::cerr << "Error: invalid level '" << argv[i] << "'\n";
                 return EXIT_FAILURE;
             }
-            if (level < SolTrace::Runner::RunnerStatistics::RAY_RECORDS || level > SolTrace::Runner::RunnerStatistics::ALL)
+            if (level < RunnerStatistics::RAY_RECORDS || level > RunnerStatistics::ALL)
             {
                 std::cerr << "Error: level must map to SolTrace::Runner::RunnerStatistics\n";
                 return EXIT_FAILURE;
@@ -496,9 +498,9 @@ int main(int argc, char *argv[])
     }
 
     // -------------------------------------------------------------------------
-    // Write results to CSV
+    // Write results to CSV / JSON
     // -------------------------------------------------------------------------
-    if (!skip_output && !skip_csv)
+    if (!skip_csv && (level == RunnerStatistics::RAY_RECORDS || level == RunnerStatistics::ALL))
     {
         std::cout << "Writing " << result.get_number_of_records()
                   << " ray records to: " << output_file << "...\n";
@@ -521,11 +523,31 @@ int main(int argc, char *argv[])
     {
         std::cout << "Skipping CSV output (--no-csv).\n";
     }
-    else
+
+    if (!skip_output && (level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL))
+    {
+        std::cout << "Writing " << result.get_number_of_groups()
+            << " group results to: " << output_file << ".json ...\n";
+        try
+        {
+            auto t_write_start = std::chrono::steady_clock::now();
+            result.write_json_file(output_file + ".json");
+            auto t_write_end = std::chrono::steady_clock::now();
+            std::cout << "  Written in "
+            << std::chrono::duration<double>(t_write_end - t_write_start).count()
+            << " s\n";
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Error writing JSON file: " << e.what() << "\n";
+            return EXIT_FAILURE;
+        }
+    }
+    else if (skip_output)
     {
         std::cout << "Skipping CSV output (--no-output).\n";
     }
-
+    
     std::cout << "Done.\n";
     return EXIT_SUCCESS;
 }

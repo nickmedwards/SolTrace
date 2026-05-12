@@ -42,6 +42,7 @@ namespace SolTrace::Runner
 
     // making an enum rather than enum class for backwards compatibility / ease
     // of integration with previous code, can update in the future.
+    // could consider making this a uint as bit flags bc i'm doing a lot of ||'s
     enum RunnerStatistics
     {
         RAY_RECORDS,    // current default behavior is level = 0, and it reports all ray records

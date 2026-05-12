@@ -993,11 +993,17 @@ TEST(io_json, element_groups_file) {
     EXPECT_EQ(groups[2], 8);
     EXPECT_EQ(sd.get_number_of_elements(), 7);
 
-    auto group_0 = sd.get_element(groups[0]);
-    auto group_1 = sd.get_element(groups[1]);
+    auto no_group = sd.get_element(groups[0] - 1);
+    auto group_0_start = sd.get_element(groups[0]);
+    auto group_0_end = sd.get_element(groups[1] - 1);
+    auto group_1_start = sd.get_element(groups[1]);
+    auto group_1_end = sd.get_element(groups[2] - 1);
     auto group_2 = sd.get_element(groups[2]);
-    EXPECT_EQ(group_0->get_group(), 0);
-    EXPECT_EQ(group_1->get_group(), 1);
+    EXPECT_EQ(no_group->get_group(), -1);
+    EXPECT_EQ(group_0_start->get_group(), 0);
+    EXPECT_EQ(group_0_end->get_group(), 0);
+    EXPECT_EQ(group_1_start->get_group(), 1);
+    EXPECT_EQ(group_1_end->get_group(), 1);
     EXPECT_EQ(group_2->get_group(), 2);
 }
 
