@@ -19,6 +19,7 @@ TEST(grouped_results, counts_test) {
     // Build paths
     const fs::path project_root(PROJECT_DIR);
     const std::string input_str = project_root.string() + "/field_test.json";
+    const std::string output_str = project_root.string() + "/field_out.json";
 
     SimulationData sd;
     ASSERT_NO_THROW(sd.import_json_file(input_str));
@@ -75,4 +76,6 @@ TEST(grouped_results, counts_test) {
     ASSERT_EQ(grouped_results[4].absorb_previous_group[1], 14);
     ASSERT_EQ(grouped_results[4].absorb_previous_group[2], 13);
     ASSERT_EQ(grouped_results[4].absorb_previous_group[3], 11);
+
+    ASSERT_NO_THROW(result.write_json_file(output_str));
 }
