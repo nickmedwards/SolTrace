@@ -162,11 +162,6 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
 
 RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 {
-    // set groups
-    std::vector<uint_fast64_t> from_data = data->get_groups();
-    std::vector<int32_t> groups(from_data.begin(), from_data.end());
-    m_sys.set_groups(groups);
-
     for (auto iter = data->get_const_iterator();
          !data->is_at_end(iter);
          ++iter)
@@ -427,6 +422,12 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             }
         }
     }
+
+    // set groups, after loop to ensure all uint64s can safely fit in int32s
+    std::vector<uint_fast64_t> from_data = data->get_groups();
+    std::vector<int32_t> groups(from_data.begin(), from_data.end());
+    m_sys.set_groups(groups);
+    
     return RunnerStatus::SUCCESS;
 }
 
@@ -535,25 +536,33 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
             switch (rev)
             {
             case SolTrace::Result::RayEvent::ABSORB:
+            {
                 ++grouped_results[group].absorb_count;
                 if (prev_group == -2) ++grouped_results[group].absorb_sun_previous;
                 if (prev_group >= 0) ++grouped_results[group].absorb_previous_group[prev_group];
                 break;
+            }
             case SolTrace::Result::RayEvent::REFLECT:
+            {
                 ++grouped_results[group].reflect_count;
                 if (prev_group == -2) ++grouped_results[group].reflect_sun_previous;
                 if (prev_group >= 0) ++grouped_results[group].reflect_previous_group[prev_group];
                 break;
+            }
             case SolTrace::Result::RayEvent::TRANSMIT:
+            {
                 ++grouped_results[group].transmit_count;
                 if (prev_group == -2) ++grouped_results[group].transmit_sun_previous;
                 if (prev_group >= 0) ++grouped_results[group].transmit_previous_group[prev_group];
                 break;
+            }
             case SolTrace::Result::RayEvent::VIRTUAL:
+            {
                 ++grouped_results[group].virtual_count;
                 if (prev_group == -2) ++grouped_results[group].virtual_sun_previous;
                 if (prev_group >= 0) ++grouped_results[group].virtual_previous_group[prev_group];
                 break;
+            }
             default:
                 break;
             }
