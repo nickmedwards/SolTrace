@@ -84,7 +84,7 @@ public:
 
   /// @brief Get the group number this element belongs to
   /// @return Group number
-  virtual int8_t get_group() const = 0;
+  virtual int32_t get_group() const = 0;
 
   /**
    * @brief Get the stage number this element belongs to

@@ -17,7 +17,7 @@ namespace SolTrace::Result
 {
     struct GroupResult
     {
-        int8_t group_id;
+        int32_t group_id;
         // counts for each ray event type
         uint_fast64_t absorb_count, reflect_count, transmit_count, virtual_count;
         // counts for ray events where the previous element was the sun
@@ -31,7 +31,7 @@ namespace SolTrace::Result
             absorb_count(0), reflect_count(0), transmit_count(0), virtual_count(0),
             absorb_sun_previous(0), reflect_sun_previous(0), transmit_sun_previous(0), virtual_sun_previous(0)
         {};
-        GroupResult(int8_t group_id, size_t n_groups);
+        GroupResult(int32_t group_id, size_t n_groups);
 
         void write_json(nlohmann::ordered_json& jnode) const;
         

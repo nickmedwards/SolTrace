@@ -294,7 +294,7 @@ public:
         return this->my_parameters;
     }
 
-    int8_t get_current_group() const
+    int32_t get_current_group() const
     {
         return this->current_group;
     }
@@ -336,7 +336,7 @@ private:
     // index is the group number and the value is the first id of that group in my_elements
     // if groups are used they must be added after all ungrouped elements
     std::vector<uint_fast64_t> my_groups;
-    int8_t current_group;
+    int32_t current_group;
 
     ElementContainer my_elements;
     RaySourceContainer my_sources;

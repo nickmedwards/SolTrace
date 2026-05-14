@@ -55,7 +55,7 @@ element_id SimulationData::add_element(element_ptr el)
 
                 // only check groups on single elements
                 // enforce that the groups are added in order
-                int8_t group = el->get_group();
+                int32_t group = el->get_group();
                 
                 if (group > -1 && group < this->current_group)
                 {

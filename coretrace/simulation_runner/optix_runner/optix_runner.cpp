@@ -516,7 +516,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // SolTrace::Result::RayEvent prev_rev;
     int32_t group, prev_group = -2; // use -2 as sun
     std::vector<GroupResult> grouped_results;
-    for (int8_t group_id = 0; group_id < (int8_t)num_groups; ++group_id)
+    for (int32_t group_id = 0; group_id < (int32_t)num_groups; ++group_id)
         grouped_results.emplace_back(group_id, num_groups);
     
     

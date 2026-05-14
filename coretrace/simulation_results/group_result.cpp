@@ -12,7 +12,7 @@
 
 namespace SolTrace::Result
 {
-    GroupResult::GroupResult(int8_t group_id, size_t n_groups) : 
+    GroupResult::GroupResult(int32_t group_id, size_t n_groups) : 
         group_id(group_id),
         absorb_count(0),
         reflect_count(0),

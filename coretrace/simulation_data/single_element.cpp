@@ -34,7 +34,7 @@ SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
     // don't need to require every element have a group
     if (jnode.contains("group"))
     {
-        this->group = jnode.at("group").get<int8_t>();
+        this->group = jnode.at("group").get<int32_t>();
     } else {
         this->group = -1;
     }

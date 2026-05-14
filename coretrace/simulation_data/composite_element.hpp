@@ -196,7 +196,7 @@ namespace SolTrace::Data
         }
         
         // only single elements have groups
-        virtual int8_t get_group() const override { return -2; }
+        virtual int32_t get_group() const override { return -2; }
 
         virtual void enforce_user_fields_set() const override;
 
