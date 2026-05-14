@@ -147,7 +147,7 @@ namespace OptixCSP
         size_t get_num_groups() const { return my_groups.size(); }
         void set_groups(const std::vector<int32_t>& groups) { m_groups = groups; }
         size_t get_num_groups() const { return m_groups.size(); }
-        int8_t get_group(int32_t element_id);
+        int32_t get_group(int32_t element_id);
 
     private:
         // could use FRIEND_TEST macro, however to avoid linking gtest to prod, forward declare test class and make it a friend
