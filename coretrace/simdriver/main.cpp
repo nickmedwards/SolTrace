@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
         try
         {
             auto t_write_start = std::chrono::steady_clock::now();
-            result.write_json_file(output_file + ".json");
+            result.write_group_json_file(output_file + ".json");
             auto t_write_end = std::chrono::steady_clock::now();
             std::cout << "  Written in "
             << std::chrono::duration<double>(t_write_end - t_write_start).count()
