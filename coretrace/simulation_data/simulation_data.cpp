@@ -18,7 +18,7 @@ SimulationData::SimulationData() : number_of_elements(0),
 
 SimulationData::~SimulationData()
 {
-    this->my_groups.clear();
+    this->clear(true);
     return;
 }
 
