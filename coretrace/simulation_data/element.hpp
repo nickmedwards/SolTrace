@@ -354,8 +354,6 @@ public:
     return;
   }
 
-  virtual int8_t get_group() const override { return -2; }
-
   virtual int_fast64_t get_stage() override { return this->stage; }
   virtual void set_stage(int_fast64_t stage) override { this->stage = stage; }
 
