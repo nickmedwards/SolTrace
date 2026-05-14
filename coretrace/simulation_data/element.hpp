@@ -354,7 +354,7 @@ public:
     return;
   }
 
-  virtual int8_t get_group() const override { return this->group; }
+  virtual int8_t get_group() const override { return -2; }
 
   virtual int_fast64_t get_stage() override { return this->stage; }
   virtual void set_stage(int_fast64_t stage) override { this->stage = stage; }
@@ -523,12 +523,6 @@ protected:
   mutable bool active;
   mutable bool virtual_flag;
   mutable element_id my_id;
-
-  // group number of element. 
-  // -2 is an element that does not interact with the trace, ie stage or composite elements. 
-  // -1 is an ungrouped element, assigned explicitly or if "group" key is missing from JSON. 
-  // 0 and above are grouped elements. 
-  int8_t group;
 
   bool coordinates_initialized;
 

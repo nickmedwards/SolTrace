@@ -22,8 +22,7 @@ ElementBase::ElementBase() : Element(),
                              my_id(ELEMENT_ID_UNASSIGNED),
                              stage(-1),
                              zrot(0.0),
-                             reference_element(nullptr),
-                             group(-2)
+                             reference_element(nullptr)
 {
     // Default local coordinates to match with the reference coordinates
     this->aim = {0.0, 0.0, 1.0};
@@ -64,7 +63,6 @@ ElementBase::ElementBase(const nlohmann::ordered_json& jnode) : ElementBase()
     this->set_zrot(jnode.at("zrot"));
 
     this->coordinates_initialized = false;
-    this->group = -2;
     //this->compute_coordinate_rotations();
 }
 

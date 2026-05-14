@@ -22,7 +22,8 @@ SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
     const OpticalPropertySetResolver& resolve_optics) : ElementBase(jnode),
                                                                     aperture(nullptr),
                                                                     surface(nullptr),
-                                                                    opt_id(OPTICS_ID_UNASSIGNED)
+                                                                    opt_id(OPTICS_ID_UNASSIGNED),
+                                                                    group(-1)
 {
     this->set_aperture(Aperture::make_aperture_from_json(jnode.at("aperture")));
     this->set_surface(make_surface_from_json(jnode.at("surface")));
