@@ -78,5 +78,5 @@ TEST(grouped_results, counts_test) {
     // ASSERT_EQ(grouped_results[4].absorb_previous_group[3], 11);
     // nvm it changed after i rebuilt, does that make sense?
 
-    ASSERT_NO_THROW(result.write_json_file(output_str));
+    ASSERT_NO_THROW(result.write_group_json_file(output_str));
 }

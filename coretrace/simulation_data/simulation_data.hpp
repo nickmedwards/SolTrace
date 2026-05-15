@@ -299,7 +299,7 @@ public:
         return this->current_group;
     }
 
-    std::vector<uint_fast64_t> get_groups() const
+    const std::vector<uint_fast64_t>& get_groups() const
     {
         return this->my_groups;
     }
