@@ -1,6 +1,9 @@
 #ifndef SOLTRACE_OPTIX_RUNNER_H
 #define SOLTRACE_OPTIX_RUNNER_H
 
+#include <set>
+#include <vector>
+
 #include "simulation_data.hpp"
 #include "simulation_result.hpp"
 #include "simulation_runner.hpp"
@@ -72,8 +75,15 @@ public:
     // Runner accessors
     OptixCSP::SolTraceSystem *get_optix_system() { return &this->m_sys; }
 
+    // group functions
+    void set_groups(const std::vector<std::set<int32_t>>& groups) { m_groups = groups; }
+    size_t get_num_groups() const { return m_groups.size(); }
+    int32_t get_group(int32_t element_id);
+
 private:
     OptixCSP::SolTraceSystem m_sys;
+
+    std::vector<std::set<int32_t>> m_groups;
 
     const SolTrace::Data::SimulationData *m_simdata;
     SolTrace::Runner::RunnerStatus setup_parameters(

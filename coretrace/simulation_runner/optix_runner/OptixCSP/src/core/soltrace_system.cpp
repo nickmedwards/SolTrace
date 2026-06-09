@@ -944,20 +944,3 @@ uint_fast64_t SolTraceSystem::determine_batch_size() const
 
     return batch_size;
 }
-
-int8_t SolTraceSystem::get_group(int32_t element_id) 
-{
-    size_t num_groups = m_groups.size();
-    if (num_groups > 0) {
-        for (size_t i = 0; i < m_groups.size() - 1; ++i) {
-            if (element_id >= m_groups[i] && element_id < m_groups[i + 1]) {
-                return static_cast<int32_t>(i);
-            }
-        }
-
-        if (element_id >= m_groups[m_groups.size() - 1])
-            return static_cast<int32_t>(m_groups.size() - 1);
-    }
-    
-    return -1;
-}

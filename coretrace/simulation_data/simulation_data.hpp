@@ -18,6 +18,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <set>
+#include <vector>
 
 #include "container.hpp"
 #include "element.hpp"
@@ -294,12 +296,7 @@ public:
         return this->my_parameters;
     }
 
-    int32_t get_current_group() const
-    {
-        return this->current_group;
-    }
-
-    const std::vector<uint_fast64_t>& get_groups() const
+    const std::vector<std::set<uint_fast64_t>>& get_groups() const
     {
         return this->my_groups;
     }
@@ -335,8 +332,7 @@ private:
     uint_fast64_t number_of_elements;
     // index is the group number and the value is the first id of that group in my_elements
     // if groups are used they must be added after all ungrouped elements
-    std::vector<uint_fast64_t> my_groups;
-    int32_t current_group;
+    std::vector<std::set<uint_fast64_t>> my_groups;
 
     ElementContainer my_elements;
     RaySourceContainer my_sources;

@@ -98,11 +98,6 @@ public:
     }*/
 
     virtual int32_t get_group() const override { return this->group; }
-    virtual void set_group(int32_t group)
-    {
-        this->group = group;
-        return;
-    }
 
     virtual void enforce_user_fields_set() const override;
 

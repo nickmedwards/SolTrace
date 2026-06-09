@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <algorithm>
+#include <set>
 
 #include <aperture.hpp>
 #include <surface.hpp>
@@ -807,8 +808,6 @@ TEST(io_json, element_groups)
 {
     // namespace fs = std::filesystem;
     using json = nlohmann::ordered_json;
-    // const fs::path project_root(PROJECT_DIR);
-
     
     // emulating SolTrace::Data::load_json_file
     SimulationData sd;
@@ -821,7 +820,7 @@ TEST(io_json, element_groups)
     ASSERT_EQ(e_no_group->get_group(), -1);
     
     sd.add_element(e_no_group);
-    ASSERT_EQ(sd.get_current_group(), -1);
+    ASSERT_EQ(sd.get_groups().size(), 0);
 
     // test 2 elements with a group 0
     json j_group_0_1;
@@ -831,7 +830,7 @@ TEST(io_json, element_groups)
     ASSERT_EQ(e_group_0_1->get_group(), 0);
     
     sd.add_element(e_group_0_1);
-    ASSERT_EQ(sd.get_current_group(), 0);
+    ASSERT_EQ(sd.get_groups().size(), 1);
     
     json j_group_0_2;
     get_default_single_element(j_group_0_2);
@@ -840,7 +839,6 @@ TEST(io_json, element_groups)
     ASSERT_EQ(e_group_0_2->get_group(), 0);
     
     sd.add_element(e_group_0_2);
-    ASSERT_EQ(sd.get_current_group(), 0);
     ASSERT_EQ(sd.get_groups().size(), 1);
     
     // add group 1
@@ -852,127 +850,26 @@ TEST(io_json, element_groups)
     
     sd.add_element(e_group_1);
     ASSERT_EQ(sd.get_groups().size(), 2);
+
+    json j_group_0_3;
+    get_default_single_element(j_group_0_3);
+    j_group_0_3["group"] = 0;
+    auto e_group_0_3 = SolTrace::Data::make_element<SingleElement>(j_group_0_3);
+    ASSERT_EQ(e_group_0_3->get_group(), 0);
+    
+    sd.add_element(e_group_0_3);
+    ASSERT_EQ(sd.get_groups().size(), 2);
     
     // check vector is the starting index of the groups
-    std::vector<uint_fast64_t> groups = sd.get_groups();
-    ASSERT_EQ(groups[0], 2);
-    ASSERT_EQ(groups[1], 4);
+    std::vector<std::set<uint_fast64_t>> groups = sd.get_groups();
+    ASSERT_EQ(groups[0].count(e_group_0_1->get_id()), 1);
+    ASSERT_EQ(groups[0].count(e_group_0_2->get_id()), 1);
+    ASSERT_EQ(groups[0].count(e_group_0_3->get_id()), 1);
+    ASSERT_EQ(groups[1].count(e_group_1->get_id()), 1);
     
     // test that sd.clear() actually clears
     sd.clear();
-    ASSERT_EQ(sd.get_current_group(), -1);
-}
-
-TEST(io_json, element_groups_skipped_group_number)
-{
-    using json = nlohmann::ordered_json;
-    
-    // emulating SolTrace::Data::load_json_file
-    SimulationData sd;
-
-    // test 2 elements with a group 0
-    json j_group_0_1;
-    get_default_single_element(j_group_0_1);
-    j_group_0_1["group"] = 0;
-    auto e_group_0_1 = SolTrace::Data::make_element<SingleElement>(j_group_0_1);
-    ASSERT_EQ(e_group_0_1->get_group(), 0);
-    
-    sd.add_element(e_group_0_1);
-    ASSERT_EQ(sd.get_current_group(), 0);
-    
-    json j_group_0_2;
-    get_default_single_element(j_group_0_2);
-    j_group_0_2["group"] = 0;
-    auto e_group_0_2 = SolTrace::Data::make_element<SingleElement>(j_group_0_2);
-    ASSERT_EQ(e_group_0_2->get_group(), 0);
-    
-    sd.add_element(e_group_0_2);
-    ASSERT_EQ(sd.get_current_group(), 0);
-    ASSERT_EQ(sd.get_groups().size(), 1);
-
-    json j_group_2;
-    get_default_single_element(j_group_2);
-    j_group_2["group"] = 2;
-    auto e_group_2 = SolTrace::Data::make_element<SingleElement>(j_group_2);
-    ASSERT_EQ(e_group_2->get_group(), 2);
-    
-    EXPECT_THROW(sd.add_element(e_group_2), std::runtime_error);
-}
-
-TEST(io_json, element_groups_out_of_order)
-{
-    using json = nlohmann::ordered_json;
-    
-    // emulating SolTrace::Data::load_json_file
-    SimulationData sd;
-
-    // test 2 elements with a group 0
-    json j_group_0_1;
-    get_default_single_element(j_group_0_1);
-    j_group_0_1["group"] = 0;
-    auto e_group_0_1 = SolTrace::Data::make_element<SingleElement>(j_group_0_1);
-    ASSERT_EQ(e_group_0_1->get_group(), 0);
-    
-    sd.add_element(e_group_0_1);
-    ASSERT_EQ(sd.get_current_group(), 0);
-    
-    json j_group_1;
-    get_default_single_element(j_group_1);
-    j_group_1["group"] = 1;
-    auto e_group_1 = SolTrace::Data::make_element<SingleElement>(j_group_1);
-    ASSERT_EQ(e_group_1->get_group(), 1);
-    sd.add_element(e_group_1);
-
-    ASSERT_EQ(sd.get_groups().size(), 2);
-    
-    std::vector<uint_fast64_t> groups = sd.get_groups();
-    ASSERT_EQ(groups[0], 1);
-    ASSERT_EQ(groups[1], 2);
-    
-    json j_group_0_2;
-    get_default_single_element(j_group_0_2);
-    j_group_0_2["group"] = 0;
-    auto e_group_0_2 = SolTrace::Data::make_element<SingleElement>(j_group_0_2);
-
-    EXPECT_THROW(sd.add_element(e_group_0_2), std::runtime_error);
-}
-
-TEST(io_json, element_groups_ungrouped_after_grouped)
-{
-    using json = nlohmann::ordered_json;
-    
-    // emulating SolTrace::Data::load_json_file
-    SimulationData sd;
-
-    // test 2 elements with a group 0
-    json j_group_0_1;
-    get_default_single_element(j_group_0_1);
-    j_group_0_1["group"] = 0;
-    auto e_group_0_1 = SolTrace::Data::make_element<SingleElement>(j_group_0_1);
-    ASSERT_EQ(e_group_0_1->get_group(), 0);
-    
-    sd.add_element(e_group_0_1);
-    ASSERT_EQ(sd.get_current_group(), 0);
-    
-    json j_group_1;
-    get_default_single_element(j_group_1);
-    j_group_1["group"] = 1;
-    auto e_group_1 = SolTrace::Data::make_element<SingleElement>(j_group_1);
-    ASSERT_EQ(e_group_1->get_group(), 1);
-    sd.add_element(e_group_1);
-
-    ASSERT_EQ(sd.get_groups().size(), 2);
-    
-    std::vector<uint_fast64_t> groups = sd.get_groups();
-    ASSERT_EQ(groups[0], 1);
-    ASSERT_EQ(groups[1], 2);
-    
-    json j_no_group;
-    get_default_single_element(j_no_group);
-    j_no_group["group"] = -1;
-    auto e_no_group = SolTrace::Data::make_element<SingleElement>(j_no_group);
-
-    EXPECT_THROW(sd.add_element(e_no_group), std::runtime_error);
+    ASSERT_EQ(sd.get_groups().size(), 0);
 }
 
 TEST(io_json, element_groups_file) {
@@ -987,44 +884,16 @@ TEST(io_json, element_groups_file) {
 
     // Check groups
     EXPECT_EQ(sd.get_groups().size(), 3);
-    std::vector<uint_fast64_t> groups = sd.get_groups();
-    EXPECT_EQ(groups[0], 4);
-    EXPECT_EQ(groups[1], 6);
-    EXPECT_EQ(groups[2], 8);
-    EXPECT_EQ(sd.get_number_of_elements(), 7);
+    std::vector<std::set<uint_fast64_t>> groups = sd.get_groups();
 
-    auto no_group = sd.get_element(groups[0] - 1);
-    auto group_0_start = sd.get_element(groups[0]);
-    auto group_0_end = sd.get_element(groups[1] - 1);
-    auto group_1_start = sd.get_element(groups[1]);
-    auto group_1_end = sd.get_element(groups[2] - 1);
-    auto group_2 = sd.get_element(groups[2]);
-    EXPECT_EQ(no_group->get_group(), -1);
-    EXPECT_EQ(group_0_start->get_group(), 0);
-    EXPECT_EQ(group_0_end->get_group(), 0);
-    EXPECT_EQ(group_1_start->get_group(), 1);
-    EXPECT_EQ(group_1_end->get_group(), 1);
-    EXPECT_EQ(group_2->get_group(), 2);
+    SolTrace::Data::element_ptr ptr = nullptr;
+    int32_t group = -1;
+    for (auto iter = sd.get_iterator(); !sd.is_at_end(iter); ++iter)
+    {
+        ptr = iter->second;
+        group = ptr->get_group();
+        if (group > -1)
+            ASSERT_EQ(groups[group].count(ptr->get_id()), 1);
+    }
 }
 
-TEST(io_json, element_groups_file_after_closed) {
-    namespace fs = std::filesystem;
-
-    // Build paths
-    const fs::path project_root(PROJECT_DIR);
-    const std::string input_str = project_root.string() + "/after_closed_test.json";
-
-    SimulationData sd;
-    EXPECT_THROW(sd.import_json_file(input_str), std::runtime_error);
-}
-
-TEST(io_json, element_groups_file_out_of_order) {
-    namespace fs = std::filesystem;
-
-    // Build paths
-    const fs::path project_root(PROJECT_DIR);
-    const std::string input_str = project_root.string() + "/out_of_order_test.json";
-
-    SimulationData sd;
-    EXPECT_THROW(sd.import_json_file(input_str), std::runtime_error);
-}

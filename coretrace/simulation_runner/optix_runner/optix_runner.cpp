@@ -423,10 +423,19 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
         }
     }
 
-    // set groups, after loop to ensure all uint64s can safely fit in int32s
-    std::vector<uint_fast64_t> from_data = data->get_groups();
-    std::vector<int32_t> groups(from_data.begin(), from_data.end());
-    m_sys.set_groups(groups);
+    // ids from base elements are used to set the optix element ids, so can safely copy over
+    std::vector<std::set<uint_fast64_t>> groups_64 = data->get_groups();
+    for (size_t i = 0; i < groups_64.size(); ++i)
+    {
+        std::set<int32_t> group_i;
+        for (auto id : groups_64[i])
+        {
+            group_i.insert(static_cast<int32_t>(id));
+        }
+        m_groups.push_back(group_i);
+    }
+
+    // m_groups = const_cast<std::vector<std::set<int32_t>>&>(data->get_groups());
     
     return RunnerStatus::SUCCESS;
 }
@@ -479,7 +488,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
                                             int level)
 {
     // check groups exist if grouped statistics are requested
-    size_t num_groups = this->m_sys.get_num_groups();
+    size_t num_groups = m_groups.size();
     if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && num_groups == 0)
     {
         return RunnerStatus::ERROR;
@@ -529,7 +538,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         int32_t element_id = element_id_vec[ii];
         uint8_t hit_type = hit_type_vec[ii];
         SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
-        group = rev == SolTrace::Result::RayEvent::CREATE ? -2 : this->m_sys.get_group(element_id);
+        group = rev == SolTrace::Result::RayEvent::CREATE ? -2 : this->get_group(element_id);
 
         if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && group >= 0)
         {
@@ -646,4 +655,18 @@ OptixCSP::OpticalDistribution OptixRunner::to_optical_distribution(SolTrace::Dat
         throw std::invalid_argument(ss.str());
     }
     return od;
+}
+
+int32_t OptixRunner::get_group(int32_t element_id) 
+{
+    size_t num_groups = m_groups.size();
+    if (num_groups > 0) {
+        for (size_t i = 0; i < num_groups; ++i) {
+            if (m_groups[i].count(element_id) > 0) {
+                return static_cast<int32_t>(i);
+            }
+        }
+    }
+    
+    return -1;
 }
