@@ -15,7 +15,6 @@ include_directories(
 set(SIMULATION_RESULTS_TEST_SRC
     ../common/common.cpp
     simulation_result_test.cpp
-    grouped_results_test.cpp
 )
 
 add_executable(SimulationResultsUnitTests
