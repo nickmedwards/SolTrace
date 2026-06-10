@@ -15,7 +15,6 @@ include_directories(
 set(SIMULATION_RESULTS_TEST_SRC
     ../common/common.cpp
     simulation_result_test.cpp
-    grouped_results_test.cpp
 )
 
 add_executable(SimulationResultsUnitTests
@@ -27,11 +26,6 @@ set(RES_LIBS
     simresult
     GTest::gtest_main
 )
-
-# Conditionally link OptiX runner
-if(SOLTRACE_BUILD_OPTIX_SUPPORT)
-	list(APPEND RES_LIBS optix_runner)
-endif()
 
 target_link_libraries(SimulationResultsUnitTests ${RES_LIBS})
 

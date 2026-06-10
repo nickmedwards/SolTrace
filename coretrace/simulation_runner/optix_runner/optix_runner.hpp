@@ -76,7 +76,20 @@ public:
     OptixCSP::SolTraceSystem *get_optix_system() { return &this->m_sys; }
 
     // group functions
+    std::vector<std::set<int32_t>> &get_groups() { return m_groups; }
     void set_groups(const std::vector<std::set<int32_t>>& groups) { m_groups = groups; }
+    void set_groups(const std::vector<std::set<uint_fast64_t>>& groups) 
+    { 
+        for (size_t i = 0; i < groups.size(); ++i)
+        {
+            std::set<int32_t> group_i;
+            for (auto id : groups[i])
+            {
+                group_i.insert(static_cast<int32_t>(id));
+            }
+            m_groups.push_back(group_i);
+        }
+    }
     size_t get_num_groups() const { return m_groups.size(); }
     int32_t get_group(int32_t element_id);
 

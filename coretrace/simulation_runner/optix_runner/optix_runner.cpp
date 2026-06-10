@@ -424,19 +424,9 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
     }
 
     // ids from base elements are used to set the optix element ids, so can safely copy over
-    std::vector<std::set<uint_fast64_t>> groups_64 = data->get_groups();
-    for (size_t i = 0; i < groups_64.size(); ++i)
-    {
-        std::set<int32_t> group_i;
-        for (auto id : groups_64[i])
-        {
-            group_i.insert(static_cast<int32_t>(id));
-        }
-        m_groups.push_back(group_i);
-    }
+    // see: optix_el->set_id(static_cast<int32_t>(id))
+    set_groups(data->get_groups());
 
-    // m_groups = const_cast<std::vector<std::set<int32_t>>&>(data->get_groups());
-    
     return RunnerStatus::SUCCESS;
 }
 
