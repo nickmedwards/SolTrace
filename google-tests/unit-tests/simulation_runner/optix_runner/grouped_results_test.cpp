@@ -38,6 +38,13 @@ OptixCSP::HitRecord create_hit_record(int32_t element_id, uint8_t hit_type, cons
     return hr;
 }
 
+class grouped_results_SolTraceSystem_helper {
+    public:
+        static void set_hit_records(OptixCSP::SolTraceSystem *sys, const std::vector<OptixCSP::HitRecord> &hit_records) {
+            sys->m_hit_records = hit_records;
+        }
+};
+
 TEST(grouped_results, counts_test) {
     using SolTrace::Runner::RunnerStatus;
     namespace fs = std::filesystem;
@@ -67,6 +74,10 @@ TEST(grouped_results, counts_test) {
     // Check groups
     std::vector<std::set<int32_t>> groups = runner.get_groups();
     EXPECT_EQ(groups.size(), 5);
+    ASSERT_EQ(runner.get_num_groups(), 5) << "Number of groups in system does not match expected";
+    ASSERT_EQ(runner.get_group(26), -1) << "Element 26 should be ungrouped";
+    ASSERT_EQ(runner.get_group(27), 0) << "Element 27 should be in group 0";
+    ASSERT_EQ(runner.get_group(127), 4) << "Element 127 should be in group 4";
 
     // conjure up some hit records to check the counting algorithm
     OptixCSP::SolTraceSystem *sys = runner.get_optix_system();
@@ -109,10 +120,11 @@ TEST(grouped_results, counts_test) {
             }
         }
     }
-    ASSERT_EQ(runner.get_num_groups(), 5) << "Number of groups in system does not match expected";
-    ASSERT_EQ(runner.get_group(26), -1) << "Element 26 should be ungrouped";
-    ASSERT_EQ(runner.get_group(27), 0) << "Element 27 should be in group 0";
-    ASSERT_EQ(runner.get_group(127), 4) << "Element 127 should be in group 4";
+
+    grouped_results_SolTraceSystem_helper::set_hit_records(sys, hit_records);
+    // sys->m_hit_records = hit_records;
+
+    std::vector<OptixCSP::HitRecord> hit_records_test = sys->get_hit_records();
 
     // sts = runner.run_simulation();
     // ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.run_simulation() failed";

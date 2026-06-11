@@ -15,8 +15,13 @@
 #include "core/Surface.h"     // Surface and derived classes
 #include "shaders/Soltrace.h" // HitRecord, HitType
 #include "ray_utils.h"        // CompactionScratch
+// #include "gtest/gtest_prod.h" // FRIEND_TEST
 
 #include "../../../../../simulation_data/simulation_data_export.hpp"
+
+// class grouped_results_counts_test_Test;
+class grouped_results_SolTraceSystem_helper; 
+
 
 namespace OptixCSP
 {
@@ -140,6 +145,10 @@ namespace OptixCSP
         bool get_trim_excess_rays() const { return m_trim_excess_rays; }
 
     private:
+        // could use FRIEND_TEST macro, however to avoid linking gtest to prod, forward declare test class and make it a friend
+        // FRIEND_TEST(grouped_results, counts_test);
+        friend class ::grouped_results_SolTraceSystem_helper;
+
         // m_verbose and m_state must be declared before the shared_ptr managers so
         // that they are initialized first (C++ initializes members in declaration order).
         // GeometryManager and pipelineManager store references/copies of these at
