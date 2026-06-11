@@ -395,9 +395,9 @@ int main(int argc, char *argv[])
 
         if (!skip_output)
         {
-            std::cout << "Retrieving results...\n";
+            std::cout << "Retrieving results at level " << level << "...\n";
             auto t_report_start = std::chrono::steady_clock::now();
-            sts = runner.report_simulation(&result, 0);
+            sts = runner.report_simulation(&result, level);
             auto t_report_end = std::chrono::steady_clock::now();
             if (sts != RunnerStatus::SUCCESS)
             {
@@ -503,11 +503,11 @@ int main(int argc, char *argv[])
     if (!skip_csv && (level == RunnerStatistics::RAY_RECORDS || level == RunnerStatistics::ALL))
     {
         std::cout << "Writing " << result.get_number_of_records()
-                  << " ray records to: " << output_file << "...\n";
+                  << " ray records to: " << output_file << ".csv ...\n";
         try
         {
             auto t_write_start = std::chrono::steady_clock::now();
-            result.write_csv_file(output_file);
+            result.write_csv_file(output_file + ".csv");
             auto t_write_end = std::chrono::steady_clock::now();
             std::cout << "  Written in "
                       << std::chrono::duration<double>(t_write_end - t_write_start).count()
