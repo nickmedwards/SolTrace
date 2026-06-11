@@ -88,6 +88,9 @@ TEST(grouped_results, counts_test) {
     // number of reflection events per heliostat element is element id - 1 
     // -> expect triangular number of facets + group number * number of facets ^ 2 reflection events in group
     // for each heliostat increment the number of absorptions by 1 ie ungrouped: 1 per facet, group 0: 2 per facet, etc
+    // number of absorptions on receiver per heliostat is (group number + 2) * number of facets
+    // -> expect 50 absorptions from group 0, 75 from group 1, 100 from group 2, 125 from group 3, and 150 from group 4
+    // therefore total absorptions 50 + 75 + 100 + 125 + 25 (ungrouped) = 375
     uint_fast64_t rec_id = 127;
     SolTrace::Data::element_ptr rec = sd.get_element(rec_id);
     glm::dvec3 rec_origin = rec->get_origin_global();
@@ -122,41 +125,30 @@ TEST(grouped_results, counts_test) {
     }
 
     grouped_results_SolTraceSystem_helper::set_hit_records(sys, hit_records);
-    // sys->m_hit_records = hit_records;
-
-    std::vector<OptixCSP::HitRecord> hit_records_test = sys->get_hit_records();
-
-    // sts = runner.run_simulation();
-    // ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.run_simulation() failed";
 
     SimulationResult result;
-    // sts = runner.report_simulation(&result, SolTrace::Runner::RunnerStatistics::GROUPED_COUNTS);
-    // std::vector<GroupResult> grouped_results = result.get_grouped_results();
-    // ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.report_simulation() failed";
+    sts = runner.report_simulation(&result, SolTrace::Runner::RunnerStatistics::GROUPED_COUNTS);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.report_simulation() failed";
 
-    // these are the counts that i got, they seem reasonable, its kinda weird that each heliostat
-    // recieved the same number of hits but that might be a halton distribution thing. i'm putting
-    // the test in for now to make sure the behavior stays the same
-    // ASSERT_EQ(grouped_results[0].absorb_count, 0);
-    // ASSERT_EQ(grouped_results[0].reflect_count, 15);
-    
-    // ASSERT_EQ(grouped_results[1].absorb_count, 1);
-    // ASSERT_EQ(grouped_results[1].reflect_count, 14);
-    
-    // ASSERT_EQ(grouped_results[2].absorb_count, 2);
-    // ASSERT_EQ(grouped_results[2].reflect_count, 13);
-    
-    // ASSERT_EQ(grouped_results[3].absorb_count, 4);
-    // ASSERT_EQ(grouped_results[3].reflect_count, 11);
-    
-    // ASSERT_EQ(grouped_results[4].reflect_count, 0);
-    // ASSERT_EQ(grouped_results[4].absorb_count, 90);
-    // ASSERT_EQ(grouped_results[4].absorb_sun_previous, 22);
-    // ASSERT_EQ(grouped_results[4].absorb_previous_group[0], 15);
-    // ASSERT_EQ(grouped_results[4].absorb_previous_group[1], 14);
-    // ASSERT_EQ(grouped_results[4].absorb_previous_group[2], 13);
-    // ASSERT_EQ(grouped_results[4].absorb_previous_group[3], 11);
-    // nvm it changed after i rebuilt, does that make sense?
+    std::vector<GroupResult> grouped_results = result.get_grouped_results();
 
-    //ASSERT_NO_THROW(result.write_group_json_file(output_str));
+    uint_fast64_t tri_num = 25 * 26 / 2; // triangular number of facets
+
+    ASSERT_EQ(grouped_results[0].reflect_count, tri_num + 1 * 25 * 25);
+    
+    ASSERT_EQ(grouped_results[1].reflect_count, tri_num + 2 * 25 * 25);
+    
+    ASSERT_EQ(grouped_results[2].reflect_count, tri_num + 3 * 25 * 25);
+    
+    ASSERT_EQ(grouped_results[3].reflect_count, tri_num + 4 * 25 * 25);
+    
+    ASSERT_EQ(grouped_results[4].reflect_count,  0);
+    ASSERT_EQ(grouped_results[4].absorb_count, 375);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[0],  50);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[1],  75);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[2], 100);
+    ASSERT_EQ(grouped_results[4].absorb_previous_group[3], 125);
+
+    // should look like unit-tests\simulation_data\grouped_elements_io\field_out_reference.json
+    ASSERT_NO_THROW(result.write_group_json_file(output_str));
 }
