@@ -27,6 +27,48 @@
             ]
         }
     },
+    "optical_properties": {
+        "0": {
+            "my_name": "receiver",
+            "my_type": "REFLECTION",
+            "refraction_index_front": 1.1,
+            "refraction_index_back": 1.1,
+            "front": {
+                "error_distribution_type": "GAUSSIAN",
+                "transmissivity": 0.0,
+                "reflectivity": 0,
+                "slope_error": 0.95,
+                "specularity_error": 0.2
+            },
+            "back": {
+                "error_distribution_type": "GAUSSIAN",
+                "transmissivity": 0.0,
+                "reflectivity": 0,
+                "slope_error": 0.95,
+                "specularity_error": 0.2
+            }
+        },
+        "1": {
+            "my_name": "heliostat",
+            "my_type": "REFLECTION",
+            "refraction_index_front": 1.1,
+            "refraction_index_back": 1.1,
+            "front": {
+                "error_distribution_type": "GAUSSIAN",
+                "transmissivity": 0.0,
+                "reflectivity": 0.885,
+                "slope_error": 1.2,
+                "specularity_error": 0.05
+            },
+            "back": {
+                "error_distribution_type": "GAUSSIAN",
+                "transmissivity": 0.0,
+                "reflectivity": 0.0,
+                "slope_error": 1.2,
+                "specularity_error": 0.05
+            }
+        }
+    },
     "elements": [
         {
             "is_stage": true,
@@ -57,8 +99,21 @@
                     "zrot": 1.9844841420195465,
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 }
+                    "opt_id": 0
+                }, 
+                {
+                    "is_single": true,
+                    "active": true,
+                    "virtual_flag": false,
+                    "my_id": null,
+                    "stage": 0,
+                    "my_name": "name",
+                    "origin": [0, 0, 0],
+                    "aim": [0, 0, 0],
+                    "zrot": 1.9844841420195465,
+                    "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
+                    "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
+                    "opt_id": 0
                 },
                 {
                     "is_single": true,
@@ -72,23 +127,7 @@
                     "zrot": 1.9844841420195465,
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 }
-                },
-                {
-                    "is_single": true,
-                    "active": true,
-                    "virtual_flag": false,
-                    "my_id": null,
-                    "stage": 0,
-                    "my_name": "name",
-                    "origin": [0, 0, 0],
-                    "aim": [0, 0, 0],
-                    "zrot": 1.9844841420195465,
-                    "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
-                    "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
+                    "opt_id": 0,
                     "group": 0
                 },
                 {
@@ -103,8 +142,7 @@
                     "zrot": 1.9844841420195465,
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
+                    "opt_id": 0,
                     "group": 0
                 },
                 {
@@ -119,8 +157,7 @@
                     "zrot": 1.9844841420195465,
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
+                    "opt_id": 0,
                     "group": 1
                 },
                 {
@@ -135,8 +172,7 @@
                     "zrot": 1.9844841420195465,
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
+                    "opt_id": 0,
                     "group": 1
                 },
                 {
@@ -151,8 +187,7 @@
                     "zrot": 1.9844841420195465,
                     "aperture": { "aperture_type": "RECTANGLE", "x_length": 1.0, "y_length": 1.0, "x_coord": -0.5, "y_coord": -0.5 },
                     "surface": { "surface_type": "PARABOLA", "focal_length_x": 1.0, "focal_length_y": 1.0 },
-                    "optics_front": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 1.0, "slope_error": 1.0, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
-                    "optics_back": { "my_type": "REFLECTION", "error_distribution_type": "GAUSSIAN", "transmissivity": 0.0, "reflectivity": 0.0, "slope_error": 1.2, "specularity_error": 0.05, "refraction_index_front": 1.1, "refraction_index_back": 1.2 },
+                    "opt_id": 1,
                     "group": 2
                 }
             ]
