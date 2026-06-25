@@ -340,8 +340,6 @@ void SolTraceSystem::run()
     uint_fast64_t N_ray_gen = 0;
     uint_fast64_t N_loops = 0;
 
-    m_timer_trace.start();
-
     m_timer_trace.reset();
     m_timer_trace.start();
     m_timer_setup_buffer.reset();
