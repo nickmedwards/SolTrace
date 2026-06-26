@@ -74,6 +74,7 @@ static void print_usage(const char *prog)
         << "                  (requires SOLTRACE_BUILD_OPTIX_SUPPORT=ON at build time)\n"
 #endif
         << "  -v, --verbose   Enable verbose logging in the OptiX runner\n"
+        << "  -t, --timing    Enable timing logging in the OptiX runner\n"
         ;
 }
 
@@ -122,6 +123,7 @@ int main(int argc, char *argv[])
     bool use_embree = false;
     bool use_optix = false;
     bool verbose = false;
+    bool log_timing = false;
 
     for (int i = opts_start; i < argc; ++i)
     {
@@ -207,6 +209,10 @@ int main(int argc, char *argv[])
         else if (arg == "-v" || arg == "--verbose")
         {
             verbose = true;
+        }
+        else if (arg == "-t" || arg == "--timing")
+        {
+            log_timing = true;
         }
         else
         {
@@ -413,7 +419,7 @@ int main(int argc, char *argv[])
             std::cout << "Skipping result retrieval (--no-output).\n";
         }
 
-        if (verbose)
+        if (verbose || log_timing)
         {
             runner.print_timing();
         }
