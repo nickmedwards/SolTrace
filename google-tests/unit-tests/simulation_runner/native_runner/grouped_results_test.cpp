@@ -5,54 +5,48 @@
 #include <aperture.hpp>
 #include <surface.hpp>
 #include <constants.hpp>
-#include <optix_runner.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
+#include <native_runner.hpp>
+#include <native_runner_types.hpp>
+
 #include <json_helpers.hpp>
 
 #include "common.hpp"
 
-OptixCSP::HitRecord create_sun_record()
-{
-    OptixCSP::HitRecord hr;
-    hr.element_id = -1;
-    hr.hit_type = static_cast<uint8_t>(OptixCSP::HitType::HIT_CREATE);
-    hr.hit_point = float4();
-    hr.hit_point.w = 0.0f;
-    hr.hit_point.x = 0.0f;
-    hr.hit_point.y = 0.0f;
-    hr.hit_point.z = 1000.0f;
-    return hr;
-}
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+using SolTrace::Result::RayEvent;
+using SolTrace::Runner::RunnerStatus;
 
-OptixCSP::HitRecord create_hit_record(int32_t element_id, uint8_t hit_type, const glm::dvec3 &hit_point)
-{
-    OptixCSP::HitRecord hr;
-    hr.element_id = element_id;
-    hr.hit_type = hit_type;
-    hr.hit_point = float4();
-    hr.hit_point.w = 0.0f;
-    hr.hit_point.x = static_cast<float>(hit_point.x);
-    hr.hit_point.y = static_cast<float>(hit_point.y);
-    hr.hit_point.z = static_cast<float>(hit_point.z);
-    return hr;
-}
-
-class grouped_results_SolTraceSystem_helper {
+class grouped_results_NativeRunner_helper {
     public:
-        static void set_hit_records(OptixCSP::SolTraceSystem *sys, const std::vector<OptixCSP::HitRecord> &hit_records) {
-            sys->m_hit_records = hit_records;
+        static void append(NativeRunner &runner, uint_fast64_t raynum, uint_fast64_t element_id, RayEvent hit_type, glm::dvec3 &hit_point) {
+            glm::dvec3 cos = {0.0, 0.0, 0.0};
+            runner.tsys.RayData.Append(0, hit_point, cos, element_id, 0, raynum, hit_type);
         }
 };
 
+void create_sun_record(NativeRunner &runner, uint_fast64_t raynum)
+{
+    glm::dvec3 pos = {0.0, 0.0, 1000.0};
+    grouped_results_NativeRunner_helper::append(runner, raynum, -1, RayEvent::CREATE, pos);
+}
+
+void create_hit_record(NativeRunner &runner, uint_fast64_t raynum, uint_fast64_t element_id, RayEvent hit_type, glm::dvec3 &hit_point)
+{
+    grouped_results_NativeRunner_helper::append(runner, raynum, -1, RayEvent::CREATE, hit_point);
+}
+
+
 TEST(grouped_results, counts_test) {
-    using SolTrace::Runner::RunnerStatus;
     namespace fs = std::filesystem;
 
     // Build paths
     const fs::path project_root(PROJECT_DIR);
     const std::string input_str = project_root.string() + "/field_test.json";
-    const std::string output_str = project_root.string() + "/field_out.json";
+    const std::string output_str = project_root.string() + "/field_out_native.json";
 
     SimulationData sd;
     ASSERT_NO_THROW(sd.import_json_file(input_str));
@@ -62,7 +56,8 @@ TEST(grouped_results, counts_test) {
     params.max_number_of_rays = params.number_of_rays * 100;
     params.seed = 608;
     
-    OptixRunner runner;
+    NativeRunner runner;
+    runner.set_number_of_threads(1);
     
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.initialize() failed";
@@ -71,7 +66,7 @@ TEST(grouped_results, counts_test) {
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.setup_simulation() failed";
     
     // Check groups
-    std::vector<std::set<int32_t>> groups = runner.get_groups();
+    std::vector<std::set<uint_fast64_t>> groups = runner.get_groups();
     EXPECT_EQ(groups.size(), 5);
     ASSERT_EQ(runner.get_num_groups(), 5) << "Number of groups in system does not match expected";
     ASSERT_EQ(runner.get_group(26), -1) << "Element 26 should be ungrouped";
@@ -79,9 +74,6 @@ TEST(grouped_results, counts_test) {
     ASSERT_EQ(runner.get_group(127), 4) << "Element 127 should be in group 4";
 
     // conjure up some hit records to check the counting algorithm
-    OptixCSP::SolTraceSystem *sys = runner.get_optix_system();
-    std::vector<OptixCSP::HitRecord> hit_records;
-
     // heliostat elements span 2 - > 126
     // receiver element is 127
     // number of reflection events per heliostat element is element id - 1 
@@ -93,37 +85,40 @@ TEST(grouped_results, counts_test) {
     uint_fast64_t rec_id = 127;
     SolTrace::Data::element_ptr rec = sd.get_element(rec_id);
     glm::dvec3 rec_origin = rec->get_origin_global();
+    uint_fast64_t raynum = 0;
     
     for (uint_fast64_t i = 2; i < rec_id; ++i)
     {
         uint_fast64_t facet_mod = (i - 1) % 25;
+        SolTrace::Data::element_ptr el = sd.get_element(i);
+        glm::dvec3 origin = el->get_origin_global();
+
         for (uint_fast64_t j = 1; j < i; ++j)
         {
             // add create record
-            hit_records.push_back(create_sun_record());
+            create_sun_record(runner, raynum);
 
             // add reflection record
-            SolTrace::Data::element_ptr el = sd.get_element(i);
-            glm::dvec3 origin = el->get_origin_global();
-
-            hit_records.push_back(create_hit_record(
-                static_cast<int32_t>(i),
-			    static_cast<uint8_t>(OptixCSP::HitType::HIT_REFLECT),
-			    origin
-            ));
+            create_hit_record(
+                runner,
+                raynum,
+                i,
+                RayEvent::REFLECT,
+                origin
+            );
             
             if (facet_mod == j % 25)
             {
-                hit_records.push_back(create_hit_record(
-                    static_cast<int32_t>(rec_id),
-                    static_cast<uint8_t>(OptixCSP::HitType::HIT_ABSORB),
+                create_hit_record(
+                    runner,
+                    raynum,
+                    rec_id,
+                    RayEvent::ABSORB,
                     rec_origin
-                ));
+                );
             }
         }
     }
-
-    grouped_results_SolTraceSystem_helper::set_hit_records(sys, hit_records);
 
     SimulationResult result;
     sts = runner.report_simulation(&result, SolTrace::Runner::RunnerStatistics::GROUPED_COUNTS);

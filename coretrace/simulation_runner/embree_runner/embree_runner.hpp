@@ -9,6 +9,8 @@
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 
+class grouped_results_EmbreeRunner_helper;
+
 namespace SolTrace::EmbreeRunner
 {
     using SolTrace::Runner::RunnerStatus;
@@ -46,6 +48,8 @@ namespace SolTrace::EmbreeRunner
         RTCScene embree_scene;
 
         void clean_embree();
+
+        friend class ::grouped_results_EmbreeRunner_helper;
     };
 
 } // namespace SolTrace::EmbreeRunner
