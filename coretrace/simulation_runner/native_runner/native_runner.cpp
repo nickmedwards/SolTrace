@@ -398,7 +398,8 @@ namespace SolTrace::NativeRunner
             //           << std::endl;
             if (element > 0)
             {
-                el = sys->StageList[stage - 1]->ElementList[element - 1];
+                //el = sys->StageList[stage - 1]->ElementList[element - 1];
+                el   = sys->StageList[use_stages ? stage - 1 : 0]->ElementList[element - 1];
                 elid = el->sim_data_id;
             }
             else
@@ -462,6 +463,8 @@ namespace SolTrace::NativeRunner
                 intr = make_interaction_record(elid, rev, point, cosines);
                 rec->add_interaction_record(intr);
             }
+            
+            prev_group = group;
         }
 
         // Attach sun results

@@ -22,9 +22,14 @@ using SolTrace::Runner::RunnerStatus;
 
 class grouped_results_NativeRunner_helper {
     public:
-        static void append(NativeRunner &runner, uint_fast64_t raynum, uint_fast64_t element_id, RayEvent hit_type, glm::dvec3 &hit_point) {
+        static void append(NativeRunner &runner, uint_fast64_t raynum, uint_fast64_t element_id, RayEvent hit_type, glm::dvec3 &hit_point)
+        {
             glm::dvec3 cos = {0.0, 0.0, 0.0};
-            runner.tsys.RayData.Append(0, hit_point, cos, element_id, 0, raynum, hit_type);
+            auto test = runner.tsys.RayData.Append(0, hit_point, cos, element_id, 0, raynum, hit_type);
+        }
+        static void setUp(NativeRunner &runner) 
+        {
+            runner.tsys.RayData.SetUp(1, 20000);
         }
 };
 
@@ -36,7 +41,7 @@ void create_sun_record(NativeRunner &runner, uint_fast64_t raynum)
 
 void create_hit_record(NativeRunner &runner, uint_fast64_t raynum, uint_fast64_t element_id, RayEvent hit_type, glm::dvec3 &hit_point)
 {
-    grouped_results_NativeRunner_helper::append(runner, raynum, -1, RayEvent::CREATE, hit_point);
+    grouped_results_NativeRunner_helper::append(runner, raynum, element_id, hit_type, hit_point);
 }
 
 
@@ -62,9 +67,11 @@ TEST(grouped_results, counts_test) {
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.initialize() failed";
     
+    runner.disable_stages();
     sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.setup_simulation() failed";
-    
+    grouped_results_NativeRunner_helper::setUp(runner);
+
     // Check groups
     std::vector<std::set<uint_fast64_t>> groups = runner.get_groups();
     EXPECT_EQ(groups.size(), 5);
@@ -102,7 +109,7 @@ TEST(grouped_results, counts_test) {
             create_hit_record(
                 runner,
                 raynum,
-                i,
+                i - 1, // simulation id
                 RayEvent::REFLECT,
                 origin
             );
@@ -112,7 +119,7 @@ TEST(grouped_results, counts_test) {
                 create_hit_record(
                     runner,
                     raynum,
-                    rec_id,
+                    rec_id - 1, // simulation id
                     RayEvent::ABSORB,
                     rec_origin
                 );
