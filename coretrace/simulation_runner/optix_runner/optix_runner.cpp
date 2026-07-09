@@ -511,23 +511,25 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // TODO: This should be redone without using these vectors and just using the
     // internal hit record vector
     // Get results from optixcsp
-    std::vector<float4> hp_vec;
-    std::vector<uint_fast64_t> raynumber_vec;
-    std::vector<int32_t> element_id_vec;
-    std::vector<uint8_t> hit_type_vec;
+
+    // std::vector<float4> hp_vec;
+    // std::vector<uint_fast64_t> raynumber_vec;
+    // std::vector<int32_t> element_id_vec;
+    // std::vector<uint8_t> hit_type_vec;
     m_timer_get_output.start();
-    m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
+    // m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
+    const std::vector<OptixCSP::HitRecord> *hit_records = m_sys.get_hit_records();
     m_timer_get_output.stop();
 
-    // Check sizes
-    if (!(hp_vec.size() == raynumber_vec.size() && raynumber_vec.size() == element_id_vec.size() && element_id_vec.size() == hit_type_vec.size()))
-    {
-        return RunnerStatus::ERROR;
-    }
+    // // Check sizes
+    // if (!(hp_vec.size() == raynumber_vec.size() && raynumber_vec.size() == element_id_vec.size() && element_id_vec.size() == hit_type_vec.size()))
+    // {
+    //     return RunnerStatus::ERROR;
+    // }
 
     // Loop through data, populating ray records
     // Assumes ray data is grouped serially
-    size_t ndata = hp_vec.size();
+    size_t ndata = hit_records->size();
     // uint_fast64_t raynum_prev = -1;
     uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
@@ -539,17 +541,21 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     std::vector<GroupResult> grouped_results;
     for (int32_t group_id = 0; group_id < (int32_t)num_groups; ++group_id)
         grouped_results.emplace_back(group_id, num_groups);
+
+    // declare loop variables
+    OptixCSP::HitRecord temp;
+    int32_t element_id;
+    uint8_t hit_type;
+    SolTrace::Result::RayEvent rev;
+    // not pos or cos bc need to change types / glm::dvec3 pos, cos;
+    float4 hp;
     
     m_timer_report_loop.start();
     for (size_t ii = 0; ii < ndata; ++ii)
     {
-        // Collect results for record
-        raynum = raynumber_vec[ii];
-        glm::dvec3 pos(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
-        glm::dvec3 cos(0.0);                                      // TODO: calculate directions
-        int32_t element_id = element_id_vec[ii];
-        uint8_t hit_type = hit_type_vec[ii];
-        SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
+        temp = (*hit_records)[ii];
+        element_id = temp.element_id;
+        rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(temp.hit_type));
         group = rev == SolTrace::Result::RayEvent::CREATE ? -2 : this->get_group(element_id);
 
         if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && group >= 0)
@@ -590,9 +596,10 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         }
         
         if (level == RunnerStatistics::RAY_RECORDS || level == RunnerStatistics::ALL) {
-            raynum = raynumber_vec[ii];
-            glm::dvec3 pos(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
-            glm::dvec3 cos(0.0);                                  // TODO: calculate directions
+            if (rev == SolTrace::Result::RayEvent::CREATE) ++raynum;
+            hp = temp.hit_point;
+            glm::dvec3 pos(hp.y, hp.z, hp.w); // x is depth
+            glm::dvec3 cos(0.0);              // TODO: calculate directions
             
             // Make new ray record if necessary
             iter = ray_records.find(raynum);

@@ -127,7 +127,7 @@ namespace OptixCSP
         uint64_t get_N_run_iterations() const { return m_n_run_iterations; }
 
         /// Returns the compacted hit records (CREATE + hits, misses excluded).
-        const std::vector<HitRecord> &get_hit_records() const { return m_hit_records; }
+        const std::vector<HitRecord> *get_hit_records() const { return &m_hit_records; }
 
         /// Returns the number of rays that hit at least one element.
         uint_fast64_t get_N_hit_rays() const { return m_n_hit_rays; }
