@@ -508,24 +508,10 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
     std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
 
-    // TODO: This should be redone without using these vectors and just using the
-    // internal hit record vector
     // Get results from optixcsp
-
-    // std::vector<float4> hp_vec;
-    // std::vector<uint_fast64_t> raynumber_vec;
-    // std::vector<int32_t> element_id_vec;
-    // std::vector<uint8_t> hit_type_vec;
     m_timer_get_output.start();
-    // m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
     const std::vector<OptixCSP::HitRecord> *hit_records = m_sys.get_hit_records();
     m_timer_get_output.stop();
-
-    // // Check sizes
-    // if (!(hp_vec.size() == raynumber_vec.size() && raynumber_vec.size() == element_id_vec.size() && element_id_vec.size() == hit_type_vec.size()))
-    // {
-    //     return RunnerStatus::ERROR;
-    // }
 
     // Loop through data, populating ray records
     // Assumes ray data is grouped serially
@@ -545,7 +531,6 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // declare loop variables
     OptixCSP::HitRecord temp;
     int32_t element_id;
-    uint8_t hit_type;
     SolTrace::Result::RayEvent rev;
     // not pos or cos bc need to change types / glm::dvec3 pos, cos;
     float4 hp;
