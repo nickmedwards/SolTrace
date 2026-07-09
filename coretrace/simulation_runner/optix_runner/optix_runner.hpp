@@ -8,6 +8,7 @@
 #include "simulation_result.hpp"
 #include "simulation_runner.hpp"
 #include "core/soltrace_system.h"
+#include "core/timer.h"
 
 // using SolTrace::Runner::RunnerStatus;
 
@@ -112,6 +113,9 @@ private:
     // helper function, convert SolTrace::Data::DistributionType to Optix::OpticalDistribution
     OptixCSP::OpticalDistribution to_optical_distribution(SolTrace::Data::DistributionType dt);
     
+    OptixCSP::Timer m_timer_report;
+    OptixCSP::Timer m_timer_get_output;
+    OptixCSP::Timer m_timer_report_loop;
 };
 
 #endif

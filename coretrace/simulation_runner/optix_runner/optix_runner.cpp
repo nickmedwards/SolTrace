@@ -29,6 +29,25 @@ void OptixRunner::set_verbose(bool verbose)
 void OptixRunner::print_timing() const
 {
     m_sys.print_timing();
+
+    // print optix runner timers after soltrace system
+    const double t_report = m_timer_report.get_time_sec();
+    const double t_output = m_timer_get_output.get_time_sec();
+    const double t_loop   = m_timer_report_loop.get_time_sec();
+    const double t_missed = t_report - t_output - t_loop;
+
+    const auto pct = [](double num, double denom) -> double
+    {
+        return denom > 0.0 ? 100.0 * num / denom : 0.0;
+    };
+
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "\n=== Report Simultation Summary ===\n";
+    std::cout << "  Get Output      : " << t_output << " s  (" << pct(t_output, t_report) << " %)\n";
+    std::cout << "  Core for loop   : " << t_loop << " s  (" << pct(t_loop, t_report) << " %)\n";
+    std::cout << "  Missed          : " << t_missed << " s  (" << pct(t_missed, t_report) << " %)\n";
+    std::cout << "  Report total    : " << t_report << " s\n";
+    std::cout << "=====================================\n";
 }
 
 void OptixRunner::set_max_ray_depth(uint_fast64_t depth)
@@ -477,6 +496,7 @@ SolTrace::Result::RayEvent hit_type_to_ray_event(OptixCSP::HitType hit_type)
 RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
                                             int level)
 {
+    m_timer_report.start();
     // check groups exist if grouped statistics are requested
     size_t num_groups = m_groups.size();
     if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && num_groups == 0)
@@ -495,7 +515,9 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     std::vector<uint_fast64_t> raynumber_vec;
     std::vector<int32_t> element_id_vec;
     std::vector<uint8_t> hit_type_vec;
+    m_timer_get_output.start();
     m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
+    m_timer_get_output.stop();
 
     // Check sizes
     if (!(hp_vec.size() == raynumber_vec.size() && raynumber_vec.size() == element_id_vec.size() && element_id_vec.size() == hit_type_vec.size()))
@@ -518,7 +540,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     for (int32_t group_id = 0; group_id < (int32_t)num_groups; ++group_id)
         grouped_results.emplace_back(group_id, num_groups);
     
-    
+    m_timer_report_loop.start();
     for (size_t ii = 0; ii < ndata; ++ii)
     {
         // Collect results for record
@@ -593,12 +615,15 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
 
         prev_group = group;
     }
+    m_timer_report_loop.stop();
 
     // Attach other results
     result->set_sun_sampling_stats(this->get_sun_plane_area(), this->get_N_sun_rays());
 
     // attach grouped results
     result->set_grouped_results(grouped_results);
+    m_timer_report.stop();
+
 
     return RunnerStatus::SUCCESS;
 }
