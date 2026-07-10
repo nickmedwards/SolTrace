@@ -115,8 +115,9 @@ private:
 
     SolTrace::Runner::RunnerStatus OptixRunner::report_single(const std::vector<OptixCSP::HitRecord> 
         *hit_records, uint_fast64_t offset, uint_fast64_t n, size_t n_groups,
-        SimulationResult *result, std::vector<GroupResult> *grouped_results);
+        SolTrace::Result::SimulationResult *result, std::vector<SolTrace::Result::GroupResult> *grouped_results);
     
+    // timers for report simulation
     OptixCSP::Timer m_timer_report;
     OptixCSP::Timer m_timer_get_output;
     OptixCSP::Timer m_timer_report_loop;

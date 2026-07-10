@@ -411,41 +411,7 @@ namespace SolTrace::NativeRunner
 
             if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && group >= 0)
             {
-                // grouped_results[group].increment(rev, prev_group)
-
-                switch (rev)
-                {
-                case SolTrace::Result::RayEvent::ABSORB:
-                {
-                    ++grouped_results[group].absorb_count;
-                    if (prev_group == -2) ++grouped_results[group].absorb_sun_previous;
-                    if (prev_group >= 0) ++grouped_results[group].absorb_previous_group[prev_group];
-                    break;
-                }
-                case SolTrace::Result::RayEvent::REFLECT:
-                {
-                    ++grouped_results[group].reflect_count;
-                    if (prev_group == -2) ++grouped_results[group].reflect_sun_previous;
-                    if (prev_group >= 0) ++grouped_results[group].reflect_previous_group[prev_group];
-                    break;
-                }
-                case SolTrace::Result::RayEvent::TRANSMIT:
-                {
-                    ++grouped_results[group].transmit_count;
-                    if (prev_group == -2) ++grouped_results[group].transmit_sun_previous;
-                    if (prev_group >= 0) ++grouped_results[group].transmit_previous_group[prev_group];
-                    break;
-                }
-                case SolTrace::Result::RayEvent::VIRTUAL:
-                {
-                    ++grouped_results[group].virtual_count;
-                    if (prev_group == -2) ++grouped_results[group].virtual_sun_previous;
-                    if (prev_group >= 0) ++grouped_results[group].virtual_previous_group[prev_group];
-                    break;
-                }
-                default:
-                    break;
-                }
+                grouped_results[group].increment(rev, prev_group);
             }
             if (level == RunnerStatistics::RAY_RECORDS || level == RunnerStatistics::ALL) 
             {

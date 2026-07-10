@@ -19,7 +19,10 @@ using SolTrace::Data::optics_id;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
-                             m_sys() {}
+                             m_sys(),
+                             m_timer_report(),
+                             m_timer_get_output(),
+                             m_timer_report_loop() {}
 
 void OptixRunner::set_verbose(bool verbose)
 {
@@ -502,6 +505,7 @@ RunnerStatus OptixRunner::report_single(const std::vector<OptixCSP::HitRecord> *
     // check previous to see if first
     // inc until next ray
     // record offset and n
+    return RunnerStatus::SUCCESS;
 }
 
 RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
@@ -547,6 +551,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     float4 hp;
     
     m_timer_report_loop.start();
+    // timing inside the loop has really slows this down bc of how many times start/stop are called
     for (size_t ii = 0; ii < ndata; ++ii)
     {
         temp = (*hit_records)[ii];
@@ -556,40 +561,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
 
         if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && group >= 0)
         {
-            // grouped_results[group].increment(rev, prev_group)
-            switch (rev)
-            {
-            case SolTrace::Result::RayEvent::ABSORB:
-            {
-                ++grouped_results[group].absorb_count;
-                if (prev_group == -2) ++grouped_results[group].absorb_sun_previous;
-                if (prev_group >= 0) ++grouped_results[group].absorb_previous_group[prev_group];
-                break;
-            }
-            case SolTrace::Result::RayEvent::REFLECT:
-            {
-                ++grouped_results[group].reflect_count;
-                if (prev_group == -2) ++grouped_results[group].reflect_sun_previous;
-                if (prev_group >= 0) ++grouped_results[group].reflect_previous_group[prev_group];
-                break;
-            }
-            case SolTrace::Result::RayEvent::TRANSMIT:
-            {
-                ++grouped_results[group].transmit_count;
-                if (prev_group == -2) ++grouped_results[group].transmit_sun_previous;
-                if (prev_group >= 0) ++grouped_results[group].transmit_previous_group[prev_group];
-                break;
-            }
-            case SolTrace::Result::RayEvent::VIRTUAL:
-            {
-                ++grouped_results[group].virtual_count;
-                if (prev_group == -2) ++grouped_results[group].virtual_sun_previous;
-                if (prev_group >= 0) ++grouped_results[group].virtual_previous_group[prev_group];
-                break;
-            }
-            default:
-                break;
-            }
+            grouped_results[group].increment(rev, prev_group);
         }
         
         if (level == RunnerStatistics::RAY_RECORDS || level == RunnerStatistics::ALL) {
@@ -627,7 +599,6 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // attach grouped results
     result->set_grouped_results(grouped_results);
     m_timer_report.stop();
-
 
     return RunnerStatus::SUCCESS;
 }
