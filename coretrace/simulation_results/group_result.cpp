@@ -46,4 +46,41 @@ namespace SolTrace::Result
         jnode["transmit_previous_group"] = transmit_previous_group;
         jnode["virtual_previous_group"] = virtual_previous_group;
     }
+
+    void GroupResult::increment(RayEvent rev, int32_t prev_group)
+    {
+        switch (rev)
+        {
+        case SolTrace::Result::RayEvent::ABSORB:
+        {
+            ++absorb_count;
+            if (prev_group == -2) ++absorb_sun_previous;
+            if (prev_group >= 0) ++absorb_previous_group[prev_group];
+            break;
+        }
+        case SolTrace::Result::RayEvent::REFLECT:
+        {
+            ++reflect_count;
+            if (prev_group == -2) ++reflect_sun_previous;
+            if (prev_group >= 0) ++reflect_previous_group[prev_group];
+            break;
+        }
+        case SolTrace::Result::RayEvent::TRANSMIT:
+        {
+            ++transmit_count;
+            if (prev_group == -2) ++transmit_sun_previous;
+            if (prev_group >= 0) ++transmit_previous_group[prev_group];
+            break;
+        }
+        case SolTrace::Result::RayEvent::VIRTUAL:
+        {
+            ++virtual_count;
+            if (prev_group == -2) ++virtual_sun_previous;
+            if (prev_group >= 0) ++virtual_previous_group[prev_group];
+            break;
+        }
+        default:
+            break;
+        }
+    }
 }

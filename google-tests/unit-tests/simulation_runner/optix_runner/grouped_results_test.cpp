@@ -38,14 +38,16 @@ OptixCSP::HitRecord create_hit_record(int32_t element_id, uint8_t hit_type, cons
     return hr;
 }
 
-class grouped_results_SolTraceSystem_helper {
+class grouped_results_SolTraceSystem_helper 
+{
     public:
         static void set_hit_records(OptixCSP::SolTraceSystem *sys, const std::vector<OptixCSP::HitRecord> &hit_records) {
             sys->m_hit_records = hit_records;
         }
 };
 
-TEST(grouped_results, counts_test) {
+TEST(grouped_results, counts_test) 
+{
     using SolTrace::Runner::RunnerStatus;
     namespace fs = std::filesystem;
 
@@ -146,4 +148,46 @@ TEST(grouped_results, counts_test) {
 
     // should look like unit-tests\simulation_data\grouped_elements_io\field_out_reference.json
     ASSERT_NO_THROW(result.write_group_json_file(output_str));
+}
+
+TEST(grouped_results, parallel_counts_test) 
+{
+    // make vector of 13 hit records
+    glm::vec3 origin = {0.0, 0.0, 0.0};
+    std::vector<OptixCSP::HitRecord> recs = {
+        create_sun_record(), 
+        create_hit_record(
+            2, static_cast<uint8_t>(OptixCSP::HitType::HIT_REFLECT), origin
+        ),
+        create_hit_record(
+            3, static_cast<uint8_t>(OptixCSP::HitType::HIT_ABSORB), origin
+        ),
+        create_sun_record(), 
+        create_hit_record(
+            2, static_cast<uint8_t>(OptixCSP::HitType::HIT_REFLECT), origin
+        ),
+        create_hit_record(
+            3, static_cast<uint8_t>(OptixCSP::HitType::HIT_ABSORB), origin
+        ),
+        create_sun_record(), 
+        create_hit_record(
+            2, static_cast<uint8_t>(OptixCSP::HitType::HIT_REFLECT), origin
+        ),
+        create_hit_record(
+            3, static_cast<uint8_t>(OptixCSP::HitType::HIT_ABSORB), origin
+        ),
+        create_sun_record(), 
+        create_hit_record(
+            2, static_cast<uint8_t>(OptixCSP::HitType::HIT_REFLECT), origin
+        ),
+        create_hit_record(
+            4, static_cast<uint8_t>(OptixCSP::HitType::HIT_REFLECT), origin
+        ),
+        create_hit_record(
+            3, static_cast<uint8_t>(OptixCSP::HitType::HIT_ABSORB), origin
+        ),
+    };
+
+    const std::vector<OptixCSP::HitRecord> *p_recs = &recs;
+    // call test of parallel report with 3 threads to figure out pointers and splicing ends together
 }

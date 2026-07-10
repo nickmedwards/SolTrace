@@ -34,6 +34,8 @@ namespace SolTrace::Result
         GroupResult(int32_t group_id, size_t n_groups);
 
         void write_json(nlohmann::ordered_json& jnode) const;
+
+        void increment(RayEvent rev, int32_t prev_group);
         
         // TODO: 
         // [] make function to calculate ungrouped counts by subtracting grouped and sun counted from totals.

@@ -411,6 +411,8 @@ namespace SolTrace::NativeRunner
 
             if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && group >= 0)
             {
+                // grouped_results[group].increment(rev, prev_group)
+
                 switch (rev)
                 {
                 case SolTrace::Result::RayEvent::ABSORB:

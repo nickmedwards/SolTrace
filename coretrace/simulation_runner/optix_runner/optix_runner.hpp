@@ -112,6 +112,10 @@ private:
     OptixCSP::Matrix33d ToMatrix33d(const glm::dmat3& mat);
     // helper function, convert SolTrace::Data::DistributionType to Optix::OpticalDistribution
     OptixCSP::OpticalDistribution to_optical_distribution(SolTrace::Data::DistributionType dt);
+
+    SolTrace::Runner::RunnerStatus OptixRunner::report_single(const std::vector<OptixCSP::HitRecord> 
+        *hit_records, uint_fast64_t offset, uint_fast64_t n, size_t n_groups,
+        SimulationResult *result, std::vector<GroupResult> *grouped_results);
     
     OptixCSP::Timer m_timer_report;
     OptixCSP::Timer m_timer_get_output;
