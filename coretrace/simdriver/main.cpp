@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
         {
             std::cout << "Retrieving results...\n";
             auto t_report_start = std::chrono::steady_clock::now();
-            sts = runner.report_simulation(&result, 0);
+            sts = runner.report_simulation(&result, level);
             auto t_report_end = std::chrono::steady_clock::now();
             if (sts != RunnerStatus::SUCCESS)
             {
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
         {
             std::cout << "Retrieving results...\n";
             auto t_report_start = std::chrono::steady_clock::now();
-            sts = runner.report_simulation(&result, 0);
+            sts = runner.report_simulation(&result, level);
             auto t_report_end = std::chrono::steady_clock::now();
             if (sts != RunnerStatus::SUCCESS)
             {
