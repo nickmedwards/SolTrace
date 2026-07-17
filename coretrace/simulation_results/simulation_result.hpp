@@ -48,8 +48,8 @@ public:
     // Functions for file IO
     void write_csv_file(std::string csv_name, int precision = 12) const;
     void write_csv_file(const char* csv_name, int precision = 12) const;
-    void write_json_file(std::string json_name, int precision = 12, int indent = 4) const;
-    void write_json_file(const char *json_name, int precision = 12, int indent = 4) const;
+    void write_group_json_file(std::string json_name, int precision = 12, int indent = 4) const;
+    void write_group_json_file(const char *json_name, int precision = 12, int indent = 4) const;
     
     // Legacy stuff -- TODO:
     // void results_to_legacy_csv(std::string csv_name,
@@ -82,6 +82,7 @@ public:
 
     void set_grouped_results(const std::vector<GroupResult>& grouped_results) { this->grouped_results = grouped_results; }
     std::vector<GroupResult> get_grouped_results() const { return this->grouped_results; }
+    size_t get_number_of_groups() { return this->grouped_results.size(); }
 
 private:
     RayRecordContainer     ray_history;

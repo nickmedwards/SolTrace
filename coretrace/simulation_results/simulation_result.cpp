@@ -77,11 +77,11 @@ void SimulationResult::write_csv_file(const char* csv_name, int precision) const
     return;
 }
 
-void SimulationResult::write_json_file(std::string json_name,
+void SimulationResult::write_group_json_file(std::string json_name,
                                         int precision, int indent) const
-{ return this->write_json_file(json_name.c_str(), precision, indent); }
+{ return this->write_group_json_file(json_name.c_str(), precision, indent); }
 
-void SimulationResult::write_json_file(const char *json_name,
+void SimulationResult::write_group_json_file(const char *json_name,
                                         int precision, int indent) const
 {
     nlohmann::ordered_json root;
