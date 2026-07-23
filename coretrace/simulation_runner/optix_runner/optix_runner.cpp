@@ -595,7 +595,8 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
 
     // Attach other results
     result->set_sun_sampling_stats(this->get_sun_plane_area(), this->get_N_sun_rays());
-
+    result->set_exceeded_depth_count(m_sys.get_N_depth_exceeded_rays());
+    
     // attach grouped results
     result->set_grouped_results(grouped_results);
     m_timer_report.stop();

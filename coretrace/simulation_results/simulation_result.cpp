@@ -101,6 +101,9 @@ void SimulationResult::write_group_json_file(const char *json_name,
         jgroups.push_back(jgroup);
     }
 
+    root["sun_ray_count"] = sun_ray_count;
+    root["A_sun_box"] = A_sun_box;
+    root["exceeded_depth_count"] = exceeded_depth_count;
     root["groups"] = jgroups;
 
     // Write to disk
