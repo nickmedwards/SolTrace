@@ -23,6 +23,8 @@ ColumnLayout {
 
         enabled: !!root.current_db
 
+        enabled: !!root.current_db
+
         RowLayout {
             Layout.fillWidth: true
             Layout.columnSpan: 2
@@ -153,14 +155,52 @@ ColumnLayout {
                 App.view.simulation_content_view = false
             }
         }
-    }
 
-    Rectangle {
-        color: Material.dividerColor
-        Layout.preferredHeight: 1
-        Layout.fillWidth: true
-        Layout.leftMargin: 3
-        Layout.rightMargin: 3
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.columnSpan: 2
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+
+            STIconButton {
+                enabled: !AppData.file_source.is_loading
+                icon: "\uf56e"
+                label: "Export"
+                toolTip: "Export scene to file"
+
+                onClicked: {
+                    if (!AppData.file_source.save_current_dialog()) {
+                        file_dialog.open()
+                    }
+                }
+
+                FileDialog {
+                    id: file_dialog
+
+                    fileMode: FileDialog.SaveFile
+
+                    defaultSuffix: "json"
+
+                    nameFilters: ["JSON files (*.json)"]
+
+                    onAccepted:
+                        AppData.file_source.save_current(file_dialog.selectedFile)
+
+
+                    Settings {
+                        id: save_file_history
+
+                        category: "save_file_history"
+
+                        property alias last_selected_file: file_dialog.selectedFile
+                        property alias last_selected_folder: file_dialog.currentFolder
+                    }
+                }
+            }
+        }
     }
 
     SceneListFooter {
