@@ -238,7 +238,7 @@ ColumnLayout {
             Layout.fillWidth: true
             currentIndex: -1
             model: ["Dawn (6am)", "Mid-Morning (9am)", "Noon (12pm)", "Mid-Afternoon (3pm)", "Golden Hour (5pm)", "Dusk (7pm)"]
-            onCurrentIndexChanged: {
+            onActivated: function(index) {
                 if (currentIndex >= 0) {
                     [
                         App.sun.calc_data.set_dawn,
