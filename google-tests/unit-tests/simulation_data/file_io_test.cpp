@@ -810,7 +810,6 @@ TEST(io_json, stage_read_fail)
 
 TEST(io_json, element_groups)
 {
-    // namespace fs = std::filesystem;
     using json = nlohmann::ordered_json;
     
     // emulating SolTrace::Data::load_json_file

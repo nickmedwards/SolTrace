@@ -531,13 +531,11 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // Loop through data, populating ray records
     // Assumes ray data is grouped serially
     size_t ndata = hit_records->size();
-    // uint_fast64_t raynum_prev = -1;
     uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
     SolTrace::Result::interaction_ptr intr = nullptr;
 
     // set up grouped results
-    // SolTrace::Result::RayEvent prev_rev;
     int32_t group, prev_group = -2; // use -2 as sun
     std::vector<GroupResult> grouped_results;
     for (int32_t group_id = 0; group_id < (int32_t)num_groups; ++group_id)

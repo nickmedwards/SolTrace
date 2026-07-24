@@ -49,6 +49,7 @@ namespace SolTrace::EmbreeRunner
 
         void clean_embree();
 
+        // could use FRIEND_TEST macro, however to avoid linking gtest to prod, forward declare test class and make it a friend
         friend class ::grouped_results_EmbreeRunner_helper;
     };
 

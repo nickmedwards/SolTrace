@@ -3,11 +3,6 @@
 #include <string>
 #include <vector>
 
-// #include "element.hpp"
-
-// #include <../../hpvm.h>
-
-// SimulationResult headers
 #include "group_result.hpp"
 
 namespace SolTrace::Result

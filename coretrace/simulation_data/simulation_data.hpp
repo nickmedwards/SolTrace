@@ -330,8 +330,7 @@ private:
     // mutable element_id next_element_id;
 
     uint_fast64_t number_of_elements;
-    // index is the group number and the value is the first id of that group in my_elements
-    // if groups are used they must be added after all ungrouped elements
+    // index is the group number and the value is a set containing the element ids of the group
     std::vector<std::set<uint_fast64_t>> my_groups;
 
     ElementContainer my_elements;
