@@ -23,8 +23,6 @@ ColumnLayout {
 
         enabled: !!root.current_db
 
-        enabled: !!root.current_db
-
         RowLayout {
             Layout.fillWidth: true
             Layout.columnSpan: 2
