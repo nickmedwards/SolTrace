@@ -496,18 +496,6 @@ SolTrace::Result::RayEvent hit_type_to_ray_event(OptixCSP::HitType hit_type)
     return static_cast<SolTrace::Result::RayEvent>(hit_type);
 }
 
-RunnerStatus OptixRunner::report_single(const std::vector<OptixCSP::HitRecord> *hit_records, uint_fast64_t offset, uint_fast64_t n, size_t n_groups,
-        SimulationResult *result, std::vector<GroupResult> *grouped_results)
-{
-    // do scan to find where rays are
-    // make offest array [threads]
-    // index into scanned array ~1/threads
-    // check previous to see if first
-    // inc until next ray
-    // record offset and n
-    return RunnerStatus::SUCCESS;
-}
-
 RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
                                             int level)
 {
