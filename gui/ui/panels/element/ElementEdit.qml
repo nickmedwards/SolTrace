@@ -330,63 +330,53 @@ ColumnLayout {
             }
 
             function update_from_angles() {
-                root.module.euler_angles_xyz = Qt.vector3d(xAngle,
-                                                           yAngle,
-                                                           zAngle)
-            }
-
-            Component.onCompleted: refresh_angles()
-
-            Connections {
-                target: root.module
-
-                function onEuler_angles_xyz_changed() {
-                    rotPanel.refresh_angles()
-                }
+                root.module.set_from_angles(
+                            Qt.vector3d(x_euler.value,
+                                        y_euler.value,
+                                        z_euler.value))
             }
         }
 
             STPropertyLabel { text: "X Angle (deg)" }
-            STDoubleSpinBox {
+            STSpinBox {
                 id: x_euler
                 Layout.fillWidth: true
-                from: -Infinity
-                to: Infinity
-                onValueModified: {
-                    rotPanel.xAngle = value
-                    rotPanel.update_from_angles()
-                }
+                value: rotPanel.angles.x
+                onValueModified: rotPanel.update_from_angles()
+                from: -180
+                to: 180
             }
 
             STPropertyLabel { text: "Y Angle (deg)" }
-            STDoubleSpinBox {
+            STSpinBox {
                 id: y_euler
                 Layout.fillWidth: true
-                from: -Infinity
-                to: Infinity
-                onValueModified: {
-                    rotPanel.yAngle = value
-                    rotPanel.update_from_angles()
-                }
+                value: rotPanel.angles.y
+                onValueModified: rotPanel.update_from_angles()
+                from: -90
+                to: 90
             }
 
             STPropertyLabel { text: "Z Angle (deg)" }
-            STDoubleSpinBox {
+            STSpinBox {
                 id: z_euler
                 Layout.fillWidth: true
-                from: -Infinity
-                to: Infinity
-                onValueModified: {
-                    rotPanel.zAngle = value
-                    rotPanel.update_from_angles()
-                }
+                value: rotPanel.angles.z
+                onValueModified: rotPanel.update_from_angles()
+                from: -180
+                to: 180
             }
 
             STButton {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
                 text: "Reset"
-                onClicked: root.module.euler_angles_xyz = Qt.vector3d(0, 0, 0)
+                onClicked: {
+                    x_euler.value = 0
+                    y_euler.value = 0
+                    z_euler.value = 0
+                    rotPanel.update_from_angles()
+                }
             }
 
             STButton {
@@ -421,35 +411,26 @@ ColumnLayout {
                             columns: 2
 
                             STPropertyLabel { text: "X" }
-                            STDoubleSpinBox {
+                            STSpinBox {
                                 id: look_at_x
                                 Layout.fillWidth: true
                                 value: 0
-                                from: -Infinity
-                                to: Infinity
-                                decimals: 4
                                 onValueModified: look_at_pop.accept_position()
                             }
 
                             STPropertyLabel { text: "Y" }
-                            STDoubleSpinBox {
+                            STSpinBox {
                                 id: look_at_y
                                 Layout.fillWidth: true
                                 value: 0
-                                from: -Infinity
-                                to: Infinity
-                                decimals: 4
                                 onValueModified: look_at_pop.accept_position()
                             }
 
                             STPropertyLabel { text: "Z" }
-                            STDoubleSpinBox {
+                            STSpinBox {
                                 id: look_at_z
                                 Layout.fillWidth: true
                                 value: 0
-                                from: -Infinity
-                                to: Infinity
-                                decimals: 4
                                 onValueModified: look_at_pop.accept_position()
                             }
                         }

@@ -115,15 +115,6 @@ Flickable {
                 onToggled: AppData.flux.show_other_geometry = checked
             }
 
-            Label {
-                Layout.columnSpan: 2
-                Layout.fillWidth: true
-                text: "Flux map values are normalized ray-density values."
-                color: App.theme.fontColor
-                opacity: 0.75
-                wrapMode: Label.WrapAtWordBoundaryOrAnywhere
-            }
-
             STPropertyLabel {
                 text: "Plotted Ray Weight"
             }
