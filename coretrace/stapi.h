@@ -70,6 +70,7 @@ extern "C" {
 #endif
 
 typedef unsigned long     st_uint_t;     // unsigned integer type, at least 32 bits, could be 64 bit in the future
+// TODO: update v1 to use SimulationData/Runner/Results
 typedef void*             st_context_t;  // opaque reference type, 32 or 64 bit, depending on system/compiler
 
 /* Runner types for st_sim_run_SolTrace20 */
@@ -183,6 +184,52 @@ STCORE_API void st_matrix_vector_mult( double m[3][3], double v[3], double mxv[3
 STCORE_API void st_calc_transform_matrices( double euler[3], double rreftoloc[3][3], double rloctoref[3][3] );
 STCORE_API void st_matrix_transpose( double input[3][3], double output[3][3] );
 
+/*
+STCORE_API: version 2
+functions for interacting with new SimulationData/Runner/Results structure through json
+*/
+
+typedef struct st_simulation_information {
+	void* data;
+	void* runner;
+	void* results;
+} st_simulation_information;
+
+typedef st_simulation_information* st_context_v2_t; 
+
+/*
+create simualtion information -> st_context_v2_t st_create_context_v2();
+free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
+
+- simulation parameter setup
+	set threads 			  -> int st_num_threads(st_context_v2_t pcxt, int n);
+	set verbose 			  -> int st_verbose(st_context_v2_t pcxt, bool v);
+
+- simlulation data set up
+	read json 			      -> int st_read_input_json(st_context_v2_t pcxt, const char *json);
+
+  - ray sources set up
+	  add sun 			  	  -> int st_sun_v2(st_context_v2_t pcxt, const char *json);
+
+  - optical property sets
+	  add optical set  		  -> int st_add_optical_set(st_context_v2_t pcxt, const char *json);
+	  add optical face 		  -> int st_add_optical_face(st_context_v2_t pcxt, const char *json);
+  
+  - no longer continuing support for stages
+  
+  - elements
+	  add element  			  -> int st_add_element_v2(st_context_v2_t pcxt, const char *json);
+	  add elements 			  -> int st_add_elements_v2(st_context_v2_t pcxt, const char *json);
+
+- simulation runner
+	setup  					  -> int st_sim_setup(st_context_v2_t pcxt, st_runner_type_t runner_type);
+	run    					  -> int st_sim_run_v2(st_context_v2_t pcxt, unsigned int seed, int (*callback)(...), void *data);
+	report 					  -> int st_sim_report(st_context_v2_t pcxt, int level);
+
+- simulation results
+	write csv  				  -> int st_write_results_csv(st_context_v2_t pcxt, const char *filename);
+	write json 				  -> int st_write_results_json(st_context_v2_t pcxt, const char *filename);
+*/
 
 #ifdef __cplusplus
 } /* extern "C" */
