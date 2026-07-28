@@ -385,6 +385,7 @@ void Script::run() {
     // sync for now
     auto engine = std::make_unique<QJSEngine>();
     auto api    = std::make_unique<ScriptDBInterface>(m_database);
+    auto fs     = std::make_unique<ScriptFSInterface>();
     api->update_working_directory(working_directory());
 
     QStringList stack_trace;
@@ -393,6 +394,8 @@ void Script::run() {
 
     auto js_api_obj = engine->newQObject(api.get());
     engine->globalObject().setProperty("db", js_api_obj);
+    auto js_fs_obj = engine->newQObject(fs.get());
+    engine->globalObject().setProperty("fs", js_fs_obj);
 
     auto console = new ScriptConsole(engine.get());
     connect(console, &ScriptConsole::logged, this, &Script::logged);

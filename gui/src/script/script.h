@@ -1,6 +1,7 @@
 #pragma once
 
 #include "script/script_db_interface.h"
+#include "script/script_fs_interface.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
@@ -156,6 +157,7 @@ class Script : public QObject {
 
     QPointer<ScriptDBInterface> m_interface;
     QPointer<db::Database>      m_database;
+    QPointer<ScriptFSInterface> m_fs;
 
     Q_WRITABLE_PROPERTY(QString, code, {});
     Q_READONLY_PROPERTY(QString, title);
