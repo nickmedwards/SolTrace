@@ -36,6 +36,11 @@ console.log(current_elements)
 
 db.list_dir(optical_properties_dir).forEach(f => {
     const name = f.split('.')[0]
+
+    // console.log(name)
+    // console.log(Object.values(current_materials).includes(name))
+    // current_materials.forEach(m => console.log(m))
+
     // if not overwritting and the materical 
     if (!overwrite_scene 
         && current_materials.length 
@@ -43,17 +48,10 @@ db.list_dir(optical_properties_dir).forEach(f => {
             console.log('skipped ' + name)
             return
         }
-    // console.log(f)
-    opt_prop_json = db.get_json_content(optical_properties_dir + f)
-
-    // console.log(opt_prop_json['my_name'])
-    // console.log(Object.values(current_materials).includes(opt_prop_json['my_name']))
-    // current_materials.forEach(m => console.log(m))
         
-    console.log("test")
     var opt_prop_entity = db.create_material()
-    db.set_identity(opt_prop_entity, opt_prop_json["my_name"])
-    db.set_material_properties(opt_prop_entity, opt_prop_json)
+    db.set_identity(opt_prop_entity, name)
+    db.set_material_properties(opt_prop_entity, db.get_json_content(optical_properties_dir + f))
 });
 
 // var test = db.get_json_content("nsttf_json/optical_properties/heliostat.json");
