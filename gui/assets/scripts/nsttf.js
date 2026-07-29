@@ -3,17 +3,74 @@ TITLE National Solar Thermal Test Facility
 DESC Create model of NSTTF based on current sun position.
 DESC Can toggle between G3P3 and flat plate receivers. (i.e. set Use g3p3 to 1 to use G3P3 receiver, 0 for flat plate)
 PROPERTY use_G3P3 integer 1 0..=1
+PROPERTY overwrite_scene integer 0 0..=1
 */
 
-console.log(Qt.resolvedUrl("nsttf_json/optical_properties/heliostat.json").toString());
-var test = db.get_json_content("nsttf_json/optical_properties/heliostat.json");
-console.log(Object.keys(test));
-const heliostat_material = db.create_material()
-db.set_identity(heliostat_material, test["my_name"])
-db.set_material_properties(heliostat_material, test)
+// set up file access
+const optical_properties_dir = "nsttf_json/optical_properties/"
+const elements_dir           = "nsttf_json/elements/"
+const heliostats_dir         = elements_dir + "heliostats/"
+const receiver_dir           = elements_dir + (use_G3P3 ? "G3P3/" : "solar_1/")
+const other_dir              = elements_dir + "other/"
 
-test = db.list_dir("nsttf_json/optical_properties")
-console.log(test)
+const sol_pos = db.get_ray_source()["position"]
+
+// optical property name to id map
+const opt_prop_name_to_id = {
+    'receiver':  0,
+    'heliostat': 1,
+    'aperture':  2,
+    'tower':     3,
+    'snout':     4,
+}
+
+// get current scene materials and elements
+get_identities = arr => arr.map(v => db.get_identity(v))
+
+const current_materials = get_identities(db.get_all_materials())
+const current_elements  = get_identities(db.get_all_elements())
+
+console.log(current_materials)
+console.log(current_elements)
+
+db.list_dir(optical_properties_dir).forEach(f => {
+    console.log(f)
+    opt_prop_json = db.get_json_content(optical_properties_dir + f)
+
+    console.log(opt_prop_json['my_name'])
+    console.log(Object.values(current_materials).includes(opt_prop_json['my_name']))
+    current_materials.forEach(m => console.log(m))
+    // if not overwritting and the materical 
+    if (!overwrite_scene 
+        && current_materials.length 
+        && current_materials.includes(opt_prop_json['my_name'])) {
+            console.log('skipped ' + opt_prop_json["my_name"])
+            return
+        }
+        
+    console.log("test")
+    var opt_prop_entity = db.create_material()
+    db.set_identity(opt_prop_entity, opt_prop_json["my_name"])
+    db.set_material_properties(opt_prop_entity, opt_prop_json)
+});
+
+// var test = db.get_json_content("nsttf_json/optical_properties/heliostat.json");
+// console.log(Object.keys(test));
+// const heliostat_material = db.create_material()
+// db.set_identity(heliostat_material, test["my_name"])
+// db.set_material_properties(heliostat_material, test)
+
+console.log("Done.")
+
+// test = db.list_dir("nsttf_json/optical_properties")
+// console.log(test)
+
+// test = db.get_all_materials()
+// console.log(test)
+
+// test.forEach(v => console.log(db.get_identity(v)))
+
+// console.log(get_identities(test))
 
 // const absorber_material = db.create_material()
 // db.set_identity(absorber_material, "Absorber material")

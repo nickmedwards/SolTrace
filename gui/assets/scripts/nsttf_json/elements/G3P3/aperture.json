@@ -1,0 +1,31 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "aperture",
+  "group": 2,
+  "origin": [
+    -40.662347,
+    8.5,
+    44.8177
+  ],
+  "aim": [
+    -40.662347,
+    8.832385424516547,
+    45.7608436420657
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 1.32475,
+    "y_length": 1.32475,
+    "x_coord": -0.662375,
+    "y_coord": -0.662375
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 2
+}

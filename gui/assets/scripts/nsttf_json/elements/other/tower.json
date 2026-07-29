@@ -1,0 +1,31 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "tower",
+  "group": -1,
+  "origin": [
+    0,
+    0,
+    30.05
+  ],
+  "aim": [
+    0,
+    1,
+    30.05
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 10,
+    "y_length": 60.1,
+    "x_coord": -5.0,
+    "y_coord": -30.05
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 3
+}

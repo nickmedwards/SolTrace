@@ -1,0 +1,20 @@
+{
+  "my_name": "snout",
+  "my_type": "REFLECTION",
+  "refraction_index_front": 1.1,
+  "refraction_index_back": 1.1,
+  "front": {
+    "error_distribution_type": "GAUSSIAN",
+    "transmissivity": 0,
+    "reflectivity": 0.2,
+    "slope_error": 0.95,
+    "specularity_error": 0.2
+  },
+  "back": {
+    "error_distribution_type": "GAUSSIAN",
+    "transmissivity": 0,
+    "reflectivity": 0,
+    "slope_error": 0.95,
+    "specularity_error": 0.2
+  }
+}

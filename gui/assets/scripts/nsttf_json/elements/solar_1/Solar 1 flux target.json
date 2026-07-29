@@ -1,0 +1,31 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "Solar 1 flux target",
+  "group": 1,
+  "origin": [
+    5.65,
+    4.25,
+    64.54
+  ],
+  "aim": [
+    5.65,
+    100,
+    64.54
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 2,
+    "y_length": 2,
+    "x_coord": -1.0,
+    "y_coord": -1.0
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 0
+}

@@ -1,0 +1,35 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "tunnel_west",
+  "group": 1,
+  "origin": [
+    -40.0,
+    9.124688361891291,
+    44.59754551122774
+  ],
+  "aim": [
+    -40.0,
+    8.81900559410251,
+    45.54967884117528
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "IRREGULAR_QUADRILATERAL",
+    "x1": 1.24012,
+    "y1": 1.175,
+    "x2": 0,
+    "y2": 1.32475,
+    "x3": 0,
+    "y3": 0,
+    "x4": 1.24012,
+    "y4": -0.575
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 4
+}

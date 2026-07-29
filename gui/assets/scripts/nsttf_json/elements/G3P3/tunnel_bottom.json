@@ -1,0 +1,35 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "tunnel_bottom",
+  "group": 1,
+  "origin": [
+    -40.0,
+    8.5,
+    44.8177
+  ],
+  "aim": [
+    -40.793606,
+    8.702233928609452,
+    45.39153877242932
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "IRREGULAR_QUADRILATERAL",
+    "x1": 0.662347,
+    "y1": 0,
+    "x2": -0.662347,
+    "y2": 0,
+    "x3": -1.65,
+    "y3": -0.945053,
+    "x4": 1.65,
+    "y4": -0.945053
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 4
+}

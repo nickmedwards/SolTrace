@@ -1,0 +1,31 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "measurement_plane",
+  "group": 1,
+  "origin": [
+    -40.0,
+    11.159083396132372,
+    52.36284913652561
+  ],
+  "aim": [
+    -40.0,
+    11.491468820648919,
+    53.30599277859131
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 1.54722,
+    "y_length": 2.07474,
+    "x_coord": -0.77361,
+    "y_coord": -1.03737
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 2
+}

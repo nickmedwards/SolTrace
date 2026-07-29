@@ -1,0 +1,31 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "shield_e",
+  "group": 1,
+  "origin": [
+    -40.375,
+    6.2499584169133025,
+    46.40587910651813
+  ],
+  "aim": [
+    -40.245313,
+    6.582343841429848,
+    47.34902274858383
+  ],
+  "zrot": -3.5083546492674384e-15,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 2,
+    "y_length": 1.75,
+    "x_coord": -1.0,
+    "y_coord": -0.875
+  },
+  "surface": {
+    "surface_type": "FLAT"
+  },
+  "opt_id": 4
+}
