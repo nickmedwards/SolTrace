@@ -7,6 +7,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonValue>
+#include <QRegularExpression>
 
 #include <glm/geometric.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -263,6 +264,12 @@ void patch_sun_shape(SD::ray_source_ptr const& source,
     source->set_shape(shape, sigma, half_width, csr, angles, intensities);
 }
 
+QString swap_separator(QString& path) {
+    bool uses_unix_sep = QDir::separator() == "/";
+    QRegularExpression other = QRegularExpression(uses_unix_sep ? "\\" : "/");
+    return (uses_unix_sep ? path : path.slice(1)).replace(other, QDir::separator());
+}
+
 QString resolve_script_content_path(QString const& working_directory,
                                     QString const& relative_path) {
     if (relative_path.isEmpty() || QFileInfo(relative_path).isAbsolute()) {
@@ -271,15 +278,17 @@ QString resolve_script_content_path(QString const& working_directory,
 
     auto base_dir = QDir(working_directory.isEmpty() ? QDir::currentPath()
                                                      : working_directory);
+    // from QDir::cleanPath docs: Returns path with directory separators 
+    // normalized (that is, platform-native separators converted to "/")
     auto base_path = QDir::cleanPath(base_dir.absolutePath());
     auto file_path = QDir::cleanPath(base_dir.filePath(relative_path));
 
     if (file_path == base_path ||
-        !file_path.startsWith(base_path + QDir::separator())) {
-        return {};
-    }
+        !file_path.startsWith(base_path + "/")) {
+            return {};
+        }
 
-    return file_path;
+    return swap_separator(file_path);
 }
 
 QJsonObject to_qjson(nlohmann::ordered_json const& json) {
@@ -316,15 +325,45 @@ QJsonObject to_qjson(SD::OpticalPropertySet const& properties,
     };
 }
 
-void patch_optical_properties(SD::OpticalPropertySet& properties,
-                              SD::OpticalSide         side,
-                              QJsonObject const&      object) {
+void patch_optical_properties_type(SD::OpticalPropertySet& properties,
+                                   QJsonObject const&      object) {
     if (object.contains("my_type")) {
         auto key = object.value("my_type").toString().toStdString();
         if (auto value = db::reverse_lookup(SD::InteractionTypeMap, key)) {
             properties.set_interaction_type(*value);
         }
     }
+}
+
+void patch_optical_properties_refraction_indicies(SD::OpticalPropertySet& properties,
+                                                  QJsonObject const&      object) {
+    double refraction_index_front;
+    double refraction_index_back;
+    properties.get_refraction_indices(refraction_index_front,
+                                      refraction_index_back);
+
+    bool has_refraction_change = false;
+    if (object.contains("refraction_index_front")) {
+        refraction_index_front =
+            object.value("refraction_index_front").toDouble();
+        has_refraction_change = true;
+    }
+    if (object.contains("refraction_index_back")) {
+        refraction_index_back =
+            object.value("refraction_index_back").toDouble();
+        has_refraction_change = true;
+    }
+
+    if (has_refraction_change) {
+        properties.set_refraction_indices(refraction_index_front,
+                                          refraction_index_back);
+    }
+}
+
+void patch_optical_properties(SD::OpticalPropertySet& properties,
+                              SD::OpticalSide         side,
+                              QJsonObject const&      object) {
+    patch_optical_properties_type(properties, object);
 
     if (object.contains("error_distribution_type")) {
         auto key =
@@ -339,10 +378,6 @@ void patch_optical_properties(SD::OpticalPropertySet& properties,
     if (object.contains("transmissivity")) {
         properties.set_transmissivity(
             side, object.value("transmissivity").toDouble());
-    }
-    if (object.contains("transmitivity")) {
-        properties.set_transmissivity(
-            side, object.value("transmitivity").toDouble());
     }
     if (object.contains("reflectivity")) {
         properties.set_reflectivity(
@@ -367,27 +402,7 @@ void patch_optical_properties(SD::OpticalPropertySet& properties,
             object.value("specularity_error").toDouble());
     }
 
-    double refraction_index_front;
-    double refraction_index_back;
-    properties.get_refraction_indices(refraction_index_front,
-                                      refraction_index_back);
-
-    bool has_refraction_change = false;
-    if (object.contains("refraction_index_front")) {
-        refraction_index_front =
-            object.value("refraction_index_front").toDouble();
-        has_refraction_change = true;
-    }
-    if (object.contains("refraction_index_back")) {
-        refraction_index_back =
-            object.value("refraction_index_back").toDouble();
-        has_refraction_change = true;
-    }
-
-    if (has_refraction_change) {
-        properties.set_refraction_indices(refraction_index_front,
-                                          refraction_index_back);
-    }
+    patch_optical_properties_refraction_indicies(properties, object);
 }
 
 template <class Component>
@@ -800,6 +815,8 @@ void ScriptDBInterface::set_material_properties(db::Entity  entity,
                                          SD::OpticalSide::Back,
                                          object.value("back").toObject());
             }
+            patch_optical_properties_type(material.optics, object);
+            patch_optical_properties_refraction_indicies(material.optics, object);
         });
 }
 

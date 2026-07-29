@@ -1,13 +1,17 @@
 /*
 TITLE National Solar Thermal Test Facility
 DESC Create model of NSTTF based on current sun position.
-DESC Can toggle between G3P3 and flat plate receivers.
+DESC Can toggle between G3P3 and flat plate receivers. (i.e. set Use g3p3 to 1 to use G3P3 receiver, 0 for flat plate)
 PROPERTY use_G3P3 integer 1 0..=1
 */
 
 console.log(Qt.resolvedUrl("nsttf_json/optical_properties/heliostat.json").toString());
-var test = fs.read(Qt.resolvedUrl("nsttf_json/optical_properties/heliostat.json").toString());
-console.log(test);
+var test = db.get_json_content("./nsttf_json/optical_properties/heliostat.json");
+console.log(Object.keys(test));
+const heliostat_material = db.create_material()
+db.set_identity(heliostat_material, test["my_name"])
+db.set_material_properties(heliostat_material, test)
+
 // const absorber_material = db.create_material()
 // db.set_identity(absorber_material, "Absorber material")
 // db.set_material_properties(absorber_material, {
