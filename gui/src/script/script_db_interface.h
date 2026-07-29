@@ -84,8 +84,9 @@ public slots:
     db::Entity get_geometry_of(db::Entity entity);
     void       set_geometry_of(db::Entity entity, db::Entity geometry);
 
-    QString    get_text_content(QString relative_path);
-    QJsonValue get_json_content(QString relative_path);
+    QStringList list_dir(QString relative_path);
+    QString     get_text_content(QString relative_path);
+    QJsonValue  get_json_content(QString relative_path);
 
 signals:
 };

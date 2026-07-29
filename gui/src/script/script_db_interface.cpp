@@ -908,6 +908,17 @@ void ScriptDBInterface::set_geometry_of(db::Entity entity,
     m_database->assign_geometry(entity, geometry);
 }
 
+QStringList ScriptDBInterface::list_dir(QString relative_path) {
+    auto target_dir_path =
+        resolve_script_content_path(m_working_directory, relative_path);
+    if (target_dir_path.isEmpty()) {
+        qWarning() << "Invalid script content path:" << relative_path;
+        return {};
+    }
+
+    auto target_dir = QDir(target_dir_path);
+    return target_dir.entryList(QDir::Files);
+}
 
 QString ScriptDBInterface::get_text_content(QString relative_path) {
     auto target_file_path =

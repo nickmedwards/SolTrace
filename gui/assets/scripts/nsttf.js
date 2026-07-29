@@ -6,11 +6,14 @@ PROPERTY use_G3P3 integer 1 0..=1
 */
 
 console.log(Qt.resolvedUrl("nsttf_json/optical_properties/heliostat.json").toString());
-var test = db.get_json_content("./nsttf_json/optical_properties/heliostat.json");
+var test = db.get_json_content("nsttf_json/optical_properties/heliostat.json");
 console.log(Object.keys(test));
 const heliostat_material = db.create_material()
 db.set_identity(heliostat_material, test["my_name"])
 db.set_material_properties(heliostat_material, test)
+
+test = db.list_dir("nsttf_json/optical_properties")
+console.log(test)
 
 // const absorber_material = db.create_material()
 // db.set_identity(absorber_material, "Absorber material")
