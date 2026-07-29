@@ -1,0 +1,33 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "5W9 22",
+  "group": 0,
+  "origin": [
+    -83.4810293199878,
+    55.99869682673757,
+    4.5970265771037955
+  ],
+  "aim": [
+    -83.18295229449271,
+    55.23382241978777,
+    5.168158656725487
+  ],
+  "zrot": -34.30833793160946,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 1.2192,
+    "y_length": 1.2192,
+    "x_coord": -0.6096,
+    "y_coord": -0.6096
+  },
+  "surface": {
+    "surface_type": "PARABOLA",
+    "focal_length_x": 146.18600707540276,
+    "focal_length_y": 146.18600707540276
+  },
+  "opt_id": 1
+}

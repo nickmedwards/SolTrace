@@ -27,26 +27,28 @@ const opt_prop_name_to_id = {
 // get current scene materials and elements
 get_identities = arr => arr.map(v => db.get_identity(v))
 
-const current_materials = get_identities(db.get_all_materials())
-const current_elements  = get_identities(db.get_all_elements())
+const current_materials  = get_identities(db.get_all_materials())
+const current_elements   = get_identities(db.get_all_elements())
+const current_geometries = get_identities(db.get_all_geometries())
 
 console.log(current_materials)
 console.log(current_elements)
 
 db.list_dir(optical_properties_dir).forEach(f => {
-    console.log(f)
-    opt_prop_json = db.get_json_content(optical_properties_dir + f)
-
-    console.log(opt_prop_json['my_name'])
-    console.log(Object.values(current_materials).includes(opt_prop_json['my_name']))
-    current_materials.forEach(m => console.log(m))
+    const name = f.split('.')[0]
     // if not overwritting and the materical 
     if (!overwrite_scene 
         && current_materials.length 
-        && current_materials.includes(opt_prop_json['my_name'])) {
-            console.log('skipped ' + opt_prop_json["my_name"])
+        && current_materials.includes(name)) {
+            console.log('skipped ' + name)
             return
         }
+    // console.log(f)
+    opt_prop_json = db.get_json_content(optical_properties_dir + f)
+
+    // console.log(opt_prop_json['my_name'])
+    // console.log(Object.values(current_materials).includes(opt_prop_json['my_name']))
+    // current_materials.forEach(m => console.log(m))
         
     console.log("test")
     var opt_prop_entity = db.create_material()

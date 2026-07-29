@@ -1,0 +1,33 @@
+{
+  "is_single": true,
+  "active": true,
+  "virtual_flag": false,
+  "my_id": null,
+  "stage": 0,
+  "my_name": "10E10 8",
+  "group": 0,
+  "origin": [
+    92.77807952124151,
+    121.97816017919722,
+    11.716098561224387
+  ],
+  "aim": [
+    92.36654227089882,
+    121.1667395136647,
+    12.131118126983349
+  ],
+  "zrot": 50.707101560481334,
+  "aperture": {
+    "aperture_type": "RECTANGLE",
+    "x_length": 1.2192,
+    "y_length": 1.2192,
+    "x_coord": -0.6096,
+    "y_coord": -0.6096
+  },
+  "surface": {
+    "surface_type": "PARABOLA",
+    "focal_length_x": 146.18600707540276,
+    "focal_length_y": 146.18600707540276
+  },
+  "opt_id": 1
+}
