@@ -14,6 +14,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # CUDA architectures 
 set(CMAKE_CUDA_ARCHITECTURES 75;86;89;90)
 
+if(WIN32)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=/Zc:preprocessor")
+endif()
+
 # Set CMAKE_MODULE_PATH BEFORE add_subdirectory so child can find FindOptiX.cmake
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
