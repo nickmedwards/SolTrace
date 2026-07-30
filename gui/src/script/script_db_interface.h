@@ -67,6 +67,7 @@ public slots:
     QVector<db::Entity> get_all_materials();
     db::Entity          create_material();
     QJsonObject         get_material_properties(db::Entity material);
+    db::Entity          get_material_entity(QString identity);
     void                set_material_properties(db::Entity  material,
                                                 QJsonObject properties);
     void                remove_material(db::Entity material);

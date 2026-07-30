@@ -2,7 +2,7 @@
 TITLE National Solar Thermal Test Facility
 DESC Create model of NSTTF based on current sun position.
 DESC Can toggle between G3P3 and flat plate receivers. (i.e. set Use g3p3 to 1 to use G3P3 receiver, 0 for flat plate)
-PROPERTY use_G3P3 integer 1 0..=1
+PROPERTY use_G3P3 integer 0 0..=1
 PROPERTY overwrite_scene integer 0 0..=1
 */
 
@@ -15,44 +15,118 @@ const other_dir              = elements_dir + "other/"
 
 const sol_pos = db.get_ray_source()["position"]
 
+const opt_prop_id_to_name = ['receiver', 'heliostat', 'aperture', 'tower', 'snout']
 // optical property name to id map
-const opt_prop_name_to_id = {
-    'receiver':  0,
-    'heliostat': 1,
-    'aperture':  2,
-    'tower':     3,
-    'snout':     4,
-}
+const opt_prop_name_to_id = opt_prop_id_to_name.reduce((accum, next, idx) => {accum[next] = idx; return accum;}, {})
 
 // get current scene materials and elements
 get_identities = arr => arr.map(v => db.get_identity(v))
 
-const current_materials  = get_identities(db.get_all_materials())
-const current_elements   = get_identities(db.get_all_elements())
-const current_geometries = get_identities(db.get_all_geometries())
+const material_entities = db.get_all_materials()
+const element_entities  = db.get_all_elements()
+const geometry_entities = db.get_all_geometries()
 
-console.log(current_materials)
-console.log(current_elements)
+const material_identities = get_identities(material_entities)
+const element_identities  = get_identities(element_entities)
+const geometry_identities = get_identities(geometry_entities)
 
-db.list_dir(optical_properties_dir).forEach(f => {
+if (overwrite_scene) {
+    material_entities.forEach(ent => db.destroy(ent))
+    element_entities.forEach(ent => db.destroy(ent))
+    geometry_entities.forEach(ent => db.destroy(ent))
+
+    material_identities.length = 0
+    element_identities.length  = 0
+    geometry_identities.length = 0
+    console.log('Destroyed current entities')
+    
+    const test = db.get_all_materials()
+    console.log(test)
+    console.log(test.length)
+    test.forEach(e => console.log(db.valid(e)))
+}
+
+
+
+console.log(material_identities)
+console.log(element_identities)
+
+in_scene = (curr, rt, name) => curr.length && curr.includes(name) && rt.push(name)
+
+function log_skipped(skipped, files, desc) {
+    if (skipped.length === files.length) console.log(`Skipped adding ${desc}...`)
+    else if (skipped.length > 0) console.log(
+        skipped.reduce(
+            (accum, next) => accum + ` ${next}`,
+            `Skipped adding ${desc}:`
+        ) + '...'
+    )
+}
+
+const skipped = []
+
+const optical_properties_files = db.list_dir(optical_properties_dir)
+
+optical_properties_files.forEach(f => {
     const name = f.split('.')[0]
 
-    // console.log(name)
-    // console.log(Object.values(current_materials).includes(name))
-    // current_materials.forEach(m => console.log(m))
-
-    // if not overwritting and the materical 
-    if (!overwrite_scene 
-        && current_materials.length 
-        && current_materials.includes(name)) {
-            console.log('skipped ' + name)
-            return
-        }
+    // if not overwritting and the materical is in the scene already
+    if (!overwrite_scene && in_scene(material_identities, skipped, name)) return
         
-    var opt_prop_entity = db.create_material()
+    const opt_prop_entity = db.create_material()
     db.set_identity(opt_prop_entity, name)
     db.set_material_properties(opt_prop_entity, db.get_json_content(optical_properties_dir + f))
 });
+
+log_skipped(skipped, optical_properties_files, 'optical properties')
+
+skipped.length = 0
+
+const receiver_files = db.list_dir(receiver_dir)
+
+get_euler_deg = (v, zrot) => [180 * Math.atan2(v[0], v[2]) / Math.PI, 180 * Math.asin(v[1]) / Math.PI, zrot]
+
+// intrinsic active rotation first by α around Z, 
+// then β around the new X, finally γ around the new Z
+euler_to_quat = euler => db.quat_mul(
+    db.quat_mul(
+        db.quat_from_axis_angle([0.0, 0.0, 1.0], euler[0]),
+        db.quat_from_axis_angle([1.0, 0.0, 0.0], euler[1])
+    ),
+    db.quat_from_axis_angle([0.0, 0.0, 1.0], euler[2])
+)
+
+function get_rotation(origin, aim, zrot) {
+    const dr = db.vec3_normalize(aim.map((a, idx) => a - origin[idx]))
+    return euler_to_quat(get_euler_deg(dr, zrot))
+}
+
+receiver_files.forEach(f => {
+    const name = f.split('.')[0]
+
+    // if not overwritting and the element/geometry is in the scene already
+    if (!overwrite_scene  && in_scene(element_identities, skipped, name)) return
+
+    const receiver_json =  db.get_json_content(receiver_dir + f)
+
+    const geometry = db.create_geometry()
+    db.set_identity(geometry, `${name} geometry`)
+    db.set_geometry_properties(geometry, {
+        aperture: receiver_json['aperture'],
+        surface: receiver_json['surface'],
+    })
+    
+    const ent = db.create()
+    db.set_identity(ent, name)
+    db.set_transform(ent, {
+        position: [...receiver_json['origin']],
+        rotation: get_rotation([...receiver_json['origin']], [...receiver_json['aim']], receiver_json['zrot'])
+    })
+    db.set_material_of(ent, db.get_material_entity(opt_prop_id_to_name[receiver_json['opt_id']]))
+    db.set_geometry_of(ent, geometry)
+})
+
+log_skipped(skipped, receiver_files, 'receiver elements')
 
 // var test = db.get_json_content("nsttf_json/optical_properties/heliostat.json");
 // console.log(Object.keys(test));
@@ -71,125 +145,3 @@ console.log("Done.")
 // test.forEach(v => console.log(db.get_identity(v)))
 
 // console.log(get_identities(test))
-
-// const absorber_material = db.create_material()
-// db.set_identity(absorber_material, "Absorber material")
-// db.set_material_properties(absorber_material, {
-//     front: {
-//         my_type: "REFLECTION",
-//         error_distribution_type: "GAUSSIAN",
-//         transmissivity: 0.0,
-//         reflectivity: 0.0,
-//         slope_error: 0.0,
-//         specularity_error: 0.0,
-//         refraction_index_front: 1.0,
-//         refraction_index_back: 1.0,
-//     },
-//     back: {
-//         my_type: "REFLECTION",
-//         error_distribution_type: "GAUSSIAN",
-//         transmissivity: 0.0,
-//         reflectivity: 0.0,
-//         slope_error: 0.0,
-//         specularity_error: 0.0,
-//         refraction_index_front: 1.0,
-//         refraction_index_back: 1.0,
-//     },
-// })
-
-// const mirror_material = db.create_material()
-// db.set_identity(mirror_material, "Ideal mirror material")
-// db.set_material_properties(mirror_material, {
-//     front: {
-//         my_type: "REFLECTION",
-//         error_distribution_type: "GAUSSIAN",
-//         transmissivity: 0.0,
-//         reflectivity: 1.0,
-//         slope_error: 0.0,
-//         specularity_error: 0.0,
-//         refraction_index_front: 1.0,
-//         refraction_index_back: 1.0,
-//     },
-//     back: {
-//         my_type: "REFLECTION",
-//         error_distribution_type: "GAUSSIAN",
-//         transmissivity: 0.0,
-//         reflectivity: 0.0,
-//         slope_error: 0.0,
-//         specularity_error: 0.0,
-//         refraction_index_front: 1.0,
-//         refraction_index_back: 1.0,
-//     },
-// })
-
-// console.log("Created materials...")
-
-// const absorber_geometry = db.create_geometry()
-// db.set_identity(absorber_geometry, "Cylindrical absorber geometry")
-// db.set_geometry_properties(absorber_geometry, {
-//     aperture: {
-//         aperture_type: "RECTANGLE",
-//         x_length: absorber_radius * 2.0,
-//         y_length: absorber_height,
-//         x_coord: -absorber_radius,
-//         y_coord: 0.0,
-//     },
-//     surface: {
-//         surface_type: "CYLINDER",
-//         radius: absorber_radius,
-//     },
-// })
-
-// const mirror_geometry = db.create_geometry()
-// db.set_identity(mirror_geometry, "Flat mirror geometry")
-// db.set_geometry_properties(mirror_geometry, {
-//     aperture: {
-//         aperture_type: "RECTANGLE",
-//         x_length: mirror_width,
-//         y_length: mirror_height,
-//         x_coord: -mirror_width / 2.0,
-//         y_coord: 0.0,
-//     },
-//     surface: {
-//         surface_type: "FLAT",
-//     },
-// })
-
-// console.log("Created geometry...")
-
-// const absorber = db.create()
-// db.set_identity(absorber, "Cylindrical absorber")
-// db.set_transform(absorber, {
-//     position: [0.0, absorber_radius, 0.0],
-//     rotation: db.quat_from_axis_angle([1.0, 0.0, 0.0], 90.0),
-// })
-// db.set_material_of(absorber, absorber_material)
-// db.set_geometry_of(absorber, absorber_geometry)
-
-// const mirrors = []
-// const denominator = Math.max(1, mirror_count - 1)
-
-// for (let i = 0; i < mirror_count; ++i) {
-//     const fraction = i / denominator
-//     const angle_degrees = -90.0 + 180.0 * fraction
-//     const angle_radians = angle_degrees * Math.PI / 180.0
-//     const x = arc_radius * Math.sin(angle_radians)
-//     const y = -arc_radius * Math.cos(angle_radians)
-//     const rotation = db.quat_mul(
-//         db.quat_from_axis_angle([0.0, 0.0, 1.0], angle_degrees + 180.0),
-//         db.quat_from_axis_angle([1.0, 0.0, 0.0], 90.0)
-//     )
-
-//     const mirror = db.create()
-//     db.set_identity(mirror, "Mirror " + String(i + 1))
-//     db.set_transform(mirror, {
-//         position: [x, y, 0.0],
-//         rotation: rotation,
-//     })
-//     db.set_material_of(mirror, mirror_material)
-//     db.set_geometry_of(mirror, mirror_geometry)
-
-//     mirrors.push(mirror)
-// }
-
-// console.log("Done!")

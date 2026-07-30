@@ -798,6 +798,19 @@ QJsonObject ScriptDBInterface::get_material_properties(db::Entity entity) {
     };
 }
 
+db::Entity ScriptDBInterface::get_material_entity(QString identity) {
+    QVector<db::Entity> materials = get_all_materials();
+
+    if (materials.size() == 0) return {};
+
+    QString curr_identity;
+    for (db::Entity mat : materials) {
+        curr_identity = get_identity(mat);
+        if (curr_identity == identity) return mat;
+    }
+    return {};
+}
+
 void ScriptDBInterface::set_material_properties(db::Entity  entity,
                                                 QJsonObject object) {
     if (!m_database || !m_database->valid(entity)) return;
