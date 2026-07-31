@@ -32,6 +32,10 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 #include "optix_runner.hpp"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum st_runner_type_t {
 	ST_RUNNER_NATIVE = 0,       /* 0 */
 	ST_RUNNER_OPTIX,            /* 1 */
@@ -85,5 +89,9 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 	write csv  				  -> int st_write_results_csv(st_context_v2_t pcxt, const char *filename);
 	write json 				  -> int st_write_results_json(st_context_v2_t pcxt, const char *filename);
 */
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
