@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # CUDA architectures 
 set(CMAKE_CUDA_ARCHITECTURES 75;86;89;90)
 
-if(WIN32)
+if(MSVC)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=/Zc:preprocessor")
 endif()
 
