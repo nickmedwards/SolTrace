@@ -22,18 +22,24 @@ const opt_prop_name_to_id = opt_prop_id_to_name.reduce((accum, next, idx) => {ac
 // get current scene materials and elements
 get_identities = arr => arr.map(v => db.get_identity(v))
 
-const material_entities = db.get_all_materials()
-const element_entities  = db.get_all_elements()
-const geometry_entities = db.get_all_geometries()
+const material_entities = [...db.get_all_materials()]
+const element_entities  = [...db.get_all_elements()]
+const geometry_entities = [...db.get_all_geometries()]
 
 const material_identities = get_identities(material_entities)
 const element_identities  = get_identities(element_entities)
 const geometry_identities = get_identities(geometry_entities)
 
 if (overwrite_scene) {
-    material_entities.forEach(ent => db.destroy(ent))
-    element_entities.forEach(ent => db.destroy(ent))
-    geometry_entities.forEach(ent => db.destroy(ent))
+    // for (var ents in [material_entities, element_entities, geometry_entities]) {
+    //     for (var ent in ents) db.destroy(ent);
+    // }
+    for (var ent in material_entities) db.destroy(ent);
+    for (var ent in element_entities) db.destroy(ent);
+    for (var ent in geometry_entities) db.destroy(ent);
+    // material_entities.forEach(ent => db.destroy(ent))
+    // element_entities.forEach(ent => db.destroy(ent))
+    // geometry_entities.forEach(ent => db.destroy(ent))
 
     material_identities.length = 0
     element_identities.length  = 0
@@ -48,8 +54,10 @@ if (overwrite_scene) {
 
 
 
-console.log(material_identities)
-console.log(element_identities)
+console.log(material_identities.length)
+console.log(typeof material_identities)
+console.log(element_identities.length)
+console.log(typeof element_identities)
 
 in_scene = (curr, rt, name) => curr.length && curr.includes(name) && rt.push(name)
 
@@ -105,6 +113,8 @@ receiver_files.forEach(f => {
     const name = f.split('.')[0]
 
     // if not overwritting and the element/geometry is in the scene already
+    console.log(name)
+    console.log(element_identities.includes(name))
     if (!overwrite_scene  && in_scene(element_identities, skipped, name)) return
 
     const receiver_json =  db.get_json_content(receiver_dir + f)

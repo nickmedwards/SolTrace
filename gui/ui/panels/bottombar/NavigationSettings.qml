@@ -29,7 +29,7 @@ STPopup {
 
         SliderField {
             value: AppData.view.sim.fps_walk_speed
-            from: 10
+            from: 1
             to: 100
             text: "FPS Camera Speed"
             visible: AppData.view.sim.camera == 0
