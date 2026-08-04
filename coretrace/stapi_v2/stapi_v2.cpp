@@ -1,3 +1,4 @@
+#include <iostream>
 #include "simulation_runner.hpp"
 #include "native_runner.hpp"
 #include "simulation_data_export.hpp"
@@ -13,7 +14,7 @@
 
 #include "stapi_v2.h"
 
-#define CONTEXT(p)  st_context_v2_t cxt = reinterpret_cast<st_context_v2_t>(p);
+#define CONTEXT(p)  st_context* cxt = reinterpret_cast<st_context*>(p);
 #define DATA(cxt)   SimulationData *data = reinterpret_cast<SimulationData*>(cxt->p_data);
 #define RUNNER(cxt) SimulationRunner *runner = reinterpret_cast<SimulationRunner*>(cxt->p_runner);
 #define RESULT(cxt) SimulationResult *result = reinterpret_cast<SimulationResult*>(cxt->p_results);
@@ -29,14 +30,14 @@
 // }
 
 /* functions for SolTrace context management */
-STCORE_V2_API void* st_create_context()
+STCORE_V2_API st_context_v2_t st_create_context()
 {
-	st_context_v2_t cxt = new st_context();
+	st_context* cxt = new st_context();
     cxt->p_data = &SimulationData();
-    return reinterpret_cast<void*>(cxt);
+    return reinterpret_cast<st_context_v2_t>(cxt);
 }
 
-STCORE_V2_API int st_free_context(void* pcxt)
+STCORE_V2_API int st_free_context(st_context_v2_t pcxt)
 {
 	CONTEXT(pcxt);
     // i think member class destructers will be called when cxt is deleted.
@@ -52,18 +53,23 @@ STCORE_V2_API int st_free_context(void* pcxt)
 }
 
 /* functions for SolTrace data management */
-STCORE_V2_API int st_read_input_json(void* pcxt, const char *json)
+STCORE_V2_API int st_read_input_json(st_context_v2_t pcxt, const char *json)
 {
 	CONTEXT(pcxt);
     DATA(cxt);
     if (!data || data == nullptr) return 0;
 
-    // data->import_json_string(json);
+    char * hard_code = "{\"schema_version\": \"2025.11.12\"}";
+
+    // std::cout << json << std::endl;
+    // std::cout << hard_code << std::endl;
+
+    data->import_json_string(hard_code);
     return (int)json;
 }
 
 /* functions for SolTrace data information */
-STCORE_V2_API int st_num_elements(void* pcxt)
+STCORE_V2_API int st_num_elements(st_context_v2_t pcxt)
 {
     CONTEXT(pcxt);
     DATA(cxt);

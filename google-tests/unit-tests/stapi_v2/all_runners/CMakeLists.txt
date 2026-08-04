@@ -1,0 +1,68 @@
+project(stapi_v2_all_runners)
+
+cmake_minimum_required(VERSION 3.19)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+include_directories(
+    .
+    ${SAMPLE_DIR}
+    ${TEST_INPUT_DIR}
+    ../../../../coretrace/simulation_data
+    ../../../../coretrace/simulation_results
+    ../../../../coretrace/simulation_runner/native_runner
+)
+
+set(STAPI_SRC
+	../../../../coretrace/stapi_v2/stapi_v2.cpp
+)
+
+# # Add header files for IDE visibility
+# set(STAPI_HEADERS
+#     ../../../../coretrace/stapi_v2/stapi_v2.h
+#     ../../../../coretrace/simulation_runner/simulation_runner.hpp
+# )
+
+# # Group header files for IDEs
+# source_group("Header Files" FILES ${STAPI_HEADERS})
+
+add_executable(stapi_v2_all_runners ${STAPI_SRC})
+set_target_properties(stapi_v2_all_runners
+		PROPERTIES
+		DEBUG_POSTFIX "d"
+		PREFIX ""
+		)
+
+# build options for optional runners
+target_include_directories(stapi_v2_all_runners PRIVATE
+    ../../../../coretrace/simulation_runner/embree_runner
+)
+target_compile_definitions(stapi_v2_all_runners PRIVATE SOLTRACE_EMBREE_SUPPORT)
+target_link_libraries(stapi_v2_all_runners PRIVATE embree_runner)
+
+
+target_include_directories(stapi_v2_all_runners PRIVATE
+    ../../../../coretrace/simulation_runner/optix_runner
+)
+target_compile_definitions(stapi_v2_all_runners PRIVATE SOLTRACE_OPTIX_SUPPORT)
+target_link_libraries(stapi_v2_all_runners PRIVATE optix_runner)
+
+target_link_libraries(stapi_v2_all_runners PRIVATE
+    simdata
+    simresult
+    native_runner
+    testtools
+    GTest::gtest_main
+)
+
+if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_options(stapi_v2_all_runners PRIVATE --coverage)
+    target_link_libraries(stapi_v2_all_runners gcov)
+endif()
+
+if(UNIX)
+    target_link_libraries(stapi_v2_all_runners pthread)
+endif()
+
+add_test(NAME stapi_v2_all_runners COMMAND stapi_v2_all_runners)

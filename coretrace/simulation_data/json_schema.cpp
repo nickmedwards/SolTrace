@@ -368,6 +368,8 @@ void load_json_cstr(SimulationData& sd, const char* json_str, std::string* upgra
     sd.clear();
 
     // Load json from cstr
+    // std::cout << json_str << std::endl;
+
     json root = json::parse(json_str);
 
     json_to_simulation_data(sd, root, upgrade_log);

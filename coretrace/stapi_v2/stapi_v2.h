@@ -53,17 +53,17 @@ typedef struct st_context {
 	SimulationResult* p_results;
 } st_context;
 
-typedef st_context* st_context_v2_t;
+typedef void* st_context_v2_t;
 
 /* functions for SolTrace context management */
-STCORE_V2_API void* st_create_context();
-STCORE_V2_API int st_free_context(void* pcxt);
+STCORE_V2_API st_context_v2_t st_create_context();
+STCORE_V2_API int st_free_context(st_context_v2_t pcxt);
 
 /* functions for SolTrace data management */
-STCORE_V2_API int st_read_input_json(void* pcxt, const char *json);
+STCORE_V2_API int st_read_input_json(st_context_v2_t pcxt, const char *json);
 
 /* functions for SolTrace data information */
-STCORE_V2_API int st_num_elements(void* pcxt);
+STCORE_V2_API int st_num_elements(st_context_v2_t pcxt);
 
 
 /*
