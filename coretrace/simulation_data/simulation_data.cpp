@@ -342,6 +342,16 @@ void SimulationData::import_json_file(const std::string file_name, std::string* 
     load_json_file(*this, file_name, upgrade_log);
 }
 
+void SimulationData::import_json_string(const std::string json_str, std::string* upgrade_log)
+{
+    this->import_json_string(json_str.c_str(), upgrade_log);
+}
+
+void SimulationData::import_json_string(const char* json_str, std::string* upgrade_log)
+{
+    load_json_cstr(*this, json_str, upgrade_log);
+}
+
 void SimulationData::export_json_file(const std::string file_name)
 {
     write_json_file(*this, file_name);

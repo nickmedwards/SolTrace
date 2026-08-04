@@ -226,19 +226,9 @@ void write_json_file(SimulationData& sd, std::string filename) {
     return;
 }
 
-void load_json_file(SimulationData& sd, std::string filename, std::string* upgrade_log) {
+void json_to_simulation_data(SimulationData& sd, nlohmann::ordered_json& root,  std::string* upgrade_log)
+{
     using json = nlohmann::ordered_json;
-
-    // Clear simulation data
-    sd.clear();
-
-    // Load json file
-    std::ifstream ifs(filename);
-    if (!ifs.is_open()) throw std::runtime_error("Failure opening json");
-
-    // Load json from file stream
-    json root;
-    ifs >> root;
 
     // File meta data
     std::string schema_version     = root.at("schema_version");
@@ -349,10 +339,40 @@ void load_json_file(SimulationData& sd, std::string filename, std::string* upgra
             sd.add_element(single);
         }
     }
+}
+
+void load_json_file(SimulationData& sd, std::string filename, std::string* upgrade_log) {
+    using json = nlohmann::ordered_json;
+
+    // Clear simulation data
+    sd.clear();
+
+    // Load json file
+    std::ifstream ifs(filename);
+    if (!ifs.is_open()) throw std::runtime_error("Failure opening json");
+
+    // Load json from file stream
+    json root;
+    ifs >> root;
+
+    json_to_simulation_data(sd, root, upgrade_log);
 
     return;
 }
 
+void load_json_cstr(SimulationData& sd, const char* json_str, std::string* upgrade_log) 
+{
+    using json = nlohmann::ordered_json;
 
+    // Clear simulation data
+    sd.clear();
+
+    // Load json from cstr
+    json root = json::parse(json_str);
+
+    json_to_simulation_data(sd, root, upgrade_log);
+
+    return;
+}
 
 } // namespace SolTrace::Data

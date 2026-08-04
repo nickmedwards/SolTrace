@@ -21,6 +21,7 @@ set(STAPI_SRC
 # Add header files for IDE visibility
 set(STAPI_HEADERS
     stapi_v2.h
+    ../simulation_runner/simulation_runner.hpp
 )
 
 # Group header files for IDEs

@@ -20,6 +20,7 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 #define STCORE_V2_API
 #endif
 
+#include "simulation_runner.hpp"
 #include "native_runner.hpp"
 #include "simulation_data_export.hpp"
 #include "simulation_result_export.hpp"
@@ -36,6 +37,8 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 extern "C" {
 #endif
 
+using SolTrace::Runner::SimulationRunner;
+
 typedef enum st_runner_type_t {
 	ST_RUNNER_NATIVE = 0,       /* 0 */
 	ST_RUNNER_OPTIX,            /* 1 */
@@ -45,16 +48,23 @@ typedef enum st_runner_type_t {
 
 
 typedef struct st_context {
-	SimulationData* p_data;
-	void* p_runner;
+	SimulationData*   p_data;
+	SimulationRunner* p_runner;
 	SimulationResult* p_results;
 } st_context;
 
 typedef st_context* st_context_v2_t;
 
-/* functions to create system contexts */
-STCORE_V2_API st_context_v2_t st_create_context();
-STCORE_V2_API int st_free_context(st_context_v2_t pcxt);
+/* functions for SolTrace context management */
+STCORE_V2_API void* st_create_context();
+STCORE_V2_API int st_free_context(void* pcxt);
+
+/* functions for SolTrace data management */
+STCORE_V2_API int st_read_input_json(void* pcxt, const char *json);
+
+/* functions for SolTrace data information */
+STCORE_V2_API int st_num_elements(void* pcxt);
+
 
 /*
 create simualtion information -> st_context_v2_t st_create_context_v2();
@@ -87,8 +97,7 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 
 - simulation results
 	write csv  				  -> int st_write_results_csv(st_context_v2_t pcxt, const char *filename);
-	write json 				  -> int st_write_results_json(st_context_v2_t pcxt, const char *filename);
-*/
+	write json 				  -> int st_write_results_json(st_context_v2_t pcxt, const char *filename);*/
 
 #ifdef __cplusplus
 } /* extern "C" */

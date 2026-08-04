@@ -30,7 +30,7 @@ namespace SolTrace::Data {
 
 class SimulationData
 {
-    friend void load_json_file(SimulationData& sd, std::string filename, std::string* upgrade_log);
+    friend void json_to_simulation_data(SimulationData& sd, nlohmann::ordered_json& root, std::string* upgrade_log);
 
 public:
     SimulationData();
@@ -318,6 +318,17 @@ public:
     /// @throws std::runtime_error if the file cannot be read or parsed.
     /// Loads simulation data from the specified JSON file and updates the current simulation state.
     void import_json_file(const std::string file_name, std::string* upgrade_log = nullptr);
+
+    /// @brief Import simulation data from a JSON string.
+    /// @param json_str The JSON string to import.
+    /// @param upgrade_log Optional pointer to a string that will be populated
+    ///        with a human-readable description of any schema upgrades applied
+    ///        during import. Left untouched if no upgrade was needed. Pass
+    ///        nullptr (default) if this information is not needed.
+    /// @throws std::runtime_error if the file cannot be read or parsed.
+    /// Loads simulation data from the specified JSON string and updates the current simulation state.
+    void import_json_string(const std::string json_str, std::string* upgrade_log = nullptr);
+    void import_json_string(const char* json_str, std::string* upgrade_log = nullptr);
 
     /// @brief Export simulation data to a JSON file.
     /// @param file_name Path to the JSON file to write.
