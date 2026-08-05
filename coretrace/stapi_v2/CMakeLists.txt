@@ -41,7 +41,7 @@ if(SOLTRACE_BUILD_EMBREE_SUPPORT)
     )
     target_compile_definitions(stapi_v2 PRIVATE SOLTRACE_EMBREE_SUPPORT)
     target_link_libraries(stapi_v2 PRIVATE embree_runner)
-    message(STATUS "[stapi_v2] - Linked Embree to stapi_v2")
+    message(STATUS "[stapi_v2] - Linked Embree")
 endif()
 
 if(SOLTRACE_BUILD_OPTIX_SUPPORT)
@@ -50,7 +50,7 @@ if(SOLTRACE_BUILD_OPTIX_SUPPORT)
     )
     target_compile_definitions(stapi_v2 PRIVATE SOLTRACE_OPTIX_SUPPORT)
     target_link_libraries(stapi_v2 PRIVATE optix_runner)
-    message(STATUS "[stapi_v2] - Linked Optix to stapi_v2")
+    message(STATUS "[stapi_v2] - Linked Optix")
 endif()
 
 target_link_libraries(stapi_v2 PRIVATE
@@ -58,7 +58,7 @@ target_link_libraries(stapi_v2 PRIVATE
     simresult
     native_runner
 )
-message(STATUS "[stapi_v2] - Added simdata, simresult, and native_runner to stapi_v2")
+message(STATUS "[stapi_v2] - Added simdata, simresult, and native_runner")
 
 if(UNIX)
     target_link_libraries(stapi_v2 PRIVATE pthread)

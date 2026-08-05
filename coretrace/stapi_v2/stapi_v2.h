@@ -37,6 +37,11 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 extern "C" {
 #endif
 
+/* changing return code convention from v1
+   to be in line with industry convention.
+   i.e. 0 for success, non-zero for failure. */
+typedef unsigned int st_return_t;
+
 using SolTrace::Runner::SimulationRunner;
 
 typedef enum st_runner_type_t {
@@ -46,21 +51,23 @@ typedef enum st_runner_type_t {
 	ST_RUNNER_COUNT             /* sentinel (not a valid runner) */
 } st_runner_type_t;
 
+typedef int (*p_callback)(char* loc, const char* msg);
 
 typedef struct st_context {
 	SimulationData*   p_data;
 	SimulationRunner* p_runner;
 	SimulationResult* p_results;
+	p_callback		  p_cb;
 } st_context;
 
 typedef void* st_context_v2_t;
 
 /* functions for SolTrace context management */
-STCORE_V2_API st_context_v2_t st_create_context();
-STCORE_V2_API int st_free_context(st_context_v2_t pcxt);
+STCORE_V2_API st_context_v2_t st_create_context(p_callback cb = nullptr);
+STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt);
 
 /* functions for SolTrace data management */
-STCORE_V2_API int st_read_input_json(st_context_v2_t pcxt, const char *json);
+STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
 
 /* functions for SolTrace data information */
 STCORE_V2_API int st_num_elements(st_context_v2_t pcxt);

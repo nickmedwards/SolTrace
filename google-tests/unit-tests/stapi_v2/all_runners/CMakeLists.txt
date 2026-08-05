@@ -1,21 +1,25 @@
+# mirroring corestrace/stapi_v2/CMakeLists.txt but forcing all runners to be built and linked in for testing purposes
 project(stapi_v2_all_runners)
 
-cmake_minimum_required(VERSION 3.19)
+# cmake_minimum_required(VERSION 3.19)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(
     .
+    ../across_builds
     ${SAMPLE_DIR}
     ${TEST_INPUT_DIR}
     ../../../../coretrace/simulation_data
     ../../../../coretrace/simulation_results
     ../../../../coretrace/simulation_runner/native_runner
+    ../../../../coretrace/stapi_v2
 )
 
-set(STAPI_SRC
-	../../../../coretrace/stapi_v2/stapi_v2.cpp
+set(STAPI_V2_ALL_RUNNERS_SRC
+    ../across_builds/across_builds.cpp
+	json_io.cpp
 )
 
 # # Add header files for IDE visibility
@@ -27,12 +31,12 @@ set(STAPI_SRC
 # # Group header files for IDEs
 # source_group("Header Files" FILES ${STAPI_HEADERS})
 
-add_executable(stapi_v2_all_runners ${STAPI_SRC})
-set_target_properties(stapi_v2_all_runners
-		PROPERTIES
-		DEBUG_POSTFIX "d"
-		PREFIX ""
-		)
+add_executable(stapi_v2_all_runners ${STAPI_V2_ALL_RUNNERS_SRC})
+# set_target_properties(stapi_v2_all_runners
+# 		PROPERTIES
+# 		DEBUG_POSTFIX "d"
+# 		PREFIX ""
+# 		)
 
 # build options for optional runners
 target_include_directories(stapi_v2_all_runners PRIVATE
@@ -52,8 +56,18 @@ target_link_libraries(stapi_v2_all_runners PRIVATE
     simdata
     simresult
     native_runner
+    stapi_v2
     testtools
     GTest::gtest_main
+)
+
+add_custom_command(TARGET stapi_v2_all_runners POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:stapi_v2>                 # The source DLL from the 'stapi_v2' target
+    $<TARGET_FILE_DIR:stapi_v2_all_runners> # The destination folder
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_PDB_FILE:stapi_v2>             # The source pdb from the 'stapi_v2' target
+    $<TARGET_FILE_DIR:stapi_v2_all_runners> # The destination folder
 )
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")

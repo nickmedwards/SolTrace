@@ -30,6 +30,8 @@ namespace SolTrace::Data {
 
 class SimulationData
 {
+    friend void load_json_file(SimulationData& sd, std::string filename, std::string* upgrade_log);
+    friend void load_json_cstr(SimulationData& sd, const char* json_str, std::string* upgrade_log);
     friend void json_to_simulation_data(SimulationData& sd, nlohmann::ordered_json& root, std::string* upgrade_log);
 
 public:

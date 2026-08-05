@@ -30,14 +30,15 @@
 // }
 
 /* functions for SolTrace context management */
-STCORE_V2_API st_context_v2_t st_create_context()
+STCORE_V2_API st_context_v2_t st_create_context(p_callback cb)
 {
 	st_context* cxt = new st_context();
-    cxt->p_data = &SimulationData();
+    cxt->p_data = new SimulationData();
+    cxt->p_cb = cb;
     return reinterpret_cast<st_context_v2_t>(cxt);
 }
 
-STCORE_V2_API int st_free_context(st_context_v2_t pcxt)
+STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt)
 {
 	CONTEXT(pcxt);
     // i think member class destructers will be called when cxt is deleted.
@@ -49,23 +50,28 @@ STCORE_V2_API int st_free_context(st_context_v2_t pcxt)
     // delete runner;
     // delete result;
     delete cxt;
-	return 1;
+	return 0;
 }
 
 /* functions for SolTrace data management */
-STCORE_V2_API int st_read_input_json(st_context_v2_t pcxt, const char *json)
+STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
 {
 	CONTEXT(pcxt);
     DATA(cxt);
-    if (!data || data == nullptr) return 0;
+    if (!data || data == nullptr) return 1;
 
     char * hard_code = "{\"schema_version\": \"2025.11.12\"}";
 
     // std::cout << json << std::endl;
     // std::cout << hard_code << std::endl;
-
-    data->import_json_string(hard_code);
-    return (int)json;
+    try {
+        data->import_json_string(json);
+    }
+    catch (const std::runtime_error& e) {
+        if (cxt->p_cb) cxt->p_cb("st_read_input_json", e.what());
+        return 1;
+    }
+    return 0;
 }
 
 /* functions for SolTrace data information */

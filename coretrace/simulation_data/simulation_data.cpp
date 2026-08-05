@@ -350,7 +350,7 @@ void SimulationData::import_json_string(const std::string json_str, std::string*
 
 void SimulationData::import_json_string(const char* json_str, std::string* upgrade_log)
 {
-    std::cout << json_str << std::endl;
+    //std::cout << json_str << std::endl;
     
     load_json_cstr(*this, json_str, upgrade_log);
 }

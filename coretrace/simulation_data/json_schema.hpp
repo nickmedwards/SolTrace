@@ -31,7 +31,7 @@ void load_json_file(SimulationData& sd, std::string filename, std::string* upgra
 ///        with a human-readable description of any schema upgrades applied
 ///        during load. Left untouched if no upgrade was needed. Pass
 ///        nullptr (default) if this information is not needed.
-void load_json_cstr(SimulationData& sd, const char* json_str, std::string* upgrade_log);
+void load_json_cstr(SimulationData& sd, const char* json_str, std::string* upgrade_log = nullptr);
 }
 
 #endif
