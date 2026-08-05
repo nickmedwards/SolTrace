@@ -60,17 +60,15 @@ STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *j
     DATA(cxt);
     if (!data || data == nullptr) return 1;
 
-    char * hard_code = "{\"schema_version\": \"2025.11.12\"}";
-
     // std::cout << json << std::endl;
-    // std::cout << hard_code << std::endl;
-    try {
-        data->import_json_string(json);
-    }
-    catch (const std::runtime_error& e) {
-        if (cxt->p_cb) cxt->p_cb("st_read_input_json", e.what());
-        return 1;
-    }
+    // try {
+    //     data->import_json_string(json);
+    // }
+    // catch (const std::runtime_error& e) {
+    //     if (cxt->p_cb) cxt->p_cb("st_read_input_json", e.what());
+    //     return 1;
+    // }
+    WRAP_CB(data->import_json_string(json), cxt->p_cb);
     return 0;
 }
 

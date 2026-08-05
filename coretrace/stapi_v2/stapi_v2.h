@@ -37,6 +37,16 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 extern "C" {
 #endif
 
+#define WRAP_CB(call, cb) 					  \
+	if (!cb) (call); 						  \
+	else { 									  \
+		try { (call); } 					  \
+		catch (const std::runtime_error& e) { \
+			cb(#call, e.what()); 			  \
+			return 1; 						  \
+		} 									  \
+	}
+
 /* changing return code convention from v1
    to be in line with industry convention.
    i.e. 0 for success, non-zero for failure. */
