@@ -39,7 +39,7 @@ if(SOLTRACE_BUILD_EMBREE_SUPPORT)
     target_include_directories(stapi_v2 PRIVATE
         ../simulation_runner/embree_runner
     )
-    target_compile_definitions(stapi_v2 PRIVATE SOLTRACE_EMBREE_SUPPORT)
+    target_compile_definitions(stapi_v2 PRIVATE STAPI_V2_EMBREE_SUPPORT)
     target_link_libraries(stapi_v2 PRIVATE embree_runner)
     message(STATUS "[stapi_v2] - Linked Embree")
 endif()
@@ -48,7 +48,7 @@ if(SOLTRACE_BUILD_OPTIX_SUPPORT)
     target_include_directories(stapi_v2 PRIVATE
         ../simulation_runner/optix_runner
     )
-    target_compile_definitions(stapi_v2 PRIVATE SOLTRACE_OPTIX_SUPPORT)
+    target_compile_definitions(stapi_v2 PRIVATE STAPI_V2_OPTIX_SUPPORT)
     target_link_libraries(stapi_v2 PRIVATE optix_runner)
     message(STATUS "[stapi_v2] - Linked Optix")
 endif()
@@ -70,7 +70,7 @@ if (NOT APPLE AND ENABLE_COVERAGE)
 endif()
 
 if(MSVC)
-    target_compile_definitions(stapi_v2 PRIVATE STCORE_V2_API_EXPORTS _STCORE_V2DLL_)
+    target_compile_definitions(stapi_v2 PRIVATE STAPI_V2_EXPORTS _STAPI_V2_DLL_)
 endif()
 
 # Link Libraries and Options

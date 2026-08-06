@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "stapi_v2.h"
+#include "../../../../coretrace/stapi_v2/stapi_v2.h"
 #include "across_builds.hpp"
 
 TEST(embree_json_io, read_input_json)
@@ -10,9 +10,9 @@ TEST(embree_json_io, read_input_json)
     EXPECT_EQ(code, st_return_code::SUCCESS);
     EXPECT_NE(pcxt, nullptr);
 
-    int result = call_stapi_v2_read_input_json(pcxt);
-    EXPECT_EQ(result, 0);
+    code = call_stapi_v2_read_input_json(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
 
-    result = st_free_context(pcxt);
-    EXPECT_EQ(result, 0);
+    code = st_free_context(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
 }

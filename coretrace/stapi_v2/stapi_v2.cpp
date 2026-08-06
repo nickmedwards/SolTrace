@@ -4,11 +4,11 @@
 #include "simulation_data_export.hpp"
 #include "simulation_result_export.hpp"
 
-#ifdef SOLTRACE_EMBREE_SUPPORT
+#ifdef STAPI_V2_EMBREE_SUPPORT
 #include "embree_runner.hpp"
 #endif
 
-#ifdef SOLTRACE_OPTIX_SUPPORT
+#ifdef STAPI_V2_OPTIX_SUPPORT
 #include "optix_runner.hpp"
 #endif
 
@@ -42,16 +42,12 @@
 //         NativeRunner *runner = reinterpret_cast<NativeRunner*>(cxt->runner); \
 // }
 
-/* functions for SolTrace context management */
-// STCORE_V2_API st_context_v2_t st_create_context(p_callback cb)
-// {
-// 	st_context* cxt = new st_context();
-//     cxt->p_data = new SimulationData();
-//     cxt->p_cb = cb;
-//     return reinterpret_cast<st_context_v2_t>(cxt);
-// }
+////////////////////////////////
+// SolTrace Context Functions //
+////////////////////////////////
 
-STCORE_V2_API st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb)
+/* functions for SolTrace context management */
+STAPI_V2 st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb)
 {
     st_context* cxt = new st_context();
     cxt->p_data = new SimulationData();
@@ -60,7 +56,7 @@ STCORE_V2_API st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb
     return st_return_code::SUCCESS;
 }
 
-STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt)
+STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 {
 	CONTEXT(pcxt);
     // i think member class destructers will be called when cxt is deleted.
@@ -75,8 +71,12 @@ STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt)
 	return st_return_code::SUCCESS;
 }
 
+////////////////////////////////
+// Simlulation Data Functions //
+////////////////////////////////
+
 /* functions for SolTrace data management */
-STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
+STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
 {
 	CONTEXT(pcxt);
     DATA(cxt);
@@ -86,11 +86,66 @@ STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *j
 }
 
 /* functions for SolTrace data information */
-STCORE_V2_API st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
+STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
 {
     CONTEXT(pcxt);
     DATA(cxt);
 
     *num_elements = data->get_number_of_elements();
     return st_return_code::SUCCESS;
+}
+
+//////////////////////////////////
+// Simlulation Runner Functions //
+//////////////////////////////////
+
+/* functions for SolTrace runner management */
+STAPI_V2 st_return_t st_sim_setup(st_context_v2_t pcxt, st_runner_type_t runner_type)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    if (cxt->p_runner) delete cxt->p_runner;
+
+    bool use_embree = runner_type == st_runner_type_t::EMBREE;
+    bool use_optix = runner_type == st_runner_type_t::OPTIX;
+
+    RunnerStatus sts;
+    st_return_t rt = st_return_code::SUCCESS;
+    SimulationRunner *runner;
+
+ #ifdef STAPI_V2_EMBREE_SUPPORT
+    if (use_embree)
+    {
+        runner = new SolTrace::EmbreeRunner::EmbreeRunner();
+    }
+    else
+ #endif
+ #ifdef STAPI_V2_OPTIX_SUPPORT
+        if (use_optix)
+    {
+        runner = new OptixRunner();
+    }
+    else
+ #endif
+    {
+#ifndef STAPI_V2_EMBREE_SUPPORT
+        if (use_embree) rt = st_return_code::WARNING_FELLBACK_FROM_EMBREE;
+#endif
+#ifndef STAPI_V2_OPTIX_SUPPORT
+        if (use_optix) rt = st_return_code::WARNING_FELLBACK_FROM_OPTIX;
+#endif
+        runner = new NativeRunner();
+    }
+    sts = (*runner).initialize();
+    if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_INILIALIZE_FAILURE;
+
+    // auto t_setup_start = std::chrono::steady_clock::now();
+    sts = (*runner).setup_simulation(data);
+    // auto t_setup_end = std::chrono::steady_clock::now();
+    if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_SETUP_FAILURE;
+
+    cxt->p_runner = runner;
+
+    return rt;
 }
