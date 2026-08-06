@@ -1,11 +1,6 @@
 # mirroring corestrace/stapi_v2/CMakeLists.txt but forcing all runners to be built and linked in for testing purposes
 project(stapi_v2_all_runners)
 
-# cmake_minimum_required(VERSION 3.19)
-
-# set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 include_directories(
     .
     ../across_builds
@@ -22,21 +17,7 @@ set(STAPI_V2_ALL_RUNNERS_SRC
 	json_io.cpp
 )
 
-# # Add header files for IDE visibility
-# set(STAPI_HEADERS
-#     ../../../../coretrace/stapi_v2/stapi_v2.h
-#     ../../../../coretrace/simulation_runner/simulation_runner.hpp
-# )
-
-# # Group header files for IDEs
-# source_group("Header Files" FILES ${STAPI_HEADERS})
-
 add_executable(stapi_v2_all_runners ${STAPI_V2_ALL_RUNNERS_SRC})
-# set_target_properties(stapi_v2_all_runners
-# 		PROPERTIES
-# 		DEBUG_POSTFIX "d"
-# 		PREFIX ""
-# 		)
 
 # build options for optional runners
 target_include_directories(stapi_v2_all_runners PRIVATE
@@ -44,7 +25,6 @@ target_include_directories(stapi_v2_all_runners PRIVATE
 )
 target_compile_definitions(stapi_v2_all_runners PRIVATE SOLTRACE_EMBREE_SUPPORT)
 target_link_libraries(stapi_v2_all_runners PRIVATE embree_runner)
-
 
 target_include_directories(stapi_v2_all_runners PRIVATE
     ../../../../coretrace/simulation_runner/optix_runner
