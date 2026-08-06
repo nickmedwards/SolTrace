@@ -14,10 +14,23 @@
 
 #include "stapi_v2.h"
 
-#define CONTEXT(p)  st_context* cxt = reinterpret_cast<st_context*>(p);
-#define DATA(cxt)   SimulationData *data = reinterpret_cast<SimulationData*>(cxt->p_data);
-#define RUNNER(cxt) SimulationRunner *runner = reinterpret_cast<SimulationRunner*>(cxt->p_runner);
-#define RESULT(cxt) SimulationResult *result = reinterpret_cast<SimulationResult*>(cxt->p_results);
+/* macros for fetching and casting pointers as SolTrace objects */
+#define CONTEXT(p)                                                       \
+    st_context *cxt = reinterpret_cast<st_context*>(p);                  \
+    if (!cxt || cxt ==nullptr) return st_return_code::CONTEXT_NOT_FOUND;
+
+#define DATA(cxt)                                                          \
+    SimulationData *data = reinterpret_cast<SimulationData*>(cxt->p_data); \
+    if (!data || data ==nullptr) return st_return_code::DATA_NOT_FOUND;
+
+#define RUNNER(cxt)                                                                \
+    SimulationRunner *runner = reinterpret_cast<SimulationRunner*>(cxt->p_runner); \
+    if (!runner || runner ==nullptr) return st_return_code::RUNNER_NOT_FOUND;
+
+#define RESULT(cxt)                                                                 \
+    SimulationResult *result = reinterpret_cast<SimulationResult*>(cxt->p_results); \
+    if (!result || result ==nullptr) return st_return_code::RESULT_NOT_FOUND;
+
 
 // #define RUNNER(p, type) {\
 //     CONTEXT(p); \
@@ -30,12 +43,21 @@
 // }
 
 /* functions for SolTrace context management */
-STCORE_V2_API st_context_v2_t st_create_context(p_callback cb)
+// STCORE_V2_API st_context_v2_t st_create_context(p_callback cb)
+// {
+// 	st_context* cxt = new st_context();
+//     cxt->p_data = new SimulationData();
+//     cxt->p_cb = cb;
+//     return reinterpret_cast<st_context_v2_t>(cxt);
+// }
+
+STCORE_V2_API st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb)
 {
-	st_context* cxt = new st_context();
+    st_context* cxt = new st_context();
     cxt->p_data = new SimulationData();
     cxt->p_cb = cb;
-    return reinterpret_cast<st_context_v2_t>(cxt);
+    *pcxt = reinterpret_cast<st_context_v2_t>(cxt);
+    return st_return_code::SUCCESS;
 }
 
 STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt)
@@ -50,7 +72,7 @@ STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt)
     // delete runner;
     // delete result;
     delete cxt;
-	return 0;
+	return st_return_code::SUCCESS;
 }
 
 /* functions for SolTrace data management */
@@ -58,24 +80,17 @@ STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *j
 {
 	CONTEXT(pcxt);
     DATA(cxt);
-    if (!data || data == nullptr) return 1;
-
-    // std::cout << json << std::endl;
-    // try {
-    //     data->import_json_string(json);
-    // }
-    // catch (const std::runtime_error& e) {
-    //     if (cxt->p_cb) cxt->p_cb("st_read_input_json", e.what());
-    //     return 1;
-    // }
-    WRAP_CB(data->import_json_string(json), cxt->p_cb);
-    return 0;
+    
+    ST_WRAP_CB_TRY_CATCH(data->import_json_string(json), cxt->p_cb);
+    return st_return_code::SUCCESS;
 }
 
 /* functions for SolTrace data information */
-STCORE_V2_API int st_num_elements(st_context_v2_t pcxt)
+STCORE_V2_API st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
 {
     CONTEXT(pcxt);
     DATA(cxt);
-    return data->get_number_of_elements();
+
+    *num_elements = data->get_number_of_elements();
+    return st_return_code::SUCCESS;
 }

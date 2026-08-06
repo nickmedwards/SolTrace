@@ -37,14 +37,14 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 extern "C" {
 #endif
 
-#define WRAP_CB(call, cb) 					  \
-	if (!cb) (call); 						  \
-	else { 									  \
-		try { (call); } 					  \
-		catch (const std::runtime_error& e) { \
-			cb(#call, e.what()); 			  \
-			return 1; 						  \
-		} 									  \
+#define ST_WRAP_CB_TRY_CATCH(call, cb) 		      \
+	if (!cb) (call); 						      \
+	else { 									      \
+		try { (call); } 					      \
+		catch (const std::runtime_error& e) {     \
+			cb(#call, e.what()); 			      \
+			return st_return_code::RUNTIME_ERROR; \
+		} 									      \
 	}
 
 /* changing return code convention from v1
@@ -52,13 +52,25 @@ extern "C" {
    i.e. 0 for success, non-zero for failure. */
 typedef unsigned int st_return_t;
 
+enum st_return_code : st_return_t {
+	SUCCESS = 0,
+	FAILURE,
+	CONTEXT_NOT_FOUND,
+	DATA_NOT_FOUND,
+	RUNNER_NOT_FOUND,
+	RESULT_NOT_FOUND,
+	RUNTIME_ERROR,
+
+	RETURN_COUNT /* sentinel (not a valid return type) */
+};
+
 using SolTrace::Runner::SimulationRunner;
 
 typedef enum st_runner_type_t {
-	ST_RUNNER_NATIVE = 0,       /* 0 */
-	ST_RUNNER_OPTIX,            /* 1 */
-	ST_RUNNER_EMBREE,			/* 2 */
-	ST_RUNNER_COUNT             /* sentinel (not a valid runner) */
+	NATIVE = 0,   /* 0 */
+	OPTIX,        /* 1 */
+	EMBREE,		  /* 2 */
+	RUNNER_COUNT         /* sentinel (not a valid runner) */
 } st_runner_type_t;
 
 typedef int (*p_callback)(char* loc, const char* msg);
@@ -73,14 +85,15 @@ typedef struct st_context {
 typedef void* st_context_v2_t;
 
 /* functions for SolTrace context management */
-STCORE_V2_API st_context_v2_t st_create_context(p_callback cb = nullptr);
+// STCORE_V2_API st_context_v2_t st_create_context(p_callback cb = nullptr);
+STCORE_V2_API st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb = nullptr);
 STCORE_V2_API st_return_t st_free_context(st_context_v2_t pcxt);
 
 /* functions for SolTrace data management */
 STCORE_V2_API st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
 
 /* functions for SolTrace data information */
-STCORE_V2_API int st_num_elements(st_context_v2_t pcxt);
+STCORE_V2_API st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
 
 
 /*
