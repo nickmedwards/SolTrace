@@ -62,8 +62,9 @@ namespace SolTrace::NativeRunner
 
         if (sts == RunnerStatus::SUCCESS)
             sts = this->setup_elements(data);
-
-        this->ready = true;
+        
+        if (sts == RunnerStatus::SUCCESS)
+            this->ready_to_run = true;
 
         return sts;
     }
@@ -320,6 +321,9 @@ namespace SolTrace::NativeRunner
             this->tsys.sim_errors_sunshape,
             this->tsys.sim_errors_optical,
             this->as_power_tower);
+        
+        if (sts == RunnerStatus::SUCCESS)
+            this->ready_to_report = true;
 
         return sts;
     }

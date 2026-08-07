@@ -33,17 +33,6 @@
     SimulationResult *result = cxt->p_results;                               \
     if (!result || result ==nullptr) return st_return_code::RESULT_NOT_FOUND;
 
-
-// #define RUNNER(p, type) {\
-//     CONTEXT(p); \
-//     if (type == st_runner_type_t::ST_RUNNER_OPTIX) \
-//         OptixRunner *runner = reinterpret_cast<OptixRunner*>(cxt->runner); \
-//     else if (type == st_runner_type_t::ST_RUNNER_EMBREE) \
-//         EmbreeRunner *runner = reinterpret_cast<EmbreeRunner*>(cxt->runner); \
-//     else \
-//         NativeRunner *runner = reinterpret_cast<NativeRunner*>(cxt->runner); \
-// }
-
 ////////////////////////////////
 // SolTrace Context Functions //
 ////////////////////////////////
@@ -157,8 +146,8 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_INILIALIZE_FAILURE;
 
     /* optix doesn't use threads the way native/embree does, 
-    and check if user requested optix but didn't build it,
-    in either case, set the number of threads for the runner */
+       and check if user requested optix but didn't build it,
+       in either case, set the number of threads for the runner */
     if (!use_optix || rt == st_return_code::WARNING_FELLBACK_FROM_OPTIX)
     {
         NativeRunner *temp_native = reinterpret_cast<NativeRunner*>(runner);
@@ -195,11 +184,25 @@ STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt)
     CONTEXT(pcxt);
     RUNNER(cxt);
 
-    if (!runner->is_ready()) return st_return_code::RUNNER_NOT_READY;
+    if (!runner->is_ready_to_run()) return st_return_code::RUNNER_NOT_READY;
 
     RunnerStatus sts = runner->run_simulation();
 
     if (sts == RunnerStatus::CANCEL) return st_return_code::CANCEL;
     else if (sts != RunnerStatus::SUCCESS) return st_return_code::FAILURE;
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level)
+{
+    CONTEXT(pcxt);
+    RUNNER(cxt);
+
+    if (!runner->is_ready_to_report()) return st_return_code::RUNNER_NOT_READY;
+
+    cxt->p_results = new SimulationResult();
+    RunnerStatus sts = runner->report_simulation(cxt->p_results, level);
+
+    if (sts != RunnerStatus::SUCCESS) return st_return_code::FAILURE;
     return st_return_code::SUCCESS;
 }

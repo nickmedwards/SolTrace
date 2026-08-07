@@ -40,10 +40,8 @@ public:
     inline uint_fast64_t get_number_rays_launched() const override {return get_N_sun_rays(); }
     inline uint_fast64_t get_number_rays_traced() const override {return m_sys.get_N_hit_rays(); }
 
-    virtual bool is_ready() const override
-    {
-        return this->ready;
-    }
+    virtual bool is_ready_to_run() const override { return this->ready_to_run; }
+    virtual bool is_ready_to_report() const override { return this->ready_to_report; }
 
     uint64_t get_N_run_iterations() const;
 
@@ -125,7 +123,8 @@ private:
     OptixCSP::Timer m_timer_get_output;
     OptixCSP::Timer m_timer_report_loop;
 
-    bool ready;
+    bool ready_to_run;
+    bool ready_to_report;
 };
 
 #endif

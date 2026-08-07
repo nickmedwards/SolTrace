@@ -131,6 +131,8 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
 
 STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt);
 
+STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level);
+
 /*
 create simualtion information -> st_context_v2_t st_create_context_v2();
 free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
