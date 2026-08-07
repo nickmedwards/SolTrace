@@ -14,3 +14,39 @@ TEST(embree_runner_tests, runner_setup)
 
     CXT_CLEANUP_TEST();
 }
+
+TEST(embree_runner_tests, runner_run_native)
+{
+    CXT_SETUP_TEST();
+
+    LOAD_JSON_TEST();
+
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    code = st_sim_setup(pcxt, st_runner_type_t::NATIVE);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    code = st_sim_run_v2(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CXT_CLEANUP_TEST();
+}
+
+TEST(embree_runner_tests, runner_run_embree)
+{
+    CXT_SETUP_TEST();
+
+    LOAD_JSON_TEST();
+
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    code = st_sim_setup(pcxt, st_runner_type_t::EMBREE);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    code = st_sim_run_v2(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CXT_CLEANUP_TEST();
+}

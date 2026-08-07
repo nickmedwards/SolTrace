@@ -19,6 +19,11 @@ using json = nlohmann::ordered_json;
     code = st_free_context(pcxt);            \
     EXPECT_EQ(code, st_return_code::SUCCESS);
 
+#define LOAD_JSON_TEST()                                  \
+    json root = load_json();                              \
+    code = st_read_input_json(pcxt, root.dump().c_str()); \
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
 json load_json();
 
 st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
