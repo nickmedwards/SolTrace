@@ -26,3 +26,29 @@ TEST(native_runner_tests, runner_run_native)
 
     CLEANUP_TEST_CXT();
 }
+
+TEST(native_runner_tests, runner_not_found)
+{
+    SETUP_TEST_CXT();
+
+    code = st_sim_run_v2(pcxt);
+    EXPECT_EQ(code, st_return_code::RUNNER_NOT_FOUND);
+
+    CLEANUP_TEST_CXT();
+}
+
+
+TEST(native_runner_tests, runner_report_native)
+{
+    SETUP_TEST_CXT();
+
+    LOAD_TEST_JSON();
+
+    code = call_stapi_v2_sim_run_v2(pcxt, st_runner_type_t::NATIVE);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+    
+    code = st_sim_report(pcxt, 0);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}

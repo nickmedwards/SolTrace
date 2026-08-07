@@ -114,8 +114,7 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 
     m_sys.initialize();
 
-    if (sts == RunnerStatus::SUCCESS)
-        this->ready_to_run = true;
+    if (sts == RunnerStatus::SUCCESS) this->set_ready_to_run(true);
 
     return sts;
 }
@@ -479,7 +478,7 @@ RunnerStatus OptixRunner::run_simulation_core()
 {
 
     m_sys.run();
-    this->ready_to_report = true;
+    this->set_ready_to_report(true);
 
     return RunnerStatus::SUCCESS;
 }

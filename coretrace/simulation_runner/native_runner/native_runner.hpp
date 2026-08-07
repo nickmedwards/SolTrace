@@ -55,7 +55,9 @@ namespace SolTrace::NativeRunner
         }
 
         virtual bool is_ready_to_run() const override { return this->ready_to_run; }
+        virtual void set_ready_to_run(bool ready) override { this->ready_to_run = ready; }
         virtual bool is_ready_to_report() const override { return this->ready_to_report; }
+        virtual void set_ready_to_report(bool ready) override { this->ready_to_report = ready; }
 
         // Runner options
         void disable_power_tower() { this->as_power_tower = false; }
