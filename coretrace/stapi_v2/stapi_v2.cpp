@@ -121,14 +121,14 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     rt = st_return_code::SUCCESS;
     SimulationRunner *runner;
 
- #ifdef STAPI_V2_EMBREE_SUPPORT
+#ifdef STAPI_V2_EMBREE_SUPPORT
     if (use_embree)
     {
         runner = new SolTrace::EmbreeRunner::EmbreeRunner();
     }
     else
- #endif
- #ifdef STAPI_V2_OPTIX_SUPPORT
+#endif
+#ifdef STAPI_V2_OPTIX_SUPPORT
         if (use_optix)
     {
         runner = new OptixRunner();
@@ -194,6 +194,8 @@ STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt)
 {
     CONTEXT(pcxt);
     RUNNER(cxt);
+
+    if (!runner->is_ready()) return st_return_code::RUNNER_NOT_READY;
 
     RunnerStatus sts = runner->run_simulation();
 

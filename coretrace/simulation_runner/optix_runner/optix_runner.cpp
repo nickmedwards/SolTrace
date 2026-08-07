@@ -114,8 +114,7 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 
     m_sys.initialize();
 
-    // std::cout << "Number of stages: " << this->tsys.StageList.size()
-    //           << std::endl;
+    this->ready = true;
 
     return sts;
 }

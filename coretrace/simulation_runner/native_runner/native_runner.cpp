@@ -63,6 +63,8 @@ namespace SolTrace::NativeRunner
         if (sts == RunnerStatus::SUCCESS)
             sts = this->setup_elements(data);
 
+        this->ready = true;
+
         return sts;
     }
 

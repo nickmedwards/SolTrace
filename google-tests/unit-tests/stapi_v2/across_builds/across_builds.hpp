@@ -30,6 +30,8 @@ st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
 
 st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt);
 
+st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runner_type);
+
 // #ifdef __cplusplus
 // } /* extern "C" */
 // #endif

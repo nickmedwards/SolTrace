@@ -77,7 +77,10 @@ namespace SolTrace::Runner
         virtual uint_fast64_t get_number_rays_launched() const = 0;
         virtual uint_fast64_t get_number_rays_traced() const = 0;
 
+        virtual bool is_ready() const = 0;
+
     private:
+        bool ready = false;
     };
 
 } // namespace SolTrace::Runner

@@ -48,3 +48,14 @@ st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt)
 
     return rt;
 }
+
+st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runner_type)
+{
+    if (runner_type != st_runner_type_t::OPTIX)
+    {
+        st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+        cxt->p_data->set_number_of_rays(1000);
+    }
+
+    return st_sim_setup(pcxt, runner_type) + st_sim_run_v2(pcxt);
+}
