@@ -14,24 +14,22 @@
 
 #include "stapi_v2.h"
 
-// DEFAULT_NUM_THREADS = 8;
-
 /* macros for fetching pointers */
 #define CONTEXT(p)                                                       \
     st_context *cxt = reinterpret_cast<st_context*>(p);                  \
-    if (!cxt || cxt ==nullptr) return st_return_code::CONTEXT_NOT_FOUND;
+    if (!cxt || cxt == nullptr) return st_return_code::CONTEXT_NOT_FOUND;
 
-#define DATA(cxt)                                                      \
-    SimulationData *data = cxt->p_data;                                \
-    if (!data || data ==nullptr) return st_return_code::DATA_NOT_FOUND;
+#define DATA(cxt)                                                       \
+    SimulationData *data = cxt->p_data;                                 \
+    if (!data || data == nullptr) return st_return_code::DATA_NOT_FOUND;
 
-#define RUNNER(cxt)                                                          \
-    SimulationRunner *runner = cxt->p_runner;                                \
-    if (!runner || runner ==nullptr) return st_return_code::RUNNER_NOT_FOUND;
+#define RUNNER(cxt)                                                           \
+    SimulationRunner *runner = cxt->p_runner;                                 \
+    if (!runner || runner == nullptr) return st_return_code::RUNNER_NOT_FOUND;
 
-#define RESULT(cxt)                                                          \
-    SimulationResult *result = cxt->p_results;                               \
-    if (!result || result ==nullptr) return st_return_code::RESULT_NOT_FOUND;
+#define RESULT(cxt)                                                           \
+    SimulationResult *result = cxt->p_results;                                \
+    if (!result || result == nullptr) return st_return_code::RESULT_NOT_FOUND;
 
 ////////////////////////////////
 // SolTrace Context Functions //
@@ -142,7 +140,7 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
         runner = new NativeRunner();
     }
 
-    sts = (*runner).initialize();
+    sts = runner->initialize();
     if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_INILIALIZE_FAILURE;
 
     /* optix doesn't use threads the way native/embree does, 
@@ -157,19 +155,20 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
             if (num_threads != num_seeds) return st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE;
 
             const std::vector<unsigned int> temp_seeds(seeds, seeds + num_seeds);
-            (*temp_native).set_number_of_threads(num_threads, temp_seeds);
-            
+            temp_native->set_number_of_threads(num_threads, temp_seeds);
         }
         else
         {
-            (*temp_native).set_number_of_threads(num_threads);
+            temp_native->set_number_of_threads(num_threads);
         }
+        // by default disable stages
+        temp_native->disable_stages();
     }
     // if using optix runner and requested threads, emit warning that it was ignored 
     else if (num_threads != DEFAULT_NUM_THREADS) rt = st_return_code::WARNING_ARGUMENT_IGNORED_BY_RUNNER;
 
     // auto t_setup_start = std::chrono::steady_clock::now();
-    sts = (*runner).setup_simulation(data);
+    sts = runner->setup_simulation(data);
     // auto t_setup_end = std::chrono::steady_clock::now();
     if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_SETUP_FAILURE;
     
@@ -204,5 +203,20 @@ STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level)
     RunnerStatus sts = runner->report_simulation(cxt->p_results, level);
 
     if (sts != RunnerStatus::SUCCESS) return st_return_code::FAILURE;
+    return st_return_code::SUCCESS;
+}
+
+///////////////////////////////////
+// Simlulation Results Functions //
+///////////////////////////////////
+
+STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt, 
+										  const char 	  *filename, 
+										  int 			  precision)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    ST_WRAP_CB_TRY_CATCH(result->write_csv_file(filename, precision), cxt->p_cb);
     return st_return_code::SUCCESS;
 }

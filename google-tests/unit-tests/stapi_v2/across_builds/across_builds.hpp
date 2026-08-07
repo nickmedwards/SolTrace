@@ -5,10 +5,6 @@
 
 using json = nlohmann::ordered_json;
 
-// #ifdef __cplusplus
-// extern "C" {
-// #endif
-
 #define SETUP_TEST_CXT()                         \
     st_context_v2_t pcxt;                        \
     st_return_t code = st_create_context(&pcxt); \
@@ -32,8 +28,9 @@ st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt);
 
 st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runner_type);
 
-// #ifdef __cplusplus
-// } /* extern "C" */
-// #endif
+// TODO: add test for st_write_results_json
+st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt, 
+                                            st_runner_type_t runner_type, 
+                                            const char       *filename);
 
 #endif

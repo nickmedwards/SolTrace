@@ -59,3 +59,25 @@ st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runn
 
     return st_sim_setup(pcxt, runner_type) + st_sim_run_v2(pcxt);
 }
+
+st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt, 
+                                            st_runner_type_t runner_type, 
+                                            const char       *filename)
+{
+    if (runner_type != st_runner_type_t::OPTIX)
+    {
+        st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+        cxt->p_data->set_number_of_rays(1000);
+    }
+
+    st_return_t rt = st_sim_setup(pcxt, runner_type); 
+    rt += st_sim_run_v2(pcxt);
+    rt += st_sim_report(pcxt, 0);
+    rt += st_write_results_csv(pcxt, filename);
+
+
+
+    std::filesystem::remove(filename);
+
+    return rt;
+}

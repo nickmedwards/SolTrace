@@ -16,6 +16,7 @@ set(STAPI_V2_NATIVE_SRC
     ../across_builds/across_builds.cpp
 	json_io.cpp
     runner_tests.cpp
+	results_tests.cpp
 )
 
 add_executable(stapi_v2_native ${STAPI_V2_NATIVE_SRC})
