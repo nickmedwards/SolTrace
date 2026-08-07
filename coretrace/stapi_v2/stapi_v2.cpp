@@ -16,7 +16,7 @@
 
 // DEFAULT_NUM_THREADS = 8;
 
-/* macros for fetching and casting pointers as SolTrace objects */
+/* macros for fetching pointers */
 #define CONTEXT(p)                                                       \
     st_context *cxt = reinterpret_cast<st_context*>(p);                  \
     if (!cxt || cxt ==nullptr) return st_return_code::CONTEXT_NOT_FOUND;
@@ -117,7 +117,8 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     bool use_optix = runner_type == st_runner_type_t::OPTIX;
 
     RunnerStatus sts;
-    st_return_t rt = st_return_code::SUCCESS;
+    st_return_t  rt;
+    rt = st_return_code::SUCCESS;
     SimulationRunner *runner;
 
  #ifdef STAPI_V2_EMBREE_SUPPORT
@@ -153,39 +154,58 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     }
 
     sts = (*runner).initialize();
-    if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_INILIALIZE_FAILURE;
-
-    /* optix doesn't use threads the way native/embree does, 
-       and check if user requested optix but didn't build it,
-       in either case, set the number of threads for the runner */
-    if (!use_optix || rt == st_return_code::WARNING_FELLBACK_FROM_OPTIX)
+    if (sts != RunnerStatus::SUCCESS) rt = st_return_code::RUNNER_INILIALIZE_FAILURE;
+    else
     {
-        NativeRunner *temp_native = reinterpret_cast<NativeRunner*>(runner);
-        if (seeds != nullptr)
+        /* optix doesn't use threads the way native/embree does, 
+        and check if user requested optix but didn't build it,
+        in either case, set the number of threads for the runner */
+        if (!use_optix || rt == st_return_code::WARNING_FELLBACK_FROM_OPTIX)
         {
-            // ensures runtime_error won't be raised
-            if (num_threads != num_seeds) return st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE;
-            const std::vector<unsigned int> temp_seeds(seeds, seeds + num_seeds);
-            (*temp_native).set_number_of_threads(num_threads, temp_seeds);
+            NativeRunner *temp_native = reinterpret_cast<NativeRunner*>(runner);
+            if (seeds != nullptr)
+            {
+                // ensures runtime_error won't be raised
+                if (num_threads != num_seeds) rt = st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE;
+                else 
+                {
+                    const std::vector<unsigned int> temp_seeds(seeds, seeds + num_seeds);
+                    (*temp_native).set_number_of_threads(num_threads, temp_seeds);
+                }
+            }
+            else
+            {
+                (*temp_native).set_number_of_threads(num_threads);
+            }
         }
-        else
+        // if using optix runner and requested threads, emit warning that it was ignored 
+        else if (num_threads != DEFAULT_NUM_THREADS) rt = st_return_code::WARNING_ARGUMENT_IGNORED_BY_RUNNER;
+        
+        if (rt != st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE)
         {
-            (*temp_native).set_number_of_threads(num_threads);
+            // auto t_setup_start = std::chrono::steady_clock::now();
+            sts = (*runner).setup_simulation(data);
+            // auto t_setup_end = std::chrono::steady_clock::now();
+            if (sts != RunnerStatus::SUCCESS) rt = st_return_code::RUNNER_SETUP_FAILURE;
+            else
+            {
+                cxt->runner_type = runner_type;
+                cxt->p_runner = runner;
+            }
         }
     }
-    // if using optix runner and requested threads, emit warning that it was ignored 
-    else if (num_threads != DEFAULT_NUM_THREADS)
-    {
-        rt = st_return_code::WARNING_ARGUMENT_IGNORED_BY_RUNNER;
-    }
-
-    // auto t_setup_start = std::chrono::steady_clock::now();
-    sts = (*runner).setup_simulation(data);
-    // auto t_setup_end = std::chrono::steady_clock::now();
-    if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_SETUP_FAILURE;
-
-    cxt->runner_type = runner_type;
-    cxt->p_runner = runner;
 
     return rt;
+}
+
+STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt)
+{
+    CONTEXT(pcxt);
+    RUNNER(cxt);
+
+    RunnerStatus sts = runner->run_simulation();
+
+    if (sts == RunnerStatus::CANCEL) return st_return_code::CANCEL;
+    else if (sts != RunnerStatus::SUCCESS) return st_return_code::FAILURE;
+    return st_return_code::SUCCESS;
 }

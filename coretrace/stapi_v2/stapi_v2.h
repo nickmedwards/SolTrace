@@ -59,6 +59,7 @@ typedef unsigned int st_return_t;
 enum st_return_code : st_return_t {
 	SUCCESS = 0,
 	FAILURE,
+	CANCEL,
 	CONTEXT_NOT_FOUND,
 	DATA_NOT_FOUND,
 	RUNNER_NOT_FOUND,
@@ -127,6 +128,7 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
 								  unsigned int 	   *seeds = nullptr,
 								  size_t		   num_seeds = 0);
 
+STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt);
 
 /*
 create simualtion information -> st_context_v2_t st_create_context_v2();

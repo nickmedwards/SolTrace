@@ -3,13 +3,27 @@
 
 #include "../../../../coretrace/stapi_v2/stapi_v2.h"
 
+using json = nlohmann::ordered_json;
+
 // #ifdef __cplusplus
 // extern "C" {
 // #endif
 
-int call_stapi_v2_read_input_json(st_context_v2_t pcxt);
+#define CXT_SETUP_TEST()                         \
+    st_context_v2_t pcxt;                        \
+    st_return_t code = st_create_context(&pcxt); \
+    EXPECT_EQ(code, st_return_code::SUCCESS);    \
+    EXPECT_NE(pcxt, nullptr);
 
-int call_stapi_v2_sim_setup(st_context_v2_t pcxt);
+#define CXT_CLEANUP_TEST()                   \
+    code = st_free_context(pcxt);            \
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+json load_json();
+
+st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
+
+st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt);
 
 // #ifdef __cplusplus
 // } /* extern "C" */
