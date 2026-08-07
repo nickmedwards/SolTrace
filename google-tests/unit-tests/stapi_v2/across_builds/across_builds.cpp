@@ -41,10 +41,10 @@ st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt)
     if (rt != st_return_code::SUCCESS) return rt;
 
     rt =  st_sim_setup(pcxt, st_runner_type_t::NATIVE);
-    rt += st_sim_setup(pcxt, st_runner_type_t::EMBREE);
-    rt += st_sim_setup(pcxt, st_runner_type_t::OPTIX);
     unsigned int *seeds_test = new unsigned int[2] { 608, 303, };
     rt += st_sim_setup(pcxt, st_runner_type_t::NATIVE, 1, seeds_test, 2);
+    rt += st_sim_setup(pcxt, st_runner_type_t::EMBREE);
+    rt += st_sim_setup(pcxt, st_runner_type_t::OPTIX);
 
     return rt;
 }
