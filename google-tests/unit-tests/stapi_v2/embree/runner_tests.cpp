@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "../../../../coretrace/stapi_v2/stapi_v2.h"
 #include "across_builds.hpp"
 
 TEST(all_runners_runner_tests, runner_setup)

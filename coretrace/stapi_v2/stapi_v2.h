@@ -50,9 +50,6 @@ extern "C" {
 using SolTrace::Runner::SimulationRunner;
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
-// using SolTrace::EmbreeRunner::EmbreeRunner;
-// using SolTrace::OptixRunner::OptixRunner;
-
 
 /* changing return code convention from v1
    to be in line with industry convention.
@@ -67,14 +64,20 @@ enum st_return_code : st_return_t {
 	RUNNER_NOT_FOUND,
 	RESULT_NOT_FOUND,
 	RUNNER_INILIALIZE_FAILURE,
+	RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE,
 	RUNNER_SETUP_FAILURE,
 	RUNTIME_ERROR,
 
 	WARNING_FELLBACK_FROM_EMBREE,
 	WARNING_FELLBACK_FROM_OPTIX,
+	WARNING_ARGUMENT_IGNORED_BY_RUNNER,
 
 	RETURN_COUNT /* sentinel (not a valid return type) */
 };
+
+#ifndef DEFAULT_NUM_THREADS
+#define DEFAULT_NUM_THREADS 8
+#endif
 
 typedef enum st_runner_type_t {
 	NATIVE = 0,   /* 0 */
@@ -87,6 +90,7 @@ typedef int (*p_callback)(char* loc, const char* msg);
 
 typedef struct st_context {
 	SimulationData*   p_data;
+	st_runner_type_t  runner_type;
 	SimulationRunner* p_runner;
 	SimulationResult* p_results;
 	p_callback		  p_cb;
@@ -117,7 +121,11 @@ STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
 //////////////////////////////////
 
 /* functions for SolTrace runner management */
-STAPI_V2 st_return_t st_sim_setup(st_context_v2_t pcxt, st_runner_type_t runner_type);
+STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
+								  st_runner_type_t runner_type, 
+								  uint_fast64_t    num_threads = DEFAULT_NUM_THREADS,
+								  unsigned int 	   *seeds = nullptr,
+								  size_t		   num_seeds = 0);
 
 
 /*

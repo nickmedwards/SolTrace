@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "../../../../coretrace/stapi_v2/stapi_v2.h"
 #include "across_builds.hpp"
 
 TEST(optix_json_io, read_input_json)
