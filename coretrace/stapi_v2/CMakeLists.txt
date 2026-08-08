@@ -1,10 +1,16 @@
-project(stapi_v2)
-
 cmake_minimum_required(VERSION 3.19)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# should only be true if compiled from pyproject.toml
+if(SOLTRACE_BUILD_WHEEL)
+    add_subdirectory(../simulation_data)
+    add_subdirectory(../simulation_results)
+    add_subdirectory(../simulation_runner)
+endif()
+
+project(stapi_v2)
 # find_package(pybind11 CONFIG REQUIRED)
 
 include_directories(
@@ -77,6 +83,13 @@ endif()
 if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 endif()
+
+add_custom_command(
+    TARGET stapi_v2
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND}
+    ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/PySolTrace
+    )
 
 install(TARGETS stapi_v2
     EXPORT SolTraceTargets

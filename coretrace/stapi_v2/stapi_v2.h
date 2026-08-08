@@ -20,17 +20,17 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 #define STAPI_V2
 #endif
 
-#include "simulation_runner.hpp"
-#include "native_runner.hpp"
-#include "simulation_data_export.hpp"
-#include "simulation_result_export.hpp"
+#include "../simulation_runner/simulation_runner.hpp"
+#include "../simulation_runner/native_runner/native_runner.hpp"
+#include "../simulation_data/simulation_data_export.hpp"
+#include "../simulation_results/simulation_result_export.hpp"
 
 #ifdef STAPI_V2_EMBREE_SUPPORT
-#include "embree_runner.hpp"
+#include "../simulation_runner/embree_runner/embree_runner.hpp"
 #endif
 
 #ifdef STAPI_V2_OPTIX_SUPPORT
-#include "optix_runner.hpp"
+#include "../simulation_runner/optix_runner/optix_runner.hpp"
 #endif
 
 #ifdef __cplusplus
