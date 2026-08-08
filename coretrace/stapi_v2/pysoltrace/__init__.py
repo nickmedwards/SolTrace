@@ -1,5 +1,7 @@
-from stapi_v2 import STAPIv2
+from .stapi_v2 import STAPIv2
+from .point import Point
 
 __all__ = [
-    "STAPIv2"
+    "STAPIv2",
+    "Point"
 ]
