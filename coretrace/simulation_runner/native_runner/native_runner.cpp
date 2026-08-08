@@ -28,7 +28,9 @@ namespace SolTrace::NativeRunner
 
     NativeRunner::NativeRunner() : SimulationRunner(),
                                    as_power_tower(false),
-                                   number_of_threads(1)
+                                   number_of_threads(1),
+                                   ready_to_run(false),
+                                   ready_to_report(false)
     {
         this->my_logger = make_trace_logger();
         this->my_manager = make_thread_manager(this->my_logger);

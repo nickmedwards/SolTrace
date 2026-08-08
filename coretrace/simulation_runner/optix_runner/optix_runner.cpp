@@ -20,6 +20,8 @@ using SolTrace::Data::optics_id;
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
                              m_sys(),
+                             ready_to_run(false),
+                             ready_to_report(false),
                              m_timer_report(),
                              m_timer_get_output(),
                              m_timer_report_loop() {}

@@ -81,7 +81,7 @@ add_custom_command(
     TARGET stapi_v2
     POST_BUILD
     COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/PySolTrace
+    ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/pysoltrace
     )
 
 install(TARGETS stapi_v2

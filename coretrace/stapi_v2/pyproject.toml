@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.11.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "PySolTrace"
+name = "pysoltrace"
 version = "0.1.0"
 description = "Python wrapper for stapi_v2 shared library"
 requires-python = ">=3.8"
@@ -23,13 +23,13 @@ cmake.build-type = "RelWithDebInfo"
 # Hardware flags for users who still need to build from source
 cmake.define = { SOLTRACE_BUILD_API = "ON", SOLTRACE_BUILD_GUI = "OFF", SOLTRACE_BUILD_TESTS = "OFF", SOLTRACE_BUILD_EMBREE_SUPPORT = "OFF", SOLTRACE_BUILD_OPTIX_SUPPORT = "ON" }
 
-wheel.packages = ["PySolTrace"]
+wheel.packages = ["pysoltrace"]
 
 sdist.include = [
     "../../CMakeLists.txt",
     "../CMakeLists.txt",
     "./**",
-    "PySolTrace/**/*.py",
+    "pysoltrace/**/*.py",
     "../simulation_data/**",
     "../simulation_results/**",
     "../simulation_runner/simulation_runner.hpp",

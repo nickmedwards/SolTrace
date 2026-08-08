@@ -1,3 +1,3 @@
-class PySolTrace:
+class pysoltrace:
     def __init__(self):
         pass

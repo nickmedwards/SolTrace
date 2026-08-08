@@ -1,5 +1,5 @@
 """
-goal is get to something like geometry.Plant.batch_run + capabilities of PySolTrace
+goal is get to something like geometry.Plant.batch_run + capabilities of pysoltrace
 
 something like geometry.Plant.batch_run
 ---------------------------------------
@@ -14,12 +14,13 @@ st.batch_run(
     timing
 )
 
-capabilities of PySolTrace
+capabilities of pysoltrace
 --------------------------
 see luke's code for example.
 """
 
 import atexit, os, pathlib, sys, warnings
+from typing import Literal
 import orjson # pyright: ignore[reportMissingImports]
 from ctypes import *
 c_number = c_double
@@ -69,13 +70,14 @@ class STAPIv2Exception(Exception):
 STAPI_V2_WARNING_PREFIX = '[stapi_v2] - Call returned with warning code'
 STAPIv2Warning = lambda code, name, msg: warnings.warn(
     f'{Fore.YELLOW}{STAPI_V2_WARNING_PREFIX} ({code}: {name}).{Style.RESET_ALL}\n  {msg}',
-    stacklevel=2
+    stacklevel=4
 )
 
 #############################################################################
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
 #############################################################################
 class STAPIv2:
+    ST_RETURN_T = c_uint
     # recognized return codes
     ST_RETURN_CODES = [
         SUCCESS,
@@ -162,29 +164,45 @@ class STAPIv2:
         #############################################
 
         self.__pdll.st_create_context.argtypes = [POINTER(c_void_p), CFUNCTYPE(c_int, c_char_p, c_char_p)]
-        self.__pdll.st_create_context.restype = c_int
+        self.__pdll.st_create_context.restype = STAPIv2.ST_RETURN_T
 
         self.__pdll.st_free_context.argtypes = [c_void_p]
-        self.__pdll.st_free_context.restype = c_int
+        self.__pdll.st_free_context.restype = STAPIv2.ST_RETURN_T
 
         ##########################################
         # functions for SolTrace data management #
         ##########################################
 
         self.__pdll.st_read_input_json.argtypes = [c_void_p, c_char_p]
-        self.__pdll.st_read_input_json.restype = c_int
+        self.__pdll.st_read_input_json.restype = STAPIv2.ST_RETURN_T
 
         ###########################################
         # functions for SolTrace data information #
         ###########################################
 
-        self.__pdll.st_num_elements.argtypes = [c_void_p]
-        self.__pdll.st_num_elements.restype = c_int
+        self.__pdll.st_num_elements.argtypes = [c_void_p, POINTER(c_int)]
+        self.__pdll.st_num_elements.restype = STAPIv2.ST_RETURN_T
 
-        #st_sim_report
-        #st_sim_run_v2
-        #st_sim_setup
-        #st_write_results_csv
+        ############################################
+        # functions for SolTrace runner management #
+        ############################################
+
+        self.__pdll.st_sim_setup.argtypes = [c_void_p, c_uint, c_uint64, POINTER(c_uint), c_size_t]
+        self.__pdll.st_sim_setup.restype = STAPIv2.ST_RETURN_T
+
+        self.__pdll.st_sim_run_v2.argtypes = [c_void_p]
+        self.__pdll.st_sim_run_v2.restype = STAPIv2.ST_RETURN_T
+
+        # TODO: include enum-ish of reporting levels
+        self.__pdll.st_sim_report.argtypes = [c_void_p, c_int]
+        self.__pdll.st_sim_report.restype = STAPIv2.ST_RETURN_T
+
+        #############################################
+        # functions for SolTrace resutls management #
+        #############################################
+
+        self.__pdll.st_write_results_csv.argtypes = [c_void_p, c_char_p, c_int]
+        self.__pdll.st_write_results_csv.restype = STAPIv2.ST_RETURN_T
 
     def __free(self):
         code = self.__pdll.st_free_context(self.__pcxt)
@@ -204,10 +222,14 @@ class STAPIv2:
     def __message_cb(loc, msg):
         sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
         return 0
+    
+    def sneak(self): return self.__pdll, self.__pcxt
 
-    ####################################
-    # Python handles for st_ functions #
-    ####################################
+    """Python handles for st_ functions"""
+
+    ##########################################
+    # functions for SolTrace data management #
+    ##########################################
 
     def read_input_json(self, input_json: str | dict) -> None:
         # TODO: togglable validity check?
@@ -219,13 +241,47 @@ class STAPIv2:
             code = self.__pdll.st_read_input_json(self.__pcxt, orjson.dumps(input_json))
         self.__check_return_code(code)
 
+    ###########################################
+    # functions for SolTrace data information #
+    ###########################################
+
     def num_elements(self) -> int:
         pcount = c_int()
         code = self.__pdll.st_num_elements(self.__pcxt, byref(pcount))
         self.__check_return_code(code)
         return pcount.value
 
-    def sneak(self): return self.__pdll, self.__pcxt
+    ############################################
+    # functions for SolTrace runner management #
+    ############################################
+
+    def sim_setup(self, 
+                  runner_type: Literal['NATIVE', 'OPTIX', 'EMBREE'], 
+                  num_threads: int = 8, 
+                  seeds: list = None) -> None:
+        num_seeds = 0
+        # redefine seeds from list to C array
+        if seeds:
+            num_seeds = len(seeds)
+            seeds = (c_uint * num_seeds)(*seeds)
+        code = self.__pdll.st_sim_setup(self.__pcxt, STAPIv2.ST_RUNNER_TYPE[runner_type], num_threads, seeds, num_seeds)
+        self.__check_return_code(code)
+
+    def sim_run_v2(self) -> None:
+        code = self.__pdll.st_sim_run_v2(self.__pcxt)
+        self.__check_return_code(code)
+
+    def sim_report(self, level: int = 0) -> None:
+        code = self.__pdll.st_sim_report(self.__pcxt, level)
+        self.__check_return_code(code)
+
+    #############################################
+    # functions for SolTrace resutls management #
+    #############################################
+
+    def write_results_csv(self, filename: str, precision: int = 12) -> None:
+        code = self.__pdll.st_write_results_csv(self.__pcxt, filename.encode('utf-8'), precision)
+        self.__check_return_code(code)
 
 if __name__ == "__main__":
     username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
@@ -233,3 +289,13 @@ if __name__ == "__main__":
     stapi.read_input_json('./sample.json')
     count = stapi.num_elements()
     print(count)
+    # stapi.sim_setup(NATIVE)
+    # stapi.sim_run_v2()
+    # stapi.sim_report()
+    # stapi.write_results_csv('./sample.csv')
+
+
+    # currently not building Embrre - emits warning
+    # stapi.sim_setup(EMBREE)
+    # raises STAPIv2Exception
+    # stapi.sim_setup(NATIVE, 8, [608, 303])
