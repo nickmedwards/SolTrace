@@ -23,6 +23,8 @@ import atexit, os, pathlib, sys, warnings
 import orjson # pyright: ignore[reportMissingImports]
 from ctypes import *
 c_number = c_double
+from colorama import just_fix_windows_console, Fore, Back, Style
+just_fix_windows_console()
 
 enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 """make a list of things an enum (ish)"""
@@ -51,31 +53,30 @@ RUNTIME_ERROR                                = 'RUNTIME_ERROR'
 WARNING_FELLBACK_FROM_EMBREE                 = 'WARNING_FELLBACK_FROM_EMBREE'
 WARNING_FELLBACK_FROM_OPTIX                  = 'WARNING_FELLBACK_FROM_OPTIX'
 WARNING_ARGUMENT_IGNORED_BY_RUNNER           = 'WARNING_ARGUMENT_IGNORED_BY_RUNNER'
-RETURN_COUNT                                 = 'RETURN_COUNT'
 
+#########################
+# st_runner_type set up #
+#########################
+NATIVE, OPTIX, EMBREE = 'NATIVE', 'OPTIX', 'EMBREE'
 
-
-# Callback to print command line progress messages
-# callback_t = CFUNCTYPE(c_int, c_char_p, c_char_p)
-
-@CFUNCTYPE(c_int, c_char_p, c_char_p)
-def api_callback(loc, msg):
-    print(loc.decode('utf-8') + ': ' + msg.decode('utf-8'))
-    return 1
-
-# c_api_callback = callback_t(api_callback)
-
+###################################
+# exception and warning reporting #
+###################################
 class STAPIv2Exception(Exception):
     def __init__(self, code, name, msg) -> None:
-        super().__init__(f'[stapi_v2] - Call returned with error code ({code}: {name}). {msg}')
+        super().__init__(f'{Fore.RED}[stapi_v2] - Call returned with error code ({code}: {name}).{Style.RESET_ALL}\n  {msg}')
 
 STAPI_V2_WARNING_PREFIX = '[stapi_v2] - Call returned with warning code'
 STAPIv2Warning = lambda code, name, msg: warnings.warn(
-    f'{STAPI_V2_WARNING_PREFIX} ({code}: {name}). {msg}',
+    f'{Fore.YELLOW}{STAPI_V2_WARNING_PREFIX} ({code}: {name}).{Style.RESET_ALL}\n  {msg}',
     stacklevel=2
 )
 
+#############################################################################
+# STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
+#############################################################################
 class STAPIv2:
+    # recognized return codes
     ST_RETURN_CODES = [
         SUCCESS,
         FAILURE,
@@ -91,10 +92,12 @@ class STAPIv2:
         RUNTIME_ERROR,
         WARNING_FELLBACK_FROM_EMBREE,
         WARNING_FELLBACK_FROM_OPTIX,
-        WARNING_ARGUMENT_IGNORED_BY_RUNNER,
-        RETURN_COUNT
+        WARNING_ARGUMENT_IGNORED_BY_RUNNER
     ]
+    # map from name of return code to position in list
     ST_RETURN_CODE = enumify(ST_RETURN_CODES)
+
+    # messages for return codes
     ST_RETURN_CODE_ERROR_MSGS = {
         ST_RETURN_CODE[FAILURE]:                                      '',
         ST_RETURN_CODE[CANCEL]:                                       'Simulation canceled.',
@@ -109,10 +112,13 @@ class STAPIv2:
         ST_RETURN_CODE[RUNTIME_ERROR]:                                'RuntimeError raised. Check validity of JSON against SolTrace schema version used.',
     }
     ST_RETURN_CODE_WARNING_MSGS = {
-        ST_RETURN_CODE[WARNING_FELLBACK_FROM_EMBREE]: 'Requested EmbreeRunner, but is not installed. Fellback to NativeRunner.',
-        ST_RETURN_CODE[WARNING_FELLBACK_FROM_OPTIX]: 'Requested OptixRunner, but is not installed. Fellback to NativeRunner.',
+        ST_RETURN_CODE[WARNING_FELLBACK_FROM_EMBREE]:       'Requested EmbreeRunner, but is not installed. Fellback to NativeRunner.',
+        ST_RETURN_CODE[WARNING_FELLBACK_FROM_OPTIX]:        'Requested OptixRunner, but is not installed. Fellback to NativeRunner.',
         ST_RETURN_CODE[WARNING_ARGUMENT_IGNORED_BY_RUNNER]: 'Requested a number of threads for OptixRunner. The arguement does not apply to this runner type and was ignored.',
     }
+
+    ST_RUNNER_TYPES = [NATIVE, OPTIX, EMBREE]
+    ST_RUNNER_TYPE = enumify(ST_RUNNER_TYPES)
 
     def __init__(self, stapi_v2_dll_path: str = ''):
         if len(stapi_v2_dll_path): self.__setup_dll(stapi_v2_dll_path)
@@ -136,11 +142,14 @@ class STAPIv2:
             print(f'{str(k):<{max_key_len}}: {v}')
 
         ppcxt = c_void_p()
-        code = self.__pdll.st_create_context(byref(ppcxt), api_callback)
+        code = self.__pdll.st_create_context(byref(ppcxt), self.__message_cb)
         self.__check_return_code(code)
         self.__pcxt = ppcxt.value
-        print(self.__pcxt)
         atexit.register(self.__free)
+
+    ##########################################
+    # internal functions for CDLL management #
+    ##########################################
 
     def __setup_dll(self, _lib_path: str = ''):
         if not os.path.exists(_lib_path):
@@ -172,9 +181,14 @@ class STAPIv2:
         self.__pdll.st_num_elements.argtypes = [c_void_p]
         self.__pdll.st_num_elements.restype = c_int
 
+        #st_sim_report
+        #st_sim_run_v2
+        #st_sim_setup
+        #st_write_results_csv
+
     def __free(self):
         code = self.__pdll.st_free_context(self.__pcxt)
-        print(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})')
+        sys.stdout.write(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})\n')
 
     def __check_return_code(self, st_return_code):
         if st_return_code in STAPIv2.ST_RETURN_CODE_ERROR_MSGS:
@@ -186,7 +200,16 @@ class STAPIv2:
                            STAPIv2.ST_RETURN_CODES[st_return_code],
                            STAPIv2.ST_RETURN_CODE_WARNING_MSGS[st_return_code])
 
-    def read_input_json(self, input_json: str | dict):
+    @CFUNCTYPE(c_int, c_char_p, c_char_p)
+    def __message_cb(loc, msg):
+        sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
+        return 0
+
+    ####################################
+    # Python handles for st_ functions #
+    ####################################
+
+    def read_input_json(self, input_json: str | dict) -> None:
         # TODO: togglable validity check?
         if isinstance(input_json, str):
             f = open(input_json, mode='rb')
@@ -196,7 +219,7 @@ class STAPIv2:
             code = self.__pdll.st_read_input_json(self.__pcxt, orjson.dumps(input_json))
         self.__check_return_code(code)
 
-    def num_elements(self):
+    def num_elements(self) -> int:
         pcount = c_int()
         code = self.__pdll.st_num_elements(self.__pcxt, byref(pcount))
         self.__check_return_code(code)
@@ -205,7 +228,8 @@ class STAPIv2:
     def sneak(self): return self.__pdll, self.__pcxt
 
 if __name__ == "__main__":
-    api = STAPIv2()
-    api.read_input_json('./sample.json')
-    count = api.num_elements()
+    username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
+    stapi = STAPIv2()
+    stapi.read_input_json('./sample.json')
+    count = stapi.num_elements()
     print(count)

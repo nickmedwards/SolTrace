@@ -3,13 +3,6 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# should only be true if compiled from pyproject.toml
-if(SOLTRACE_BUILD_WHEEL)
-    add_subdirectory(../simulation_data)
-    add_subdirectory(../simulation_results)
-    add_subdirectory(../simulation_runner)
-endif()
-
 project(stapi_v2)
 # find_package(pybind11 CONFIG REQUIRED)
 

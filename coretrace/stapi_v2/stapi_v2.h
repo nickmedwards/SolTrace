@@ -81,7 +81,7 @@ enum st_return_code : st_return_t {
 #define DEFAULT_NUM_THREADS 8
 #endif
 
-typedef enum st_runner_type_t {
+typedef enum st_runner_type_t : unsigned int {
 	NATIVE = 0,   /* 0 */
 	OPTIX,        /* 1 */
 	EMBREE,		  /* 2 */

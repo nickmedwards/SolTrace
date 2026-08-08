@@ -7,7 +7,7 @@ name = "PySolTrace"
 version = "0.1.0"
 description = "Python wrapper for stapi_v2 shared library"
 requires-python = ">=3.8"
-dependencies = ["orjson >= 3.10,<4"]
+dependencies = ["colorama >= 0.4.6, orjson >= 3.10,<4"]
 
 # ADDED: Link your GitHub repository for distribution tools and PyPI
 [project.urls]
