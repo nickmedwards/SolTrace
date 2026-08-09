@@ -425,6 +425,7 @@ class STAPIv2:
     def dump_batch_args(self):
         for args in self.__stash_batch_args: print(args)
 
+    # TODO: include version that calls functions from python for debugging STAPIv2.generate_api_call
     def batch(self, api_pairs: list[_st_api_pair]):
         num_calls = len(api_pairs)
         # unzip pairs

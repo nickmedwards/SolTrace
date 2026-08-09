@@ -224,7 +224,7 @@ typedef st_return_t (*st_api_func_ptr)(void);
 /* For each call, the void* function pointer and void* argument       */
 /* pointer are cast back to their real, concrete types inside the 	  */
 /* loop, based on the st_api_call tag carried in st_api_call_args.    */
-/* Error codes break the loop, and warning codes are ignored          */
+/* Error codes break the loop, and warning codes are ignored.         */
 /* ------------------------------------------------------------------ */
 STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
 							  st_api_func_ptr* functions, 
