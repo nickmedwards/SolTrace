@@ -175,6 +175,63 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 	write csv  				  -> int st_write_results_csv(st_context_v2_t pcxt, const char *filename);
 	write json 				  -> int st_write_results_json(st_context_v2_t pcxt, const char *filename);*/
 
+///////////////////////
+// Batch caller work //
+///////////////////////
+
+// enum defining all calls available to batch together
+typedef enum st_api_call : unsigned int {
+    CALL_ST_READ_INPUT_JSON,
+    CALL_ST_NUM_ELEMENTS
+} st_api_call;
+
+// packed argument layouts — one per function signature
+typedef struct args_st_read_input_json {
+    st_context_v2_t pcxt; 
+	const char *json;
+} args_st_read_input_json;
+
+typedef struct args_st_num_elements {
+    st_context_v2_t pcxt;
+	int *num_elements;
+} args_st_num_elements;
+
+/* Every argument layout passed through the generic arrays is one of
+ * these: a tag telling us which payload is active, plus the payload
+ * itself. This is what a void* in the "arguments" array actually
+ * points to. */
+typedef struct st_api_call_args {
+    st_api_call type;
+    union {
+        args_st_read_input_json  read_input_json_args;
+        args_st_num_elements 	 num_elements_args;
+    } payload;
+} st_api_call_args;
+
+/* Generic function pointer type used to store heterogeneous function
+ * pointers in the "functions" array. Each one gets cast back to its
+ * real signature right before it's invoked. */
+typedef st_return_t (*st_api_func_ptr)(void);
+
+/* ------------------------------------------------------------------ */
+/* The function containing the loop for batching stapi_v2 calls.      */
+/*                                                                    */
+/* functions : array of function pointers (stored generically)        */
+/* arguments : array of void* pointers, each actually pointing at a   */
+/*             st_api_call_args struct                                */
+/* count     : number of calls to make                                */
+/*                                                                    */
+/* For each call, the void* function pointer and void* argument       */
+/* pointer are cast back to their real, concrete types inside the 	  */
+/* loop, based on the st_api_call tag carried in st_api_call_args.    */
+/* Error codes break the loop, and warning codes are ignored          */
+/* ------------------------------------------------------------------ */
+STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
+							  st_api_func_ptr* functions, 
+							  void** arguments, 
+							  unsigned int count,
+                              unsigned int* fail_iteration);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

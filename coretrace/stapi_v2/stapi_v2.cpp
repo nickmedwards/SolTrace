@@ -317,32 +317,62 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 // /* pointer are cast back to their real, concrete types right here,     */
 // /* inside the loop, based on the CallType tag carried in CallArgs.     */
 // /* ------------------------------------------------------------------ */
-// void execute_calls(GenericFunc* functions, void** arguments, int count) {
-//     for (int i = 0; i < count; ++i) {
-//         /* cast the generic void* argument pointer back to its real type
-//          * so we can inspect the tag and reach the right payload */
-//         CallArgs* call_args = (CallArgs*)arguments[i];
+bool is_error(st_return_t code)
+{
+    return code > st_return_code::SUCCESS && code < st_return_code::WARNING_FELLBACK_FROM_EMBREE;
+}
 
-//         switch (call_args->type) {
-//             case CALL_ADD_AND_PRINT: {
-//                 /* cast the generic function pointer back to signature A */
-//                 void (*fn)(int, int) = (void (*)(int, int))functions[i];
-//                 fn(call_args->payload.add.a, call_args->payload.add.b);
-//                 break;
-//             }
-//             case CALL_GREET_WITH_SCORE: {
-//                 /* cast the generic function pointer back to signature B */
-//                 void (*fn)(const char*, float) =
-//                     (void (*)(const char*, float))functions[i];
-//                 fn(call_args->payload.greet.name, call_args->payload.greet.score);
-//                 break;
-//             }
-//             default:
-//                 fprintf(stderr, "execute_calls: unknown call type at index %d\n", i);
-//                 break;
-//         }
-//     }
-// }
+STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
+                              st_api_func_ptr* functions, 
+							  void** arguments, 
+							  unsigned int count,
+                              unsigned int* fail_iteration)
+{
+    try {
+        st_return_t code = st_return_code::SUCCESS;
+        for (int i = 0; i < count; ++i) {
+            /* cast the generic void* argument pointer back to its real type
+            * so we can inspect the tag and reach the right payload */
+            st_api_call_args* call_args = (st_api_call_args*)arguments[i];
+
+            switch (call_args->type) {
+                case st_api_call::CALL_ST_READ_INPUT_JSON: {
+                    /* cast the generic function pointer back to */
+                    /* st_read_input_json signature              */
+                    /* -> st_context_v2_t pcxt, const char *json */
+                    st_return_t (*fn)(st_context_v2_t, const char *) = 
+                        (st_return_t (*)(st_context_v2_t, const char *))functions[i];
+                    code = fn(call_args->payload.read_input_json_args.pcxt, 
+                            call_args->payload.read_input_json_args.json);
+                    break;
+                }
+                case st_api_call::CALL_ST_NUM_ELEMENTS: {
+                    /* cast the generic function pointer back to  */
+                    /* st_num_elements signature                  */
+                    /* -> st_context_v2_t pcxt, int *num_elements */
+                    st_return_t (*fn)(st_context_v2_t, int *) =
+                        (st_return_t (*)(st_context_v2_t, int *))functions[i];
+                    code = fn(call_args->payload.num_elements_args.pcxt, 
+                            call_args->payload.num_elements_args.num_elements);
+                    break;
+                }
+                default:
+                    fprintf(stderr, "execute_calls: unknown call type at index %d\n", i);
+                    break;
+            }
+
+            if (is_error(code))
+            {
+                *fail_iteration = i;
+                break;
+            }
+        }
+        return code;
+    } catch (const std::exception& e) {
+        CONTEXT(pcxt);
+        cxt->p_cb("batch", e.what());
+    }
+}
 
 // } /* extern "C" */
 

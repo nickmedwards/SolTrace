@@ -20,10 +20,12 @@ see luke's code for example.
 """
 
 import atexit, os, pathlib, sys, warnings
+from dataclasses import dataclass
 from typing import Literal
 import orjson # pyright: ignore[reportMissingImports]
-from ctypes import *
-c_number = c_double
+# from ctypes import *
+import ctypes
+c_number = ctypes.c_double
 from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
@@ -55,6 +57,8 @@ WARNING_FELLBACK_FROM_EMBREE                 = 'WARNING_FELLBACK_FROM_EMBREE'
 WARNING_FELLBACK_FROM_OPTIX                  = 'WARNING_FELLBACK_FROM_OPTIX'
 WARNING_ARGUMENT_IGNORED_BY_RUNNER           = 'WARNING_ARGUMENT_IGNORED_BY_RUNNER'
 
+# TODO: maybe fetch enums from include/SolTrace/stapi_v2/stapi_v2.h?
+
 #########################
 # st_runner_type set up #
 #########################
@@ -73,11 +77,54 @@ STAPIv2Warning = lambda code, name, msg: warnings.warn(
     stacklevel=4
 )
 
+_ST_CONTEXT_V2_T = ctypes.c_void_p  # typedef void* st_context_v2_t;
+
+# setting up st_api_call enum
+_ST_API_CALL_T = ctypes.c_uint        # enum st_api_call : unsigned int
+
+# classes mirroring structs with name args_st_*
+class _args_st_read_input_json(ctypes.Structure):
+    _fields_ = [
+        ('pcxt', _ST_CONTEXT_V2_T),
+        ('json', ctypes.c_char_p)
+    ]
+
+class _args_st_num_elements(ctypes.Structure):
+    _fields_ = [
+        ('pcxt',         _ST_CONTEXT_V2_T),
+        ('num_elements', ctypes.POINTER(ctypes.c_int))
+    ]
+
+print(_args_st_read_input_json)
+print(_args_st_read_input_json._fields_)
+print(_args_st_num_elements)
+print(_args_st_num_elements._fields_)
+
+#########################################
+# classes for modeling st_api_call_args #
+#########################################
+class _payload(ctypes.Union):
+    _fields_ = [
+        ('read_input_json_args', _args_st_read_input_json),
+        ('num_elements_args',    _args_st_num_elements)
+    ]
+
+class _st_api_call_args(ctypes.Structure):
+    _fields_ = [
+        ('type',    _ST_API_CALL_T),
+        ('payload', _payload),
+    ]
+
+@dataclass
+class _st_api_pair():
+    func: ctypes._CFuncPtr
+    args: _st_api_call_args
+
 #############################################################################
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
 #############################################################################
 class STAPIv2:
-    ST_RETURN_T = c_uint
+    ST_RETURN_T = ctypes.c_uint
     # recognized return codes
     ST_RETURN_CODES = [
         SUCCESS,
@@ -122,6 +169,18 @@ class STAPIv2:
     ST_RUNNER_TYPES = [NATIVE, OPTIX, EMBREE]
     ST_RUNNER_TYPE = enumify(ST_RUNNER_TYPES)
 
+    CALL_ST_READ_INPUT_JSON = 'CALL_ST_READ_INPUT_JSON'
+    CALL_ST_NUM_ELEMENTS    = 'CALL_ST_NUM_ELEMENTS'
+    ST_API_CALLS = [
+        CALL_ST_READ_INPUT_JSON,
+        CALL_ST_NUM_ELEMENTS
+    ]
+    ST_API_CALL = enumify(ST_API_CALLS)
+    ST_API_CALL_ARGS = {
+        ST_API_CALL[CALL_ST_READ_INPUT_JSON]: _args_st_read_input_json,
+        ST_API_CALL[CALL_ST_NUM_ELEMENTS]:    _args_st_num_elements
+    }
+
     def __init__(self, stapi_v2_dll_path: str = ''):
         if len(stapi_v2_dll_path): self.__setup_dll(stapi_v2_dll_path)
         else:
@@ -139,70 +198,105 @@ class STAPIv2:
             self.__setup_dll(_lib_path)
 
         # print(self.__pdll.__dict__)
+        print(f'{id(self.__pdll):#x}')
         max_key_len = max(len(str(k)) for k in self.__pdll.__dict__.keys())
         for k, v in self.__pdll.__dict__.items():
-            print(f'{str(k):<{max_key_len}}: {v}')
+            print(f'\n{str(k):<{max_key_len}}: {v}')
+            if (isinstance(v, ctypes._CFuncPtr)):
+                print(f'{id(v):#x}')
+                # for arg_t in v.argtypes: print(arg_t.__dict__)
+                print(v.argtypes)
 
-        ppcxt = c_void_p()
-        code = self.__pdll.st_create_context(byref(ppcxt), self.__message_cb)
+        ppcxt = ctypes.c_void_p()
+        code = self.__pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb)
         self.__check_return_code(code)
         self.__pcxt = ppcxt.value
         atexit.register(self.__free)
+
+        # keep the struct instances alive — ctypes.cast() does NOT keep a
+        # reference, so if these get garbage collected the void* becomes dangling
+        self.__stash_batch_args = []
 
     ##########################################
     # internal functions for CDLL management #
     ##########################################
 
+    @staticmethod
+    def __get_argtypes(args_struct: ctypes.Structure) -> list:
+        return [args[1] for args in args_struct._fields_]
+
     def __setup_dll(self, _lib_path: str = ''):
         if not os.path.exists(_lib_path):
             raise FileNotFoundError(f'Could not find DLL at {_lib_path}')
 
-        self.__pdll = CDLL(_lib_path)
+        self.__pdll = ctypes.CDLL(_lib_path)
+        self.__func_map = {}
 
         #############################################
         # functions for SolTrace context management #
         #############################################
 
-        self.__pdll.st_create_context.argtypes = [POINTER(c_void_p), CFUNCTYPE(c_int, c_char_p, c_char_p)]
+        self.__pdll.st_create_context.argtypes = [ctypes.POINTER(ctypes.c_void_p),
+                                                  ctypes.CFUNCTYPE(ctypes.c_int,
+                                                                   ctypes.c_char_p,
+                                                                   ctypes.c_char_p)]
         self.__pdll.st_create_context.restype = STAPIv2.ST_RETURN_T
 
-        self.__pdll.st_free_context.argtypes = [c_void_p]
+        self.__pdll.st_free_context.argtypes = [ctypes.c_void_p]
         self.__pdll.st_free_context.restype = STAPIv2.ST_RETURN_T
 
         ##########################################
         # functions for SolTrace data management #
         ##########################################
 
-        self.__pdll.st_read_input_json.argtypes = [c_void_p, c_char_p]
+        self.__pdll.st_read_input_json.argtypes = self.__get_argtypes(_args_st_read_input_json)
         self.__pdll.st_read_input_json.restype = STAPIv2.ST_RETURN_T
+        self.__func_map[STAPIv2.ST_API_CALL[STAPIv2.CALL_ST_READ_INPUT_JSON]] = self.__pdll.st_read_input_json
 
         ###########################################
         # functions for SolTrace data information #
         ###########################################
 
-        self.__pdll.st_num_elements.argtypes = [c_void_p, POINTER(c_int)]
+        self.__pdll.st_num_elements.argtypes = self.__get_argtypes(_args_st_num_elements)
         self.__pdll.st_num_elements.restype = STAPIv2.ST_RETURN_T
+        self.__func_map[STAPIv2.ST_API_CALL[STAPIv2.CALL_ST_NUM_ELEMENTS]] = self.__pdll.st_num_elements
 
         ############################################
         # functions for SolTrace runner management #
         ############################################
 
-        self.__pdll.st_sim_setup.argtypes = [c_void_p, c_uint, c_uint64, POINTER(c_uint), c_size_t]
+        self.__pdll.st_sim_setup.argtypes = [ctypes.c_void_p,
+                                             ctypes.c_uint,
+                                             ctypes.c_uint64,
+                                             ctypes.POINTER(ctypes.c_uint),
+                                             ctypes.c_size_t]
         self.__pdll.st_sim_setup.restype = STAPIv2.ST_RETURN_T
 
-        self.__pdll.st_sim_run_v2.argtypes = [c_void_p]
+        self.__pdll.st_sim_run_v2.argtypes = [ctypes.c_void_p]
         self.__pdll.st_sim_run_v2.restype = STAPIv2.ST_RETURN_T
 
         # TODO: include enum-ish of reporting levels
-        self.__pdll.st_sim_report.argtypes = [c_void_p, c_int]
+        self.__pdll.st_sim_report.argtypes = [ctypes.c_void_p, ctypes.c_int]
         self.__pdll.st_sim_report.restype = STAPIv2.ST_RETURN_T
 
         #############################################
-        # functions for SolTrace resutls management #
+        # functions for SolTrace results management #
         #############################################
 
-        self.__pdll.st_write_results_csv.argtypes = [c_void_p, c_char_p, c_int]
+        self.__pdll.st_write_results_csv.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
         self.__pdll.st_write_results_csv.restype = STAPIv2.ST_RETURN_T
+
+        ############################################
+        # function for batching SolTrace API calls #
+        ############################################
+
+        self.__api_func_ptr = ctypes.CFUNCTYPE(STAPIv2.ST_RETURN_T, ctypes.c_void_p)
+        self.__pdll.st_batch.argtypes = [ctypes.c_void_p,
+                                         ctypes.POINTER(ctypes.c_void_p),
+                                         ctypes.POINTER(ctypes.c_void_p),
+                                         ctypes.c_uint,
+                                         ctypes.POINTER(ctypes.c_uint)]
+        self.__pdll.st_batch.restype = STAPIv2.ST_RETURN_T
 
     def __free(self):
         code = self.__pdll.st_free_context(self.__pcxt)
@@ -218,7 +312,7 @@ class STAPIv2:
                            STAPIv2.ST_RETURN_CODES[st_return_code],
                            STAPIv2.ST_RETURN_CODE_WARNING_MSGS[st_return_code])
 
-    @CFUNCTYPE(c_int, c_char_p, c_char_p)
+    @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
     def __message_cb(loc, msg):
         sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
         return 0
@@ -246,8 +340,8 @@ class STAPIv2:
     ###########################################
 
     def num_elements(self) -> int:
-        pcount = c_int()
-        code = self.__pdll.st_num_elements(self.__pcxt, byref(pcount))
+        pcount = ctypes.c_int()
+        code = self.__pdll.st_num_elements(self.__pcxt, ctypes.byref(pcount))
         self.__check_return_code(code)
         return pcount.value
 
@@ -263,7 +357,7 @@ class STAPIv2:
         # redefine seeds from list to C array
         if seeds:
             num_seeds = len(seeds)
-            seeds = (c_uint * num_seeds)(*seeds)
+            seeds = (ctypes.c_uint * num_seeds)(*seeds)
         code = self.__pdll.st_sim_setup(self.__pcxt, STAPIv2.ST_RUNNER_TYPE[runner_type], num_threads, seeds, num_seeds)
         self.__check_return_code(code)
 
@@ -283,6 +377,83 @@ class STAPIv2:
         code = self.__pdll.st_write_results_csv(self.__pcxt, filename.encode('utf-8'), precision)
         self.__check_return_code(code)
 
+    #####################
+    # Batch caller work #
+    #####################
+
+    def generate_api_call(self, call_name: str, *args):
+        print(f'\n\n{call_name}')
+        call_type = STAPIv2.ST_API_CALL[call_name]
+        rt = _st_api_call_args()
+        rt.type = call_type
+        args_name, args_cls = rt.payload._fields_[call_type]
+        args_payload = getattr(rt.payload, args_name)
+        print(args_name)
+        print(args_cls)
+        print(args_payload)
+        print(args_payload._fields_[1:])
+        # print(*args)
+
+        args_payload.pcxt = self.__pcxt
+        for i, arg in enumerate(args):
+            setattr(args_payload, 
+                    args_payload._fields_[i + 1][0],
+                    arg)
+            
+        # print('\nres')
+        # for field in args_payload._fields_:
+        #     temp_payload_attr = getattr(rt.payload, args_name)
+        #     print(getattr(temp_payload_attr, field[0]))
+        # print()
+
+        # func_args = STAPIv2.ST_API_CALL_ARGS[call_type]
+        # print('\nmisc')
+        # print(rt)
+        # print(rt.__dict__)
+        # print(rt.type)
+        # print(_payload)
+        # print(rt.payload)
+        # print(rt.payload._fields_)
+        # print(getattr(rt.payload, 'num_elements_args'))
+        # print(rt.payload.__dict__)
+        # print(func_args._fields_)
+        # print(func_args.__dict__)
+        # func_args.pcxt = self.__pcxt
+        # print(func_args.__dict__)
+        return _st_api_pair(self.__func_map[call_type], rt)
+
+    def dump_batch_args(self):
+        for args in self.__stash_batch_args: print(args)
+
+    def batch(self, api_pairs: list[_st_api_pair]):
+        num_calls = len(api_pairs)
+        # unzip pairs
+        func_addrs = []
+        call_args = []
+        for pair in api_pairs:
+            # print(pair.func)
+            # print(f'{id(pair.func):#x}')
+            func_addrs.append(ctypes.cast(pair.func, ctypes.c_void_p).value)
+            call_args.append(pair.args)
+        for addr in func_addrs: print(f'{addr:#x}')
+        print(call_args)
+        self.__stash_batch_args = call_args
+
+        func_arr = (ctypes.c_void_p * num_calls)(*func_addrs)
+        args_arr = (ctypes.c_void_p * num_calls)(*[
+            ctypes.cast(ctypes.byref(c), ctypes.c_void_p) for c in call_args
+        ])
+
+        fail_iteration = ctypes.c_uint(0)
+
+        code = self.__pdll.st_batch(self.__pcxt,
+                                    func_arr,
+                                    args_arr,
+                                    num_calls,
+                                    ctypes.byref(fail_iteration))
+        self.__check_return_code(code)
+
+
 if __name__ == "__main__":
     username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
     stapi = STAPIv2()
@@ -299,3 +470,8 @@ if __name__ == "__main__":
     # stapi.sim_setup(EMBREE)
     # raises STAPIv2Exception
     # stapi.sim_setup(NATIVE, 8, [608, 303])
+
+
+"""
+
+"""
