@@ -2437,7 +2437,7 @@ class PySolTrace_v1:
 
 
     # /* utility transform/math functions */
-    def util_calc_euler_angles(self, origin : numpy.array, aimpoint : numpy.array, zrot) -> numpy.array:
+    # def util_calc_euler_angles(self, origin : numpy.array, aimpoint : numpy.array, zrot) -> numpy.array:
         # """
         # Calculate the Euler angles associated with a given origin, aimpoint, and z-axis rotation.
 
@@ -2470,7 +2470,7 @@ class PySolTrace_v1:
         # return euler
         pass
 
-    def util_transform_to_local(self, posref : numpy.array, cosref : numpy.array, origin : numpy.array, rreftoloc : numpy.array):
+    # def util_transform_to_local(self, posref : numpy.array, cosref : numpy.array, origin : numpy.array, rreftoloc : numpy.array):
         # """
         # Perform coordinate transformation from reference system to local system.
 
