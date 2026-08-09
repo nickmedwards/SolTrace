@@ -8,7 +8,7 @@ seconds and generates a flux map and a trace plot (requires plotly).
 # Load the pysoltrace api from the parent directory ---
 import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 # ----------
 
 from pysoltrace import PySolTrace, Point
@@ -28,9 +28,9 @@ opt_abs.front.reflectivity = 0.
 # Sun
 sun = PT.add_sun()
 # Give sun an arbitrary position
-sun.position.x = 0.
-sun.position.y = 0.
-sun.position.z = 100.
+sun.position.x = 1.
+sun.position.y = -1.
+sun.position.z = 99.
 
 # Reflector stage
 st = PT.add_stage()
@@ -57,20 +57,19 @@ for i in range(-1,2):
     # Set surface and aperture characteristics
     el.surface_flat()
     el.aperture_rectangle(1.0,1.95)
-    
 
 sta = PT.add_stage()
-    
-# cylindrical absorber element. 
-# r = 0.5
-# ela = sta.add_element()
-# abs_pos.y = -r
-# ela.position = abs_pos
-# ela.zrot = 0
-# ela.aim = Point(0, 100, -r-50)
-# ela.optic = opt_abs
-# ela.surface_cylindrical(r)
-# ela.aperture_singleax_curve(0,0,5)
+
+# # cylindrical absorber element. 
+# # r = 0.5
+# # ela = sta.add_element()
+# # abs_pos.y = -r
+# # ela.position = abs_pos
+# # ela.zrot = 0
+# # ela.aim = Point(0, 100, -r-50)
+# # ela.optic = opt_abs
+# # ela.surface_cylindrical(r)
+# # ela.aperture_singleax_curve(0,0,5)
 
 # flat absorber element
 ela = sta.add_element()
@@ -94,14 +93,14 @@ if __name__ == "__main__":
     # Run the configuration specified above
     PT.run(-1, True, 8)         #(seed, is point focus system?, number of threads)
 
-    # Print a message after completion
-    print("Num rays traced: {:d}".format(PT.raydata.index.size))
+#     # Print a message after completion
+#     print("Num rays traced: {:d}".format(PT.raydata.index.size))
     
-    # Generate a solatrace input file if desired
-    PT.write_soltrace_input_file('simpletest.stinput')
+#     # Generate a solatrace input file if desired
+#     PT.write_soltrace_input_file('simpletest.stinput')
 
-    # Create a 3D trace plot of the simulation (requires plotly library)
-    PT.plot_trace()
+#     # Create a 3D trace plot of the simulation (requires plotly library)
+#     PT.plot_trace()
 
-    # Plot the flux map on the last element of the last stage (the receiver in this case)
-    PT.plot_flux(PT.stages[-1].elements[-1], nx=50, ny=50, levels=50)
+#     # Plot the flux map on the last element of the last stage (the receiver in this case)
+#     PT.plot_flux(PT.stages[-1].elements[-1], nx=50, ny=50, levels=50)

@@ -1,7 +1,11 @@
 from .stapi_v2 import STAPIv2
+from . import soltrace_json
 from .point import Point
+from .legacy import legacy as PySolTrace
 
 __all__ = [
-    "STAPIv2",
-    "Point"
+    'Point',
+    'PySolTrace',
+    'soltrace_json',
+    'STAPIv2',
 ]

@@ -60,6 +60,12 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 	return st_return_code::SUCCESS;
 }
 
+// TODO: renumber st_runner_type_t::NAME to 1 << idx
+//       move ifdef stuff to a function that returns a sum based on enum 
+//       call it get_built_runners() or something 
+//       add another function to check if a runner is built 
+
+
 ////////////////////////////////
 // Simlulation Data Functions //
 ////////////////////////////////
