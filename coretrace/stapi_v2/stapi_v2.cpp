@@ -302,6 +302,9 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 //  * real signature right before it's invoked. */
 // typedef void (*GenericFunc)(void);
 
+// # C equivalent: int (*func_ptr)(int, int)
+// MyFuncType = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int)
+
 // /* ------------------------------------------------------------------ */
 // /* The function containing the loop.                                   */
 // /*                                                                      */
