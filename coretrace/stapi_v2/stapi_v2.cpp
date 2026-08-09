@@ -48,14 +48,11 @@ STAPI_V2 st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb)
 STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 {
 	CONTEXT(pcxt);
-    // i think member class destructers will be called when cxt is deleted.
 
-	// DATA(cxt);
-	// RUNNER(cxt);
-	// RESULT(cxt);
-    // delete data;
-    // delete runner;
-    // delete result;
+    delete cxt->p_data;
+    delete cxt->p_runner;
+    delete cxt->p_results;
+
     delete cxt;
 	return st_return_code::SUCCESS;
 }
@@ -104,7 +101,8 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     CONTEXT(pcxt);
     DATA(cxt);
 
-    if (cxt->p_runner) delete cxt->p_runner;
+    delete cxt->p_runner;
+    delete cxt->p_results;
 
     bool use_embree = runner_type == st_runner_type_t::EMBREE;
     bool use_optix = runner_type == st_runner_type_t::OPTIX;
