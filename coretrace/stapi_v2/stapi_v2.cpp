@@ -226,3 +226,155 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
     ST_WRAP_CB_TRY_CATCH(result->write_csv_file(filename, precision), cxt->p_cb);
     return st_return_code::SUCCESS;
 }
+
+// idea for batching function calls in a callbackable way for scripting
+// /*
+//  * call_dispatcher.cpp
+//  *
+//  * Demonstrates a generic call dispatcher:
+//  *   - a list of function pointers to call
+//  *   - a list of void* argument bundles to pass to those functions
+//  *   - a count of how many calls to make
+//  *
+//  * Because the target functions have different signatures, each argument
+//  * bundle is tagged with a CallType so the loop function knows how to cast
+//  * the void* function pointer and void* argument pointer back to their real
+//  * types. That casting happens inline, inside the function that contains
+//  * the loop (execute_calls), not inside the target functions themselves.
+//  *
+//  * Compiled as C++ (so we get things like extern "C" linkage control),
+//  * but the exported symbol is given C linkage so it can be called from
+//  * plain C code / declared in a C header.
+//  */
+
+// #include <cstdio>
+
+// extern "C" {
+
+// /* ------------------------------------------------------------------ */
+// /* Two example functions with different call signatures               */
+// /* ------------------------------------------------------------------ */
+
+// /* Signature A: (int, int) -> void */
+// void add_and_print(int a, int b) {
+//     printf("add_and_print: %d + %d = %d\n", a, b, a + b);
+// }
+
+// /* Signature B: (const char*, float) -> void */
+// void greet_with_score(const char* name, float score) {
+//     printf("greet_with_score: Hello %s, your score is %.2f\n", name, score);
+// }
+
+// /* ------------------------------------------------------------------ */
+// /* Tag identifying which real signature/argument layout a call uses    */
+// /* ------------------------------------------------------------------ */
+
+// typedef enum {
+//     CALL_ADD_AND_PRINT,
+//     CALL_GREET_WITH_SCORE
+// } CallType;
+
+// /* Packed argument layouts — one per distinct function signature */
+// typedef struct {
+//     int a;
+//     int b;
+// } AddArgs;
+
+// typedef struct {
+//     const char* name;
+//     float score;
+// } GreetArgs;
+
+// /* Every argument bundle passed through the generic arrays is one of
+//  * these: a tag telling us which payload is active, plus the payload
+//  * itself. This is what a void* in the "arguments" array actually
+//  * points to. */
+// typedef struct {
+//     CallType type;
+//     union {
+//         AddArgs  add;
+//         GreetArgs greet;
+//     } payload;
+// } CallArgs;
+
+// /* Generic function pointer type used to store heterogeneous function
+//  * pointers in the "functions" array. Each one gets cast back to its
+//  * real signature right before it's invoked. */
+// typedef void (*GenericFunc)(void);
+
+// /* ------------------------------------------------------------------ */
+// /* The function containing the loop.                                   */
+// /*                                                                      */
+// /* functions : array of function pointers (stored generically)         */
+// /* arguments : array of void* pointers, each actually pointing at a     */
+// /*             CallArgs struct                                         */
+// /* count     : number of calls to make                                 */
+// /*                                                                      */
+// /* For each call, the void* function pointer and void* argument        */
+// /* pointer are cast back to their real, concrete types right here,     */
+// /* inside the loop, based on the CallType tag carried in CallArgs.     */
+// /* ------------------------------------------------------------------ */
+// void execute_calls(GenericFunc* functions, void** arguments, int count) {
+//     for (int i = 0; i < count; ++i) {
+//         /* cast the generic void* argument pointer back to its real type
+//          * so we can inspect the tag and reach the right payload */
+//         CallArgs* call_args = (CallArgs*)arguments[i];
+
+//         switch (call_args->type) {
+//             case CALL_ADD_AND_PRINT: {
+//                 /* cast the generic function pointer back to signature A */
+//                 void (*fn)(int, int) = (void (*)(int, int))functions[i];
+//                 fn(call_args->payload.add.a, call_args->payload.add.b);
+//                 break;
+//             }
+//             case CALL_GREET_WITH_SCORE: {
+//                 /* cast the generic function pointer back to signature B */
+//                 void (*fn)(const char*, float) =
+//                     (void (*)(const char*, float))functions[i];
+//                 fn(call_args->payload.greet.name, call_args->payload.greet.score);
+//                 break;
+//             }
+//             default:
+//                 fprintf(stderr, "execute_calls: unknown call type at index %d\n", i);
+//                 break;
+//         }
+//     }
+// }
+
+// } /* extern "C" */
+
+// /* ------------------------------------------------------------------ */
+// /* Demonstration                                                       */
+// /* ------------------------------------------------------------------ */
+// #ifdef CALL_DISPATCHER_DEMO
+// int main(void) {
+//     /* Build the argument bundles */
+//     CallArgs args1;
+//     args1.type = CALL_ADD_AND_PRINT;
+//     args1.payload.add.a = 3;
+//     args1.payload.add.b = 4;
+
+//     CallArgs args2;
+//     args2.type = CALL_GREET_WITH_SCORE;
+//     args2.payload.greet.name = "Ada";
+//     args2.payload.greet.score = 97.5f;
+
+//     CallArgs args3;
+//     args3.type = CALL_ADD_AND_PRINT;
+//     args3.payload.add.a = 10;
+//     args3.payload.add.b = -2;
+
+//     /* Build the parallel arrays */
+//     GenericFunc functions[3] = {
+//         (GenericFunc)add_and_print,
+//         (GenericFunc)greet_with_score,
+//         (GenericFunc)add_and_print
+//     };
+
+//     void* arguments[3] = { &args1, &args2, &args3 };
+
+//     execute_calls(functions, arguments, 3);
+
+//     return 0;
+// }
+// #endif
