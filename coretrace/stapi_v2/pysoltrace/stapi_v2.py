@@ -79,16 +79,6 @@ class STAPIv2:
             _lib_path = _here / _lib_name
             self.__setup_dll(_lib_path)
 
-        # print(self.__pdll.__dict__)
-        print(f'{id(self.__pdll):#x}')
-        max_key_len = max(len(str(k)) for k in self.__pdll.__dict__.keys())
-        for k, v in self.__pdll.__dict__.items():
-            print(f'\n{str(k):<{max_key_len}}: {v}')
-            if (isinstance(v, ctypes._CFuncPtr)):
-                print(f'{id(v):#x}')
-                # for arg_t in v.argtypes: print(arg_t.__dict__)
-                print(v.argtypes)
-
         ppcxt = ctypes.c_void_p()
         code = self.__pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb)
         self.__check_return_code(code)
@@ -100,7 +90,15 @@ class STAPIv2:
         self.__stash_batch_args = []
 
     def __repr__(self):
-        pass
+        rt = f'STAPIv2 Object at ({id(self.__pdll):#x})'
+        rt += '\n' + '-' * len(rt)
+        max_key_len = max(len(str(k)) for k in self.__pdll.__dict__.keys())
+        for k, v in self.__pdll.__dict__.items():
+            rt += f'\n{str(k):<{max_key_len}}: {v}'
+            if (isinstance(v, ctypes._CFuncPtr)):
+                # str(f"{id(v):#x}")
+                rt += f'\n{" " * max_key_len}: {v.argtypes}'
+        return rt
 
     ##########################################
     # internal functions for CDLL management #
