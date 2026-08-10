@@ -40,10 +40,8 @@ public:
     inline uint_fast64_t get_number_rays_launched() const override {return get_N_sun_rays(); }
     inline uint_fast64_t get_number_rays_traced() const override {return m_sys.get_N_hit_rays(); }
 
-    virtual bool is_ready_to_run() const override { return this->ready_to_run; }
-    virtual void set_ready_to_run(bool ready) override { this->ready_to_run = ready; }
-    virtual bool is_ready_to_report() const override { return this->ready_to_report; }
-    virtual void set_ready_to_report(bool ready) override { this->ready_to_report = ready; }
+    bool is_ready_to_run() const override { return this->ready_to_run; }
+    bool is_ready_to_report() const override { return this->ready_to_report; }
 
     uint64_t get_N_run_iterations() const;
 
@@ -127,6 +125,8 @@ private:
 
     bool ready_to_run;
     bool ready_to_report;
+    void set_ready_to_run(bool ready) override { this->ready_to_run = ready; }
+    void set_ready_to_report(bool ready) override { this->ready_to_report = ready; }
 };
 
 #endif
