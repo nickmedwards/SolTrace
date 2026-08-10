@@ -388,12 +388,9 @@ class STAPIv2:
         func_addrs = []
         call_args = []
         for pair in api_pairs:
-            # print(pair.func)
-            # print(f'{id(pair.func):#x}')
             func_addrs.append(ctypes.cast(pair.func, ctypes.c_void_p).value)
             call_args.append(pair.args)
-        for addr in func_addrs: print(f'{addr:#x}')
-        print(call_args)
+
         self.__stash_batch_args = call_args
 
         func_arr = (ctypes.c_void_p * num_calls)(*func_addrs)
@@ -428,8 +425,3 @@ if __name__ == "__main__":
     # stapi.sim_setup(EMBREE)
     # raises STAPIv2Exception
     # stapi.sim_setup(NATIVE, 8, [608, 303])
-
-
-"""
-
-"""
