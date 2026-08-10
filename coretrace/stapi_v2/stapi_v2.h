@@ -143,7 +143,7 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 // functions for simulation data management thru json strings
 STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
 
-/* functions for SolTrace data information */
+// functions for SolTrace data information
 STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
 
 //////////////////////////////////
@@ -210,7 +210,14 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 // enum defining all calls available to batch together
 typedef enum st_api_call : st_uint_t {
 	// Simlulation Data Functions
-    CALL_ST_READ_INPUT_JSON = 0,
+	// sun functions
+	CALL_ST_SUN = 0,
+	CALL_ST_SUN_XYZ,
+	CALL_ST_SUN_POSITION,
+	CALL_ST_SUN_USERDATA,
+	// functions for simulation data management thru json strings
+    CALL_ST_READ_INPUT_JSON,
+	// functions for SolTrace data information
     CALL_ST_NUM_ELEMENTS,
 	// Simlulation Runner Functions
 	CALL_ST_SIM_SETUP,
@@ -222,15 +229,49 @@ typedef enum st_api_call : st_uint_t {
 
 typedef struct empty_args {} empty_args;
 
-// packed argument layouts — one per function signature
+// argument layouts — one per function signature
+
+// Simlulation Data Functions
+
+// sun functions
+typedef struct args_st_sun {
+	int    point_source;
+	char   shape;
+	double sigma_halfwidth_csr;
+} args_st_sun;
+
+typedef struct args_st_sun_xyz {
+	double x;
+	double y;
+	double z;
+} args_st_sun_xyz;
+
+typedef struct args_st_sun_position {
+	double  lat;
+	double  day;
+	double  hour;
+	double* x;
+	double* y;
+	double* z;
+} args_st_sun_position;
+
+typedef struct args_st_sun_userdata {
+	st_uint_t npoints;
+	double*	  angle;
+	double*	  intensity;
+} args_st_sun_userdata;
+
+// functions for simulation data management thru json strings
 typedef struct args_st_read_input_json {
 	const char *json;
 } args_st_read_input_json;
 
+// functions for SolTrace data information
 typedef struct args_st_num_elements {
 	int *num_elements;
 } args_st_num_elements;
 
+// Simlulation Runner Functions
 typedef struct args_st_sim_setup {
 	st_runner_type_t runner_type;
 	uint_fast64_t    num_threads = DEFAULT_NUM_THREADS;
@@ -240,6 +281,8 @@ typedef struct args_st_sim_setup {
 
 typedef empty_args args_st_sim_run_v2;
 
+// Simlulation Results Functions
+
 /* Every argument layout passed through the generic arrays is one of
  * these: a tag telling us which payload is active, plus the payload
  * itself. This is what a void* in the "arguments" array actually
@@ -248,7 +291,14 @@ typedef struct st_api_call_args {
     st_api_call type;
     union {
 		// Simlulation Data Functions
+		// sun functions
+		args_st_sun 		 sun_args;
+		args_st_sun_xyz 	 sun_xyz_args;
+		args_st_sun_position sun_position_args;
+		args_st_sun_userdata sun_userdata_args;
+		// functions for simulation data management thru json strings
         args_st_read_input_json read_input_json_args;
+		// functions for SolTrace data information
         args_st_num_elements 	num_elements_args;
 		// Simlulation Runner Functions
 		args_st_sim_setup		sim_setup_args;

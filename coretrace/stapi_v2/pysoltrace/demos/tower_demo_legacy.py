@@ -91,7 +91,7 @@ PT.is_surface_errors = True
 if __name__ == "__main__":
 
     # Run the configuration specified above
-    PT.run(-1, True, 8)         #(seed, is point focus system?, number of threads)
+    PT.run(-1, True, 1)         #(seed, is point focus system?, number of threads)
 
 #     # Print a message after completion
 #     print("Num rays traced: {:d}".format(PT.raydata.index.size))

@@ -37,8 +37,9 @@
 # def _thread_func(pobj, as_pt, seed, id, no_callback):
 #     pobj.run(seed, as_pt, 0, id, no_callback)
 #     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
-import random
+import ctypes, random
 from typing import Literal
+from . import soltrace_constants as _STC
 from . import soltrace_json as st_json
 from .point import Point
 from . import math_utils
@@ -226,7 +227,27 @@ class _Sun:
         if snew != None: snew = new_sun
         else:            return new_sun
 
-    def Create(self, stapi: STAPIv2): pass
+    def Create(self, stapi: STAPIv2, _do: bool = True):
+        calls = [
+            stapi.generate_api_call(_STC.CALL_ST_SUN,
+                                    self.point_source,
+                                    self.shape[0],
+                                    self.sigma),
+            stapi.generate_api_call(_STC.CALL_ST_SUN_XYZ,
+                                    self.position.x,
+                                    self.position.y,
+                                    self.position.z)
+        ]
+        if (npoints := len(self.user_intensity_table)) > 2 and self.shape.lower()[0] == 'd':
+            _angle     = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[0]))
+            _intensity = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[1]))
+            calls.append(stapi.generate_api_call(_STC.CALL_ST_SUN_USERDATA,
+                                                 npoints,
+                                                 _angle,
+                                                 _intensity))
+        if _do: return stapi.batch(calls)
+        return calls
+
     def calc_sun_vector(self): pass # TODO: expose SolTrace::Data::SolarPositionCalculator
 
 #################
@@ -537,7 +558,7 @@ class _Stage:
         if snew != None: snew = new_stage
         else:            return new_stage
 
-    def Create(self, stapi: STAPIv2): pass
+    def Create(self, stapi: STAPIv2, _do: bool = True): pass
 
     def add_element(self, enew: _Element = None) -> _Element:
         enew    = _default_cls_arg(enew, _Element, self, None)
@@ -590,6 +611,14 @@ class legacy:
         if stnew != None: stnew = new_st
         else:             return new_st
 
+    def Create(self):
+        sun_calls = self.sun.Create(self.stapi, False)
+        print(sun_calls)
+
+        return self.stapi.batch([
+            *sun_calls
+        ])
+
     def run(self,
             seed:           int  = -1,
             as_power_tower: bool = False,
@@ -629,7 +658,9 @@ class legacy:
         else:
             runseed = seed
 
-        # if nthread in [0,1]:
+        if nthread in [0,1]:
+            print('here')
+            self.Create()
         #     """self.Create(pdll, p_data)"""
         #     # self.sun.Create(pdll, p_data)
         #     # for opt in self.optics:

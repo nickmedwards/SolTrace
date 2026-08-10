@@ -29,7 +29,13 @@ c_number = ctypes.c_double
 from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
 just_fix_windows_console()
 
-from . import soltrace_constants as _STC
+try:
+    import soltrace_constants as _STC
+    from point import Point
+except ImportError:
+    from . import soltrace_constants as _STC
+    from .point import Point
+
 
 enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 """make a list of things an enum (ish)"""
@@ -93,6 +99,9 @@ class STAPIv2:
         # reference, so if these get garbage collected the void* becomes dangling
         self.__stash_batch_args = []
 
+    def __repr__(self):
+        pass
+
     ##########################################
     # internal functions for CDLL management #
     ##########################################
@@ -102,10 +111,17 @@ class STAPIv2:
         return [_STC.ST_CONTEXT_V2_T, *[args[1] for args in args_struct._fields_]]
 
     def __setup_dll(self, _lib_path: str = ''):
+        print(_lib_path)
+        print(os.path.exists(_lib_path))
         if not os.path.exists(_lib_path):
             raise FileNotFoundError(f'Could not find DLL at {_lib_path}')
 
-        self.__pdll = ctypes.CDLL(_lib_path)
+        # print(str(_lib_path).rsplit(os.sep, maxsplit=1)[0])
+        # test = ctypes.WinDLL(_lib_path, winmode=0)
+        if sys.platform == "win32":
+            os.add_dll_directory(str(_lib_path).rsplit(os.sep, maxsplit=1)[0])
+            self.__pdll = ctypes.WinDLL(_lib_path, winmode=0)
+        else: self.__pdll = ctypes.CDLL(_lib_path)
         self.__func_map = {}
 
         #############################################
@@ -116,49 +132,73 @@ class STAPIv2:
                                                   ctypes.CFUNCTYPE(ctypes.c_int,
                                                                    ctypes.c_char_p,
                                                                    ctypes.c_char_p)]
-        self.__pdll.st_create_context.restype = _STC.ST_RETURN_T
+        self.__pdll.st_create_context.restype  = _STC.ST_RETURN_T
 
         self.__pdll.st_free_context.argtypes = [ctypes.c_void_p]
-        self.__pdll.st_free_context.restype = _STC.ST_RETURN_T
+        self.__pdll.st_free_context.restype  = _STC.ST_RETURN_T
 
         ##########################################
         # functions for SolTrace data management #
         ##########################################
 
-        self.__pdll.st_read_input_json.argtypes = self.__get_argtypes(_STC.args_st_read_input_json)
-        self.__pdll.st_read_input_json.restype = _STC.ST_RETURN_T
+        #################
+        # sun functions #
+        #################
+
+        self.__pdll.st_sun.argtypes       = self.__get_argtypes(_STC.args_st_sun)
+        self.__pdll.st_sun.restype        = _STC.ST_RETURN_T
+        self.__func_map[_STC.CALL_ST_SUN] = self.__pdll.st_sun
+
+        self.__pdll.st_sun_xyz.argtypes       = self.__get_argtypes(_STC.args_st_sun_xyz)
+        self.__pdll.st_sun_xyz.restype        = _STC.ST_RETURN_T
+        self.__func_map[_STC.CALL_ST_SUN_XYZ] = self.__pdll.st_sun_xyz
+
+        self.__pdll.st_sun_position.argtypes       = self.__get_argtypes(_STC.args_st_sun_position)
+        self.__pdll.st_sun_position.restype        = _STC.ST_RETURN_T
+        self.__func_map[_STC.CALL_ST_SUN_POSITION] = self.__pdll.st_sun_position
+
+        self.__pdll.st_sun_userdata.argtypes       = self.__get_argtypes(_STC.args_st_sun_userdata)
+        self.__pdll.st_sun_userdata.restype        = _STC.ST_RETURN_T
+        self.__func_map[_STC.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
+
+        ##############################################################
+        # functions for simulation data management thru json strings #
+        ##############################################################
+
+        self.__pdll.st_read_input_json.argtypes       = self.__get_argtypes(_STC.args_st_read_input_json)
+        self.__pdll.st_read_input_json.restype        = _STC.ST_RETURN_T
         self.__func_map[_STC.CALL_ST_READ_INPUT_JSON] = self.__pdll.st_read_input_json
 
         ###########################################
         # functions for SolTrace data information #
         ###########################################
 
-        self.__pdll.st_num_elements.argtypes = self.__get_argtypes(_STC.args_st_num_elements)
-        self.__pdll.st_num_elements.restype = _STC.ST_RETURN_T
+        self.__pdll.st_num_elements.argtypes       = self.__get_argtypes(_STC.args_st_num_elements)
+        self.__pdll.st_num_elements.restype        = _STC.ST_RETURN_T
         self.__func_map[_STC.CALL_ST_NUM_ELEMENTS] = self.__pdll.st_num_elements
 
         ############################################
         # functions for SolTrace runner management #
         ############################################
 
-        self.__pdll.st_sim_setup.argtypes = self.__get_argtypes(_STC.args_st_sim_setup)
-        self.__pdll.st_sim_setup.restype = _STC.ST_RETURN_T
+        self.__pdll.st_sim_setup.argtypes       = self.__get_argtypes(_STC.args_st_sim_setup)
+        self.__pdll.st_sim_setup.restype        = _STC.ST_RETURN_T
         self.__func_map[_STC.CALL_ST_SIM_SETUP] = self.__pdll.st_sim_setup
 
-        self.__pdll.st_sim_run_v2.argtypes = self.__get_argtypes(_STC.args_st_sim_run_v2)
-        self.__pdll.st_sim_run_v2.restype = _STC.ST_RETURN_T
+        self.__pdll.st_sim_run_v2.argtypes       = self.__get_argtypes(_STC.args_st_sim_run_v2)
+        self.__pdll.st_sim_run_v2.restype        = _STC.ST_RETURN_T
         self.__func_map[_STC.CALL_ST_SIM_RUN_V2] = self.__pdll.st_sim_run_v2
 
         # TODO: include enum-ish of reporting levels
         self.__pdll.st_sim_report.argtypes = [ctypes.c_void_p, ctypes.c_int]
-        self.__pdll.st_sim_report.restype = _STC.ST_RETURN_T
+        self.__pdll.st_sim_report.restype  = _STC.ST_RETURN_T
 
         #############################################
         # functions for SolTrace results management #
         #############################################
 
         self.__pdll.st_write_results_csv.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
-        self.__pdll.st_write_results_csv.restype = _STC.ST_RETURN_T
+        self.__pdll.st_write_results_csv.restype  = _STC.ST_RETURN_T
 
         ############################################
         # function for batching SolTrace API calls #
@@ -170,7 +210,7 @@ class STAPIv2:
                                          ctypes.POINTER(ctypes.c_void_p),
                                          ctypes.c_uint,
                                          ctypes.POINTER(ctypes.c_uint)]
-        self.__pdll.st_batch.restype = _STC.ST_RETURN_T
+        self.__pdll.st_batch.restype  = _STC.ST_RETURN_T
 
     def __free(self):
         code = self.__pdll.st_free_context(self.__pcxt)
@@ -198,7 +238,63 @@ class STAPIv2:
     ##########################################
     # functions for SolTrace data management #
     ##########################################
+    
+    #################
+    # sun functions #
+    #################
+    
+    def sun(self,
+            point_source:        int,
+            shape:               str,
+            sigma_halfwidth_csr: float) -> None:
+        code = self.__pdll.st_sun(self.__pcxt,
+                                  point_source,
+                                  shape,
+                                  sigma_halfwidth_csr)
+        self.__check_return_code(code)
 
+    def sun_xyz(self,
+                x: float,
+                y: float,
+                z: float) -> None:
+        code = self.__pdll.st_sun_xyz(self.__pcxt, x, y, z)
+        self.__check_return_code(code)
+
+    def sun_position(self,
+                     lat: float,
+                     day: float,
+                     hour: float) -> Point:
+        px = ctypes.c_double()
+        py = ctypes.c_double()
+        pz = ctypes.c_double()
+        code = self.__pdll.st_sun_position(self.__pcxt,
+                                           lat,
+                                           day,
+                                           hour,
+                                           ctypes.byref(px),
+                                           ctypes.byref(py),
+                                           ctypes.byref(pz))
+        self.__check_return_code(code)
+        return Point(px.value,
+                     py.value,
+                     pz.value)
+
+    def sun_userdata(self,
+                     npoints:   int,
+                     angle:     list[float],
+                     intensity: list[float]) -> None:
+        _angle     = (ctypes.c_double * npoints)(*angle)
+        _intensity = (ctypes.c_double * npoints)(*intensity)
+        code = self.__pdll.st_sun_userdata(self.__pcxt,
+                                           npoints,
+                                           _angle,
+                                           _intensity)
+        self.__check_return_code(code)
+
+    ##############################################################
+    # functions for simulation data management thru json strings #
+    ##############################################################
+    
     def read_input_json(self, input_json: str | dict) -> None:
         # TODO: togglable validity check?
         if isinstance(input_json, str):
@@ -229,10 +325,11 @@ class STAPIv2:
                   seeds: list = None) -> None:
         num_seeds = 0
         # redefine seeds from list to C array
+        _seeds = None
         if seeds:
             num_seeds = len(seeds)
-            seeds = (ctypes.c_uint * num_seeds)(*seeds)
-        code = self.__pdll.st_sim_setup(self.__pcxt, runner_type, num_threads, seeds, num_seeds)
+            _seeds = (ctypes.c_uint * num_seeds)(*seeds)
+        code = self.__pdll.st_sim_setup(self.__pcxt, runner_type, num_threads, _seeds, num_seeds)
         self.__check_return_code(code)
 
     def sim_run_v2(self) -> None:
@@ -257,7 +354,7 @@ class STAPIv2:
 
     def generate_api_call(self, call_type: int, *args):
         if not call_type < _STC.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
-        print(f'\n\n{_STC.ST_API_CALL_NAME[call_type]}')
+        # print(f'\n\n{_STC.ST_API_CALL_NAME[call_type]}')
         # call_type = STAPIv2.ST_API_CALL[call_name]
         rt = _STC.st_api_call_args()
         rt.type = call_type

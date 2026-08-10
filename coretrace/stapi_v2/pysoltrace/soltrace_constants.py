@@ -90,14 +90,28 @@ ST_RUNNER_NAME = {
 #######################
 ST_RETURN_T = ctypes.c_uint
 
-CALL_ST_READ_INPUT_JSON = 0
-CALL_ST_NUM_ELEMENTS    = 1
-CALL_ST_SIM_SETUP       = 2
-CALL_ST_SIM_RUN_V2      = 3
+# Simlulation Data Functions
+# sun functions
+CALL_ST_SUN = 0
+CALL_ST_SUN_XYZ = 1
+CALL_ST_SUN_POSITION = 2
+CALL_ST_SUN_USERDATA = 3
+# functions for simulation data management thru json strings
+CALL_ST_READ_INPUT_JSON = 4
+# functions for SolTrace data information
+CALL_ST_NUM_ELEMENTS = 5
+# Simlulation Runner Functions
+CALL_ST_SIM_SETUP = 6
+CALL_ST_SIM_RUN_V2 = 7
+# Simlulation Results Functions
 # sentinal (not valid api call code)
-API_CALL_COUNT          = 4
+API_CALL_COUNT = 8
 
 ST_API_CALL_NAME = {
+    CALL_ST_SUN:             'CALL_ST_SUN',
+    CALL_ST_SUN_XYZ:         'CALL_ST_SUN_XYZ',
+    CALL_ST_SUN_POSITION:    'CALL_ST_SUN_POSITION',
+    CALL_ST_SUN_USERDATA:    'CALL_ST_SUN_USERDATA',
     CALL_ST_READ_INPUT_JSON: 'CALL_ST_READ_INPUT_JSON',
     CALL_ST_NUM_ELEMENTS:    'CALL_ST_NUM_ELEMENTS',
     CALL_ST_SIM_SETUP:       'CALL_ST_SIM_SETUP',
@@ -117,11 +131,47 @@ class empty_args(ctypes.Structure):
 
 # simlulation data functions
 
+# functions for SolTrace data management
+
+# sun functions
+class args_st_sun(ctypes.Structure):
+    _fields_ = [
+        ('point_source',        ctypes.c_int),
+        ('shape',               ctypes.c_wchar),
+        ('sigma_halfwidth_csr', ctypes.c_double),
+    ]
+
+class args_st_sun_xyz(ctypes.Structure):
+    _fields_ = [
+        ('x', ctypes.c_double),
+        ('y', ctypes.c_double),
+        ('z', ctypes.c_double),
+    ]
+
+class args_st_sun_position(ctypes.Structure):
+    _fields_ = [
+        ('lat',  ctypes.c_double),
+        ('day',  ctypes.c_double),
+        ('hour', ctypes.c_double),
+        ('x',    ctypes.POINTER(ctypes.c_double)),
+        ('y',    ctypes.POINTER(ctypes.c_double)),
+        ('z',    ctypes.POINTER(ctypes.c_double)),
+    ]
+
+class args_st_sun_userdata(ctypes.Structure):
+    _fields_ = [
+        ('npoints',   ctypes.c_uint),
+        ('angle',     ctypes.POINTER(ctypes.c_double)),
+        ('intensity', ctypes.POINTER(ctypes.c_double)),
+    ]
+
+# functions for simulation data management thru json strings
 class args_st_read_input_json(ctypes.Structure):
     _fields_ = [
         ('json', ctypes.c_char_p)
     ]
 
+# functions for SolTrace data information
 class args_st_num_elements(ctypes.Structure):
     _fields_ = [
         ('num_elements', ctypes.POINTER(ctypes.c_int))
@@ -133,8 +183,8 @@ class args_st_sim_setup(ctypes.Structure):
     _fields_ = [
         ('runner_type', ctypes.c_uint),
         ('num_threads', ctypes.c_uint64),
-        ('seeds', ctypes.POINTER(ctypes.c_uint)),
-        ('num_seeds', ctypes.c_size_t)
+        ('seeds',       ctypes.POINTER(ctypes.c_uint)),
+        ('num_seeds',   ctypes.c_size_t)
     ]
 
     def __init__(self, runner_type, num_threads = 8, seeds = None, num_seeds = 0):
@@ -166,8 +216,16 @@ _ST_API_CALL_T = ctypes.c_uint        # enum st_api_call : unsigned int
 class _payload(ctypes.Union):
     _fields_ = [
         # simlulation data functions
+        # functions for SolTrace data management
+        # sun functions
+        ('sun',          args_st_sun),
+        ('sun_xyz',      args_st_sun_xyz),
+        ('sun_position', args_st_sun_position),
+        ('sun_userdata', args_st_sun_userdata),
+        # functions for simulation data management thru json strings
         ('read_input_json_args', args_st_read_input_json),
-        ('num_elements_args',    args_st_num_elements),
+        # functions for SolTrace data information
+        ('num_elements_args', args_st_num_elements),
         # simlulation runner functions
         ('sim_setup_args',  args_st_sim_setup),
         ('sim_run_v2_args', args_st_sim_run_v2),
@@ -185,9 +243,9 @@ class st_api_pair():
     func: ctypes._CFuncPtr
     args: st_api_call_args
 
-ST_API_CALL_ARGS = {
-    CALL_ST_READ_INPUT_JSON: args_st_read_input_json,
-    CALL_ST_NUM_ELEMENTS:    args_st_num_elements,
-    CALL_ST_SIM_SETUP:       args_st_sim_setup,
-    CALL_ST_SIM_RUN_V2:      args_st_num_elements,
-}
+# ST_API_CALL_ARGS = {
+#     CALL_ST_READ_INPUT_JSON: args_st_read_input_json,
+#     CALL_ST_NUM_ELEMENTS:    args_st_num_elements,
+#     CALL_ST_SIM_SETUP:       args_st_sim_setup,
+#     CALL_ST_SIM_RUN_V2:      args_st_num_elements,
+# }
