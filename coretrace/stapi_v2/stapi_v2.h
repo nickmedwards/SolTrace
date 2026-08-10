@@ -51,10 +51,12 @@ using SolTrace::Runner::SimulationRunner;
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
 
+typedef unsigned int st_uint_t;
+
 /* changing return code convention from v1
    to be in line with industry convention.
    i.e. 0 for success, non-zero for failure. */
-typedef unsigned int st_return_t;
+typedef st_uint_t st_return_t;
 
 enum st_return_code : st_return_t {
 	SUCCESS = 0,
@@ -73,6 +75,7 @@ enum st_return_code : st_return_t {
 	WARNING_FELLBACK_FROM_EMBREE,
 	WARNING_FELLBACK_FROM_OPTIX,
 	WARNING_ARGUMENT_IGNORED_BY_RUNNER,
+	WARNING_SUN_SHAPE_IGNORED,
 
 	RETURN_COUNT /* sentinel (not a valid return type) */
 };
@@ -81,7 +84,7 @@ enum st_return_code : st_return_t {
 #define DEFAULT_NUM_THREADS 8
 #endif
 
-typedef enum st_runner_type_t : unsigned int {
+typedef enum st_runner_type_t : st_uint_t {
 	NATIVE = 0,   /* 0 */
 	OPTIX,        /* 1 */
 	EMBREE,		  /* 2 */
@@ -104,7 +107,7 @@ typedef void* st_context_v2_t;
 // SolTrace Context Functions //
 ////////////////////////////////
 
-/* functions for SolTrace context management */
+// functions for SolTrace context management
 STAPI_V2 st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb = nullptr);
 STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 
@@ -112,7 +115,30 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 // Simlulation Data Functions //
 ////////////////////////////////
 
-/* functions for SolTrace data management */
+// functions for SolTrace data management
+
+// sun functions
+STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
+							int    			point_source,
+							char   			shape, 
+							double 			sigma_halfwidth_csr);
+STAPI_V2 st_return_t st_sun_xyz(st_context_v2_t pcxt,
+								double 			x,
+								double 			y,
+								double 			z);
+STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
+									 double  		 lat,
+									 double  		 day,
+									 double  		 hour,
+									 double* 		 x,
+									 double* 		 y,
+									 double* 		 z);
+STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
+									 st_uint_t 		 npoints,
+									 double 		 angle[],
+									 double 		 intensity[]);
+
+// functions for simulation data management thru json strings
 STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
 
 /* functions for SolTrace data information */
@@ -126,7 +152,7 @@ STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
 STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
 								  st_runner_type_t runner_type, 
 								  uint_fast64_t    num_threads = DEFAULT_NUM_THREADS,
-								  unsigned int 	   *seeds = nullptr,
+								  st_uint_t 	   *seeds = nullptr,
 								  size_t		   num_seeds = 0);
 
 STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt);
@@ -168,7 +194,7 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 
 - simulation runner
 	setup  					  -> int st_sim_setup(st_context_v2_t pcxt, st_runner_type_t runner_type);
-	run    					  -> int st_sim_run_v2(st_context_v2_t pcxt, unsigned int seed, int (*callback)(...), void *data);
+	run    					  -> int st_sim_run_v2(st_context_v2_t pcxt, st_uint_t seed, int (*callback)(...), void *data);
 	report 					  -> int st_sim_report(st_context_v2_t pcxt, int level);
 
 - simulation results
@@ -180,7 +206,7 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 ///////////////////////
 
 // enum defining all calls available to batch together
-typedef enum st_api_call : unsigned int {
+typedef enum st_api_call : st_uint_t {
 	// Simlulation Data Functions
     CALL_ST_READ_INPUT_JSON = 0,
     CALL_ST_NUM_ELEMENTS,
@@ -206,7 +232,7 @@ typedef struct args_st_num_elements {
 typedef struct args_st_sim_setup {
 	st_runner_type_t runner_type;
 	uint_fast64_t    num_threads = DEFAULT_NUM_THREADS;
-	unsigned int 	 *seeds = nullptr;
+	st_uint_t 	 	 *seeds = nullptr;
 	size_t		     num_seeds = 0;
 } args_st_sim_setup;
 
@@ -247,11 +273,11 @@ typedef st_return_t (*st_api_func_ptr)(void);
 /* loop, based on the st_api_call tag carried in st_api_call_args.    */
 /* Error codes break the loop, and warning codes are ignored.         */
 /* ------------------------------------------------------------------ */
-STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
+STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
 							  st_api_func_ptr* functions, 
-							  void** arguments, 
-							  unsigned int count,
-                              unsigned int* fail_iteration);
+							  void** 	 	   arguments, 
+							  st_uint_t  	   count,
+                              st_uint_t* 	   fail_iteration);
 
 #ifdef __cplusplus
 } /* extern "C" */

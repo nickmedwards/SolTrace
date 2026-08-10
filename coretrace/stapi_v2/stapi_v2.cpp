@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+
 #include "../simulation_runner/simulation_runner.hpp"
 #include "../simulation_runner/native_runner/native_runner.hpp"
 #include "../simulation_data/simulation_data_export.hpp"
@@ -67,7 +69,116 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 // Simlulation Data Functions //
 ////////////////////////////////
 
-/* functions for SolTrace data management */
+// functions for SolTrace data management
+
+// sun functions
+std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
+{
+    if (!data->get_number_of_ray_sources())
+        data->add_ray_source(make_ray_source<Sun>());
+    
+    ray_source_ptr sun_ptr = data->get_ray_source(0);
+    return std::dynamic_pointer_cast<Sun>(sun_ptr);
+}
+
+STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
+							int             point_source,
+							char            shape, 
+							double          sigma_halfwidth_csr)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    st_return_t code = st_return_code::SUCCESS; 
+
+    SunShape sun_shape = SunShape::GAUSSIAN;
+    switch (shape)
+    {
+        /* default to gaussian shape, 
+           using default to add warning
+           case 'g':
+           case 'G':                    */
+        case 'p':
+        case 'P':
+        {
+            sun_shape = SunShape::PILLBOX;
+            break;
+        }
+        case 'l':
+        case 'L':
+        {
+            sun_shape = SunShape::LIMBDARKENED;
+            break;
+        }
+        case 'b':
+        case 'B':
+        {
+            sun_shape = SunShape::BUIE_CSR;
+            break;
+        }
+        /* user defined sun shape goes thru same 
+           Sun::set_shape, emit warning because not 
+           enough information from this signiture, 
+           maybe add defaults?                      
+           case 'u':
+           case 'U':                             */
+    default:
+        // warning code default to gaussian
+        code = st_return_code::WARNING_SUN_SHAPE_IGNORED;
+        break;
+    }
+
+    auto sun = get_or_create_sun(data);
+    if (code == st_return_code::SUCCESS)
+        sun->set_shape(sun_shape, 
+                       sigma_halfwidth_csr,
+                       sigma_halfwidth_csr,
+                       sigma_halfwidth_csr);
+    return code;
+}
+STAPI_V2 st_return_t st_sun_xyz(st_context_v2_t pcxt,
+								double          x,
+								double          y,
+								double          z)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    auto sun = get_or_create_sun(data);
+    sun->set_position(x, y, z);
+    return st_return_code::SUCCESS;
+}
+STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
+									 double          lat,
+									 double          day,
+									 double          hour,
+									 double*         x,
+									 double*         y,
+									 double*         z)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+}
+STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
+									 st_uint_t 		 npoints,
+									 double 		 angle[],
+									 double 		 intensity[])
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    std::vector<double> v_angle(angle, angle + npoints);
+    std::vector<double> v_intensity(intensity, intensity + npoints);
+    auto sun = get_or_create_sun(data);
+    sun->set_shape(SunShape::USER_DEFINED,
+                   0, 0, 0,
+                   v_angle, 
+                   v_intensity);
+    return st_return_code::SUCCESS;
+}
+
+// functions for simulation data management thru json strings
 STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
 {
 	CONTEXT(pcxt);
@@ -77,7 +188,7 @@ STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
     return st_return_code::SUCCESS;
 }
 
-/* functions for SolTrace data information */
+// functions for SolTrace data information
 STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
 {
     CONTEXT(pcxt);
@@ -95,7 +206,7 @@ STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
 STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
 								  st_runner_type_t runner_type, 
 								  uint_fast64_t    num_threads,
-								  unsigned int 	   *seeds,
+								  st_uint_t 	   *seeds,
 								  size_t		   num_seeds)
 {
     CONTEXT(pcxt);
@@ -158,7 +269,7 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
             // ensures runtime_error won't be raised
             if (num_threads != num_seeds) return st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE;
 
-            const std::vector<unsigned int> temp_seeds(seeds, seeds + num_seeds);
+            const std::vector<st_uint_t> temp_seeds(seeds, seeds + num_seeds);
             temp_native->set_number_of_threads(num_threads, temp_seeds);
         }
         else
@@ -237,8 +348,8 @@ bool is_error(st_return_t code)
 STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
                               st_api_func_ptr* functions, 
 							  void** arguments, 
-							  unsigned int num_calls,
-                              unsigned int* fail_iteration)
+							  st_uint_t num_calls,
+                              st_uint_t* fail_iteration)
 {
     st_return_t code = st_return_code::SUCCESS;
     
@@ -277,17 +388,17 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
                     // -> st_context_v2_t  pcxt, 
 					// 	  st_runner_type_t runner_type, 
 					// 	  uint_fast64_t    num_threads,
-					// 	  unsigned int 	   *seeds,
+					// 	  st_uint_t 	   *seeds,
 					// 	  size_t		   num_seeds
                     st_return_t (*fn)(st_context_v2_t,
                                       st_runner_type_t,
                                       uint_fast64_t,
-                                      unsigned int *,
+                                      st_uint_t *,
                                       size_t) =
                         (st_return_t (*)(st_context_v2_t,
                                       st_runner_type_t,
                                       uint_fast64_t,
-                                      unsigned int *,
+                                      st_uint_t *,
                                       size_t))functions[i];
                     code = fn(pcxt, 
                               call_args->payload.sim_setup_args.runner_type,
