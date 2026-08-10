@@ -45,7 +45,8 @@ from .point import Point
 from . import math_utils
 from .stapi_v2 import STAPIv2
 
-_default_cls_arg = lambda arg, default_cls, *args: arg if arg != None else default_cls(*args)
+_default_cls_arg = lambda arg, default_cls, *args: \
+    arg if arg != None else default_cls(*args)
 
 def _format_class(prefix, 
                   pairs, 
