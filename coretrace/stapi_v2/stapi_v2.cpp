@@ -90,32 +90,33 @@ STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
     DATA(cxt);
 
     st_return_t code = st_return_code::SUCCESS; 
-
     SunShape sun_shape = SunShape::GAUSSIAN;
+
     switch (shape)
     {
         /* default to gaussian shape, 
-           using default to add warning
-           case 'g':
-           case 'G':                    */
+           using default to add warning */
+        case 'g':
+        case 'G':
+            // sun_shape = SunShape::GAUSSIAN;
+            break;
         case 'p':
         case 'P':
-        {
             sun_shape = SunShape::PILLBOX;
             break;
-        }
+        /* currently no set_limbdarkend_distribution
+           function is implemented, so ignore and 
+           emit warning
         case 'l':
         case 'L':
         {
             sun_shape = SunShape::LIMBDARKENED;
             break;
-        }
+        }                                           */
         case 'b':
         case 'B':
-        {
             sun_shape = SunShape::BUIE_CSR;
             break;
-        }
         /* user defined sun shape goes thru same 
            Sun::set_shape, emit warning because not 
            enough information from this signiture, 
@@ -123,19 +124,21 @@ STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
            case 'u':
            case 'U':                             */
     default:
-        // warning code default to gaussian
+        // warning code default to gaussian, default sigma = 4.65
+        sun_shape = SunShape::GAUSSIAN;
+        sigma_halfwidth_csr = 4.65;
         code = st_return_code::WARNING_SUN_SHAPE_IGNORED;
         break;
     }
 
     auto sun = get_or_create_sun(data);
-    if (code == st_return_code::SUCCESS)
-        sun->set_shape(sun_shape, 
-                       sigma_halfwidth_csr,
-                       sigma_halfwidth_csr,
-                       sigma_halfwidth_csr);
+    sun->set_shape(sun_shape, 
+                    sigma_halfwidth_csr,
+                    sigma_halfwidth_csr,
+                    sigma_halfwidth_csr);
     return code;
 }
+
 STAPI_V2 st_return_t st_sun_xyz(st_context_v2_t pcxt,
 								double          x,
 								double          y,
@@ -148,6 +151,7 @@ STAPI_V2 st_return_t st_sun_xyz(st_context_v2_t pcxt,
     sun->set_position(x, y, z);
     return st_return_code::SUCCESS;
 }
+
 STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
 									 double          lat,
 									 double          day,
@@ -156,10 +160,33 @@ STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
 									 double*         y,
 									 double*         z)
 {
-    CONTEXT(pcxt);
-    DATA(cxt);
+    /* TODO: make st_sun_position_v2 that take a 
+	computes the sun vector xyz given arguments
+	lat : [deg] latitude 
+	day : [] day of the year 
+	hour : [hour] solar time. 12.00 corresponds to sun at maximum elevation and does not necessarily match local time
 
+	xyz coordinate system:
+		x: +west
+		y: +zenith
+		z: +north
+	*/
+
+	double Declination, HourAngle, Elevation, Azimuth;
+
+	Declination = 180 / M_PI * asin(0.39795 * cos(0.98563 * M_PI / 180 * (day - 173)));
+	HourAngle = 15 * (hour - 12);
+	Elevation = 180 / M_PI * asin(sin(Declination * M_PI / 180) * sin(lat * M_PI / 180) + cos(Declination * M_PI / 180) * cos(HourAngle * M_PI / 180) * cos(lat * M_PI / 180));
+	Azimuth = 180 / M_PI * acos((sin(M_PI / 180 * Declination) * cos(M_PI / 180 * lat) - cos(M_PI / 180 * Declination) * sin(M_PI / 180 * lat) * cos(M_PI / 180 * HourAngle)) / cos(M_PI / 180 * Elevation) + 0.0000000001);
+	if (sin(HourAngle * M_PI / 180) > 0.0)
+		Azimuth = 360 - Azimuth;
+	*x = -sin(Azimuth * M_PI / 180) * cos(Elevation * M_PI / 180);
+	*y = sin(Elevation * M_PI / 180);
+	*z = cos(Azimuth * M_PI / 180) * cos(Elevation * M_PI / 180);
+
+	return st_return_code::SUCCESS;
 }
+
 STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 									 st_uint_t 		 npoints,
 									 double 		 angle[],
@@ -171,10 +198,11 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
     std::vector<double> v_angle(angle, angle + npoints);
     std::vector<double> v_intensity(intensity, intensity + npoints);
     auto sun = get_or_create_sun(data);
-    sun->set_shape(SunShape::USER_DEFINED,
-                   0, 0, 0,
-                   v_angle, 
-                   v_intensity);
+    ST_WRAP_CB_TRY_CATCH(sun->set_shape(SunShape::USER_DEFINED,
+                                        0, 0, 0,
+                                        v_angle, 
+                                        v_intensity),
+                        cxt->p_cb);
     return st_return_code::SUCCESS;
 }
 

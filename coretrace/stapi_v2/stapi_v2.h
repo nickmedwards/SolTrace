@@ -37,15 +37,17 @@ functions for interacting with new SimulationData/Runner/Results structure throu
 extern "C" {
 #endif
 
-#define ST_WRAP_CB_TRY_CATCH(call, cb) 		      \
-	if (!cb) (call); 						      \
-	else { 									      \
-		try { (call); } 					      \
-		catch (const std::runtime_error& e) {     \
-			cb(#call, e.what()); 			      \
-			return st_return_code::RUNTIME_ERROR; \
-		} 									      \
-	}
+#ifndef M_PI
+	#define M_PI 3.141592653589793238462643
+#endif
+
+
+#define ST_WRAP_CB_TRY_CATCH(call, cb) 	  \
+	try { (call); } 					  \
+	catch (const std::exception& e) {     \
+		if (cb) cb(#call, e.what()); 	  \
+		return st_return_code::EXCEPTION; \
+	} 									  \
 
 using SolTrace::Runner::SimulationRunner;
 using SolTrace::Runner::RunnerStatus;
@@ -70,7 +72,7 @@ enum st_return_code : st_return_t {
 	RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE,
 	RUNNER_SETUP_FAILURE,
 	RUNNER_NOT_READY,
-	RUNTIME_ERROR,
+	EXCEPTION,
 
 	WARNING_FELLBACK_FROM_EMBREE,
 	WARNING_FELLBACK_FROM_OPTIX,
@@ -148,7 +150,7 @@ STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
 // Simlulation Runner Functions //
 //////////////////////////////////
 
-/* functions for SolTrace runner management */
+// functions for SolTrace runner management
 STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
 								  st_runner_type_t runner_type, 
 								  uint_fast64_t    num_threads = DEFAULT_NUM_THREADS,

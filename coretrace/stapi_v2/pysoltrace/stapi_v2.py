@@ -26,7 +26,7 @@ import orjson # pyright: ignore[reportMissingImports]
 # from ctypes import *
 import ctypes
 c_number = ctypes.c_double
-from colorama import just_fix_windows_console, Fore, Back, Style
+from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
 just_fix_windows_console()
 
 from . import soltrace_constants as _STC

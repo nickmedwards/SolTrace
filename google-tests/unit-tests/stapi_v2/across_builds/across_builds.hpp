@@ -20,13 +20,34 @@ using json = nlohmann::ordered_json;
     code = st_read_input_json(pcxt, root.dump().c_str()); \
     EXPECT_EQ(code, st_return_code::SUCCESS);
 
+///////////////////////
+// Utility Functions //
+///////////////////////
+
 json load_json();
 
+////////////////////////////////
+// Simlulation Data Functions //
+////////////////////////////////
+
+// sun functions
+st_return_t call_stapi_v2_sun(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt);
+
+// functions for simulation data management thru json strings
 st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
 
-st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt);
+//////////////////////////////////
+// Simlulation Runner Functions //
+//////////////////////////////////
 
+st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runner_type);
+
+///////////////////////////////////
+// Simlulation Results Functions //
+///////////////////////////////////
 
 // TODO: add test for st_write_results_json
 st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt, 

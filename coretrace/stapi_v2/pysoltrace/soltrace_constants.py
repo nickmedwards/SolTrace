@@ -20,7 +20,7 @@ RUNNER_INILIALIZE_FAILURE                    = 7
 RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE = 8
 RUNNER_SETUP_FAILURE                         = 9
 RUNNER_NOT_READY                             = 10
-RUNTIME_ERROR                                = 11
+EXCEPTION                                    = 11
 # warning codes
 WARNING_FELLBACK_FROM_EMBREE                 = 12
 WARNING_FELLBACK_FROM_OPTIX                  = 13
@@ -43,7 +43,7 @@ ST_RETURN_CODE_NAME = {
     RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE: 'RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE',
     RUNNER_SETUP_FAILURE:                         'RUNNER_SETUP_FAILURE',
     RUNNER_NOT_READY:                             'RUNNER_NOT_READY',
-    RUNTIME_ERROR:                                'RUNTIME_ERROR',
+    EXCEPTION:                                    'EXCEPTION',
     # warning codes
     WARNING_FELLBACK_FROM_EMBREE:                 'WARNING_FELLBACK_FROM_EMBREE',
     WARNING_FELLBACK_FROM_OPTIX:                  'WARNING_FELLBACK_FROM_OPTIX',
@@ -62,7 +62,7 @@ ST_RETURN_CODE_ERROR_MSG = {
     RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE: 'Number of threads requested and length of seeds list are not equal. Include the number of seeds as threads requested.',
     RUNNER_SETUP_FAILURE:                         'SimulationRunner could not be set up based on SimulationData provided.',
     RUNNER_NOT_READY:                             'SimulationRunner is not ready for operation. Set up the SimulationRunner or run the simulation.',
-    RUNTIME_ERROR:                                'RuntimeError raised. Check validity of JSON against SolTrace schema version used.',
+    EXCEPTION:                                    'Exception raised. Check validity of the arguments passed to the function called or of the JSON against SolTrace schema version used.',
 }
 ST_RETURN_CODE_WARNING_MSG = {
     WARNING_FELLBACK_FROM_EMBREE:       'Requested EmbreeRunner, but is not installed. Fellback to NativeRunner.',

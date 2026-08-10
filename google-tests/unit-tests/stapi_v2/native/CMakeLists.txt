@@ -14,9 +14,10 @@ include_directories(
 set(STAPI_V2_NATIVE_SRC
     ../../../../coretrace/stapi_v2/stapi_v2.h
     ../across_builds/across_builds.cpp
-	json_io.cpp
-    runner_tests.cpp
+	data_tests.cpp
+    json_io.cpp
 	results_tests.cpp
+	runner_tests.cpp
 )
 
 add_executable(stapi_v2_native ${STAPI_V2_NATIVE_SRC})

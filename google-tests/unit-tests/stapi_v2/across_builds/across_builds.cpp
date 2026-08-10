@@ -5,8 +5,13 @@ intended to be called from tests inside different api build tests, those manage 
 */
 
 #include <fstream>
+#include <vector>
 
 #include "across_builds.hpp"
+
+///////////////////////
+// Utility Functions //
+///////////////////////
 
 json load_json()
 {
@@ -25,6 +30,148 @@ json load_json()
     return root;
 }
 
+////////////////////////////////
+// Simlulation Data Functions //
+////////////////////////////////
+// sun functions
+st_return_t call_stapi_v2_sun(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    // expect == 0
+    st_return_t code = (st_return_t)cxt->p_data->get_number_of_ray_sources();
+
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    code += st_sun(pcxt, 0, (char)"", 0);
+    auto sun_0 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    SunShape shape = sun_0->get_shape();
+    double sigma = sun_0->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    code += st_sun(pcxt, 1, (char)"", 0);
+    auto sun_1 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_1->get_shape();
+    sigma = sun_1->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+    // expect sun opbject to be same
+    if (sun_0 != sun_1) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // tests below follow switch statement order in st_sun
+
+    // expect += 0
+    code += st_sun(pcxt, 0, 'g', 5);
+    auto sun_2 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_2->get_shape();
+    sigma = sun_2->get_sigma();
+    // expect both of these to equal args
+    if (shape != SunShape::GAUSSIAN || sigma != 5) ++code;
+    // expect sun opbject to be same
+    if (sun_1 != sun_2) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += 0
+    code += st_sun(pcxt, 0, 'p', 5);
+    auto sun_3 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_3->get_shape();
+    double hw = sun_3->get_half_width();
+    // expect both of these to equal args
+    if (shape != SunShape::PILLBOX || hw != 5) ++code;
+    // expect sun opbject to be same
+    if (sun_2 != sun_3) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    code += st_sun(pcxt, 0, 'l', 5);
+    auto sun_4 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_4->get_shape();
+    sigma = sun_4->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+    // expect sun opbject to be same
+    if (sun_3 != sun_4) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += 0
+    code += st_sun(pcxt, 0, 'b', .5);
+    auto sun_5 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_5->get_shape();
+    double csr = sun_5->get_circumsolar_ratio();
+    // expect both of these to equal args
+    if (shape != SunShape::BUIE_CSR || csr != .5) ++code;
+    // expect sun opbject to be same
+    if (sun_4 != sun_5) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    code += st_sun(pcxt, 0, 'u', 0);
+    auto sun_6 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_6->get_shape();
+    sigma = sun_6->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+    // expect sun opbject to be same
+    if (sun_5 != sun_6) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect code == 4 * st_return_code::WARNING_SUN_SHAPE_IGNORED
+    return code;
+}
+
+st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    // expect == 0
+    st_return_t code = (st_return_t)cxt->p_data->get_number_of_ray_sources();
+
+    // expect == 0
+    code += st_sun_xyz(pcxt, 608, 303, 1000);
+    auto sun = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    auto xyz = sun->get_position();
+    // expect position to be what was set
+    if (xyz[0] != 608 || xyz[1] != 303 || xyz[2] != 1000) ++code;
+
+    return code;
+}
+
+st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    // expect == 0
+    st_return_t code = (st_return_t)cxt->p_data->get_number_of_ray_sources();
+
+    double good_angles[3]      = {0, 1, 2};
+    double good_intensities[3] = {0, 1, 2};
+
+    // expect += 0
+    code += st_sun_userdata(pcxt, 3, good_angles, good_intensities);
+    auto sun = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    
+    std::vector<double> angles, intensities;
+    sun->get_user_data(angles, intensities);
+    if (angles[0] != good_angles[0]
+        || angles[1] != good_angles[1]
+        || angles[2] != good_angles[2]
+        || intensities[0] != intensities[0]
+        || intensities[1] != intensities[1]
+        || intensities[2] != intensities[2]) ++code;
+
+    double bad_intensities[2] = {0, -1};
+    // expect += st_return_code::EXCEPTION
+    code += st_sun_userdata(pcxt, 3, good_angles, bad_intensities);
+    
+    return code;
+}
+
+// functions for simulation data management thru json strings
 st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt)
 {
     json root = load_json();
@@ -32,8 +179,15 @@ st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt)
     return st_read_input_json(pcxt, root.dump().c_str());
 }
 
+//////////////////////////////////
+// Simlulation Runner Functions //
+//////////////////////////////////
+
+// functions for SolTrace runner management
 st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt)
 {
+    // this fails on first execution after build if optix is built
+    // when debugging first execution, it passes 
     json root = load_json();
 
     st_return_t rt = st_read_input_json(pcxt, root.dump().c_str());
@@ -60,6 +214,10 @@ st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runn
     return st_sim_setup(pcxt, runner_type) + st_sim_run_v2(pcxt);
 }
 
+///////////////////////////////////
+// Simlulation Results Functions //
+///////////////////////////////////
+
 st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt, 
                                             st_runner_type_t runner_type, 
                                             const char       *filename)
@@ -75,9 +233,8 @@ st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt,
     rt += st_sim_report(pcxt, 0);
     rt += st_write_results_csv(pcxt, filename);
 
-
-
-    std::filesystem::remove(filename);
+    std::error_code ec;
+    std::filesystem::remove(filename, ec);
 
     return rt;
 }
