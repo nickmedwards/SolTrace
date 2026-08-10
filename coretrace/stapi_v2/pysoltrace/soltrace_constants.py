@@ -50,27 +50,6 @@ ST_RETURN_CODE_NAME = {
     WARNING_ARGUMENT_IGNORED_BY_RUNNER:           'WARNING_ARGUMENT_IGNORED_BY_RUNNER',
 }
 
-# ST_RETURN_CODES = [
-#     # success code
-#     SUCCESS,
-#     # error codes
-#     FAILURE,
-#     CANCEL,
-#     CONTEXT_NOT_FOUND,
-#     DATA_NOT_FOUND,
-#     RUNNER_NOT_FOUND,
-#     RESULT_NOT_FOUND,
-#     RUNNER_INILIALIZE_FAILURE,
-#     RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE,
-#     RUNNER_SETUP_FAILURE,
-#     RUNNER_NOT_READY,
-#     RUNTIME_ERROR,
-#     # warning codes
-#     WARNING_FELLBACK_FROM_EMBREE,
-#     WARNING_FELLBACK_FROM_OPTIX,
-#     WARNING_ARGUMENT_IGNORED_BY_RUNNER
-# ]
-
 # messages for return codes
 ST_RETURN_CODE_ERROR_MSG = {
     FAILURE:                                      '',
@@ -105,8 +84,6 @@ ST_RUNNER_NAME = {
     OPTIX:  'OPTIX',
     EMBREE: 'EMBREE',
 }
-
-# ST_RUNNER_TYPES = [NATIVE, OPTIX, EMBREE]
 
 #######################
 # batchable api calls #

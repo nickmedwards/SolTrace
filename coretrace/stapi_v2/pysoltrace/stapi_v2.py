@@ -40,32 +40,6 @@ enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 
 # t = timer()
 
-# #########################
-# # st_return_code set up #
-# #########################
-# SUCCESS                                      = 'SUCCESS'
-# FAILURE                                      = 'FAILURE'
-# CANCEL                                       = 'CANCEL'
-# CONTEXT_NOT_FOUND                            = 'CONTEXT_NOT_FOUND'
-# DATA_NOT_FOUND                               = 'DATA_NOT_FOUND'
-# RUNNER_NOT_FOUND                             = 'RUNNER_NOT_FOUND'
-# RESULT_NOT_FOUND                             = 'RESULT_NOT_FOUND'
-# RUNNER_INILIALIZE_FAILURE                    = 'RUNNER_INILIALIZE_FAILURE'
-# RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE = 'RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE'
-# RUNNER_SETUP_FAILURE                         = 'RUNNER_SETUP_FAILURE'
-# RUNNER_NOT_READY                             = 'RUNNER_NOT_READY'
-# RUNTIME_ERROR                                = 'RUNTIME_ERROR'
-# WARNING_FELLBACK_FROM_EMBREE                 = 'WARNING_FELLBACK_FROM_EMBREE'
-# WARNING_FELLBACK_FROM_OPTIX                  = 'WARNING_FELLBACK_FROM_OPTIX'
-# WARNING_ARGUMENT_IGNORED_BY_RUNNER           = 'WARNING_ARGUMENT_IGNORED_BY_RUNNER'
-
-# # TODO: maybe fetch enums from include/SolTrace/stapi_v2/stapi_v2.h?
-
-# #########################
-# # st_runner_type set up #
-# #########################
-# NATIVE, OPTIX, EMBREE = 'NATIVE', 'OPTIX', 'EMBREE'
-
 ###################################
 # exception and warning reporting #
 ###################################
@@ -79,147 +53,10 @@ STAPIv2Warning = lambda code, name, msg: warnings.warn(
     stacklevel=4
 )
 
-# _ST_CONTEXT_V2_T = ctypes.c_void_p  # typedef void* st_context_v2_t;
-
-# # setting up st_api_call enum
-# _ST_API_CALL_T = ctypes.c_uint        # enum st_api_call : unsigned int
-
-# # classes mirroring structs with name args_st_*
-# class _empty_args(ctypes.Structure):
-#     _fields_ = []
-
-# # simlulation data functions
-
-# class _args_st_read_input_json(ctypes.Structure):
-#     _fields_ = [
-#         ('json', ctypes.c_char_p)
-#     ]
-
-# class _args_st_num_elements(ctypes.Structure):
-#     _fields_ = [
-#         ('num_elements', ctypes.POINTER(ctypes.c_int))
-#     ]
-
-# # simlulation runner functions
-
-# class _args_st_sim_setup(ctypes.Structure):
-#     _fields_ = [
-#         ('runner_type', ctypes.c_uint),
-#         ('num_threads', ctypes.c_uint64),
-#         ('seeds', ctypes.POINTER(ctypes.c_uint)),
-#         ('num_seeds', ctypes.c_size_t)
-#     ]
-
-#     def __init__(self, runner_type, num_threads = 8, seeds = None, num_seeds = 0):
-#         super().__init__(runner_type, num_threads, seeds, num_seeds)
-
-# class _args_st_sim_run_v2(_empty_args): pass
-
-# # simlulation results functions
-
-# print(_empty_args)
-# print(_empty_args._fields_)
-# print(_args_st_read_input_json)
-# print(_args_st_read_input_json._fields_)
-# print(_args_st_num_elements)
-# print(_args_st_num_elements._fields_)
-# print(_args_st_sim_setup)
-# print(_args_st_sim_setup._fields_)
-# print(_args_st_sim_run_v2)
-# print(_args_st_sim_run_v2._fields_)
-
-# #########################################
-# # classes for modeling st_api_call_args #
-# #########################################
-# class _payload(ctypes.Union):
-#     _fields_ = [
-#         # simlulation data functions
-#         ('read_input_json_args', _args_st_read_input_json),
-#         ('num_elements_args',    _args_st_num_elements),
-#         # simlulation runner functions
-#         ('sim_setup_args', _args_st_sim_setup),
-#         ('sim_run_v2_args', _args_st_sim_run_v2),
-#         # simlulation results functions
-#     ]
-
-# class _st_api_call_args(ctypes.Structure):
-#     _fields_ = [
-#         ('type',    _ST_API_CALL_T),
-#         ('payload', _payload),
-#     ]
-
-# @dataclass
-# class _st_api_pair():
-#     func: ctypes._CFuncPtr
-#     args: _st_api_call_args
-
 #############################################################################
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
 #############################################################################
 class STAPIv2:
-    # ST_RETURN_T = ctypes.c_uint
-    # # recognized return codes
-    # ST_RETURN_CODES = [
-    #     SUCCESS,
-    #     FAILURE,
-    #     CANCEL,
-    #     CONTEXT_NOT_FOUND,
-    #     DATA_NOT_FOUND,
-    #     RUNNER_NOT_FOUND,
-    #     RESULT_NOT_FOUND,
-    #     RUNNER_INILIALIZE_FAILURE,
-    #     RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE,
-    #     RUNNER_SETUP_FAILURE,
-    #     RUNNER_NOT_READY,
-    #     RUNTIME_ERROR,
-    #     WARNING_FELLBACK_FROM_EMBREE,
-    #     WARNING_FELLBACK_FROM_OPTIX,
-    #     WARNING_ARGUMENT_IGNORED_BY_RUNNER
-    # ]
-    # # map from name of return code to position in list
-    # ST_RETURN_CODE = enumify(ST_RETURN_CODES)
-
-    # # messages for return codes
-    # ST_RETURN_CODE_ERROR_MSG = {
-    #     ST_RETURN_CODE[FAILURE]:                                      '',
-    #     ST_RETURN_CODE[CANCEL]:                                       'Simulation canceled.',
-    #     ST_RETURN_CODE[CONTEXT_NOT_FOUND]:                            'Context pointer could not be cast as context.',
-    #     ST_RETURN_CODE[DATA_NOT_FOUND]:                               'SimulationData pointer could not be found in context.',
-    #     ST_RETURN_CODE[RUNNER_NOT_FOUND]:                             'SimulationRunner pointer could not be found in context.',
-    #     ST_RETURN_CODE[RESULT_NOT_FOUND]:                             'SimulationResult pointer could not be found in context.',
-    #     ST_RETURN_CODE[RUNNER_INILIALIZE_FAILURE]:                    'SimulationRunner could not be initialized.',
-    #     ST_RETURN_CODE[RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE]: 'Number of threads requested and length of seeds list are not equal. Include the number of seeds as threads requested.',
-    #     ST_RETURN_CODE[RUNNER_SETUP_FAILURE]:                         'SimulationRunner could not be set up based on SimulationData provided.',
-    #     ST_RETURN_CODE[RUNNER_NOT_READY]:                             'SimulationRunner is not ready for operation. Set up the SimulationRunner or run the simulation.',
-    #     ST_RETURN_CODE[RUNTIME_ERROR]:                                'RuntimeError raised. Check validity of JSON against SolTrace schema version used.',
-    # }
-    # ST_RETURN_CODE_WARNING_MSG = {
-    #     ST_RETURN_CODE[WARNING_FELLBACK_FROM_EMBREE]:       'Requested EmbreeRunner, but is not installed. Fellback to NativeRunner.',
-    #     ST_RETURN_CODE[WARNING_FELLBACK_FROM_OPTIX]:        'Requested OptixRunner, but is not installed. Fellback to NativeRunner.',
-    #     ST_RETURN_CODE[WARNING_ARGUMENT_IGNORED_BY_RUNNER]: 'Requested a number of threads for OptixRunner. The arguement does not apply to this runner type and was ignored.',
-    # }
-
-    # ST_RUNNER_TYPES = [NATIVE, OPTIX, EMBREE]
-    # ST_RUNNER_TYPE = enumify(ST_RUNNER_TYPES)
-
-    # CALL_ST_READ_INPUT_JSON = 'CALL_ST_READ_INPUT_JSON'
-    # CALL_ST_NUM_ELEMENTS    = 'CALL_ST_NUM_ELEMENTS'
-    # CALL_ST_SIM_SETUP       = 'CALL_ST_SIM_SETUP'
-    # CALL_ST_SIM_RUN_V2      = 'CALL_ST_SIM_RUN_V2'
-    # ST_API_CALLS = [
-    #     CALL_ST_READ_INPUT_JSON,
-    #     CALL_ST_NUM_ELEMENTS,
-    #     CALL_ST_SIM_SETUP,
-    #     CALL_ST_SIM_RUN_V2
-    # ]
-    # ST_API_CALL = enumify(ST_API_CALLS)
-    # ST_API_CALL_ARGS = {
-    #     ST_API_CALL[CALL_ST_READ_INPUT_JSON]: _args_st_read_input_json,
-    #     ST_API_CALL[CALL_ST_NUM_ELEMENTS]:    _args_st_num_elements,
-    #     # ST_API_CALL[CALL_ST_SIM_SETUP]:       _args_st_,
-    #     # ST_API_CALL[CALL_ST_SIM_RUN_V2]:    _args_st_num_elements,
-    # }
-
     def __init__(self, stapi_v2_dll_path: str = ''):
         if len(stapi_v2_dll_path): self.__setup_dll(stapi_v2_dll_path)
         else:
@@ -426,11 +263,11 @@ class STAPIv2:
         rt.type = call_type
         args_name, args_cls = rt.payload._fields_[call_type]
         args_payload = getattr(rt.payload, args_name)
-        print(args_name)
-        print(args_cls)
-        print(args_payload)
-        print(args_payload._fields_)
-        # print(*args)
+        # print(args_name)
+        # print(args_cls)
+        # print(args_payload)
+        # print(args_payload._fields_)
+        # print(args)
 
         args_payload.pcxt = self.__pcxt
         for i, arg in enumerate(args):
@@ -444,20 +281,6 @@ class STAPIv2:
         #     print(getattr(temp_payload_attr, field[0]))
         # print()
 
-        # func_args = STAPIv2.ST_API_CALL_ARGS[call_type]
-        # print('\nmisc')
-        # print(rt)
-        # print(rt.__dict__)
-        # print(rt.type)
-        # print(_payload)
-        # print(rt.payload)
-        # print(rt.payload._fields_)
-        # print(getattr(rt.payload, 'num_elements_args'))
-        # print(rt.payload.__dict__)
-        # print(func_args._fields_)
-        # print(func_args.__dict__)
-        # func_args.pcxt = self.__pcxt
-        # print(func_args.__dict__)
         return _STC.st_api_pair(self.__func_map[call_type], rt)
 
     def dump_batch_args(self):
