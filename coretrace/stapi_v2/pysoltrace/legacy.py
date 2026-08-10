@@ -790,7 +790,7 @@ class PySolTrace_v1:
     [ ] - PySolTrace.Optics.Create
     [x] - PySolTrace.Sun.__init__
     [x] - PySolTrace.Sun.copy
-    [ ] - PySolTrace.Sun.Create
+    [x] - PySolTrace.Sun.Create
     [T] - PySolTrace.Sun.calc_sun_vector
     [x] - PySolTrace.Stage.Element.__init__
     [x] - PySolTrace.Stage.Element.copy
