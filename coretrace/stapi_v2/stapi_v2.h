@@ -182,7 +182,7 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 // enum defining all calls available to batch together
 typedef enum st_api_call : unsigned int {
 	// Simlulation Data Functions
-    CALL_ST_READ_INPUT_JSON,
+    CALL_ST_READ_INPUT_JSON = 0,
     CALL_ST_NUM_ELEMENTS,
 	// Simlulation Runner Functions
 	CALL_ST_SIM_SETUP,
