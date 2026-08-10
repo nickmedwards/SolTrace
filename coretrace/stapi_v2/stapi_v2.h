@@ -181,20 +181,36 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 
 // enum defining all calls available to batch together
 typedef enum st_api_call : unsigned int {
+	// Simlulation Data Functions
     CALL_ST_READ_INPUT_JSON,
-    CALL_ST_NUM_ELEMENTS
+    CALL_ST_NUM_ELEMENTS,
+	// Simlulation Runner Functions
+	CALL_ST_SIM_SETUP,
+	CALL_ST_SIM_RUN_V2,
+	// Simlulation Results Functions
+
+	API_CALL_COUNT			// sentinal
 } st_api_call;
+
+typedef struct empty_args {} empty_args;
 
 // packed argument layouts — one per function signature
 typedef struct args_st_read_input_json {
-    st_context_v2_t pcxt; 
 	const char *json;
 } args_st_read_input_json;
 
 typedef struct args_st_num_elements {
-    st_context_v2_t pcxt;
 	int *num_elements;
 } args_st_num_elements;
+
+typedef struct args_st_sim_setup {
+	st_runner_type_t runner_type;
+	uint_fast64_t    num_threads = DEFAULT_NUM_THREADS;
+	unsigned int 	 *seeds = nullptr;
+	size_t		     num_seeds = 0;
+} args_st_sim_setup;
+
+typedef empty_args args_st_sim_run_v2;
 
 /* Every argument layout passed through the generic arrays is one of
  * these: a tag telling us which payload is active, plus the payload
@@ -203,8 +219,13 @@ typedef struct args_st_num_elements {
 typedef struct st_api_call_args {
     st_api_call type;
     union {
-        args_st_read_input_json  read_input_json_args;
-        args_st_num_elements 	 num_elements_args;
+		// Simlulation Data Functions
+        args_st_read_input_json read_input_json_args;
+        args_st_num_elements 	num_elements_args;
+		// Simlulation Runner Functions
+		args_st_sim_setup		sim_setup_args;
+		args_st_sim_run_v2		sim_run_v2_args;
+		// Simlulation Results Functions
     } payload;
 } st_api_call_args;
 

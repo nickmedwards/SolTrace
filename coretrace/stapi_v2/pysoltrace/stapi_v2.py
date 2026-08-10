@@ -83,30 +83,61 @@ _ST_CONTEXT_V2_T = ctypes.c_void_p  # typedef void* st_context_v2_t;
 _ST_API_CALL_T = ctypes.c_uint        # enum st_api_call : unsigned int
 
 # classes mirroring structs with name args_st_*
+class _empty_args(ctypes.Structure):
+    _fields_ = []
+
+# simlulation data functions
+
 class _args_st_read_input_json(ctypes.Structure):
     _fields_ = [
-        ('pcxt', _ST_CONTEXT_V2_T),
         ('json', ctypes.c_char_p)
     ]
 
 class _args_st_num_elements(ctypes.Structure):
     _fields_ = [
-        ('pcxt',         _ST_CONTEXT_V2_T),
         ('num_elements', ctypes.POINTER(ctypes.c_int))
     ]
 
+# simlulation runner functions
+
+class _args_st_sim_setup(ctypes.Structure):
+    _fields_ = [
+        ('runner_type', ctypes.c_uint),
+        ('num_threads', ctypes.c_uint64),
+        ('seeds', ctypes.POINTER(ctypes.c_uint)),
+        ('num_seeds', ctypes.c_size_t)
+    ]
+
+    def __init__(self, runner_type, num_threads = 8, seeds = None, num_seeds = 0):
+        super().__init__(runner_type, num_threads, seeds, num_seeds)
+
+class _args_st_sim_run_v2(_empty_args): pass
+
+# simlulation results functions
+
+print(_empty_args)
+print(_empty_args._fields_)
 print(_args_st_read_input_json)
 print(_args_st_read_input_json._fields_)
 print(_args_st_num_elements)
 print(_args_st_num_elements._fields_)
+print(_args_st_sim_setup)
+print(_args_st_sim_setup._fields_)
+print(_args_st_sim_run_v2)
+print(_args_st_sim_run_v2._fields_)
 
 #########################################
 # classes for modeling st_api_call_args #
 #########################################
 class _payload(ctypes.Union):
     _fields_ = [
+        # simlulation data functions
         ('read_input_json_args', _args_st_read_input_json),
-        ('num_elements_args',    _args_st_num_elements)
+        ('num_elements_args',    _args_st_num_elements),
+        # simlulation runner functions
+        ('sim_setup_args', _args_st_sim_setup),
+        ('sim_run_v2_args', _args_st_sim_run_v2),
+        # simlulation results functions
     ]
 
 class _st_api_call_args(ctypes.Structure):
@@ -171,14 +202,20 @@ class STAPIv2:
 
     CALL_ST_READ_INPUT_JSON = 'CALL_ST_READ_INPUT_JSON'
     CALL_ST_NUM_ELEMENTS    = 'CALL_ST_NUM_ELEMENTS'
+    CALL_ST_SIM_SETUP       = 'CALL_ST_SIM_SETUP'
+    CALL_ST_SIM_RUN_V2      = 'CALL_ST_SIM_RUN_V2'
     ST_API_CALLS = [
         CALL_ST_READ_INPUT_JSON,
-        CALL_ST_NUM_ELEMENTS
+        CALL_ST_NUM_ELEMENTS,
+        CALL_ST_SIM_SETUP,
+        CALL_ST_SIM_RUN_V2
     ]
     ST_API_CALL = enumify(ST_API_CALLS)
     ST_API_CALL_ARGS = {
         ST_API_CALL[CALL_ST_READ_INPUT_JSON]: _args_st_read_input_json,
-        ST_API_CALL[CALL_ST_NUM_ELEMENTS]:    _args_st_num_elements
+        ST_API_CALL[CALL_ST_NUM_ELEMENTS]:    _args_st_num_elements,
+        # ST_API_CALL[CALL_ST_SIM_SETUP]:       _args_st_,
+        # ST_API_CALL[CALL_ST_SIM_RUN_V2]:    _args_st_num_elements,
     }
 
     def __init__(self, stapi_v2_dll_path: str = ''):
@@ -223,7 +260,7 @@ class STAPIv2:
 
     @staticmethod
     def __get_argtypes(args_struct: ctypes.Structure) -> list:
-        return [args[1] for args in args_struct._fields_]
+        return [_ST_CONTEXT_V2_T, *[args[1] for args in args_struct._fields_]]
 
     def __setup_dll(self, _lib_path: str = ''):
         if not os.path.exists(_lib_path):
@@ -236,7 +273,7 @@ class STAPIv2:
         # functions for SolTrace context management #
         #############################################
 
-        self.__pdll.st_create_context.argtypes = [ctypes.POINTER(ctypes.c_void_p),
+        self.__pdll.st_create_context.argtypes = [ctypes.POINTER(_ST_CONTEXT_V2_T),
                                                   ctypes.CFUNCTYPE(ctypes.c_int,
                                                                    ctypes.c_char_p,
                                                                    ctypes.c_char_p)]
@@ -265,15 +302,13 @@ class STAPIv2:
         # functions for SolTrace runner management #
         ############################################
 
-        self.__pdll.st_sim_setup.argtypes = [ctypes.c_void_p,
-                                             ctypes.c_uint,
-                                             ctypes.c_uint64,
-                                             ctypes.POINTER(ctypes.c_uint),
-                                             ctypes.c_size_t]
+        self.__pdll.st_sim_setup.argtypes = self.__get_argtypes(_args_st_sim_setup)
         self.__pdll.st_sim_setup.restype = STAPIv2.ST_RETURN_T
+        self.__func_map[STAPIv2.ST_API_CALL[STAPIv2.CALL_ST_SIM_SETUP]] = self.__pdll.st_sim_setup
 
-        self.__pdll.st_sim_run_v2.argtypes = [ctypes.c_void_p]
+        self.__pdll.st_sim_run_v2.argtypes = self.__get_argtypes(_args_st_sim_run_v2)
         self.__pdll.st_sim_run_v2.restype = STAPIv2.ST_RETURN_T
+        self.__func_map[STAPIv2.ST_API_CALL[STAPIv2.CALL_ST_SIM_RUN_V2]] = self.__pdll.st_sim_run_v2
 
         # TODO: include enum-ish of reporting levels
         self.__pdll.st_sim_report.argtypes = [ctypes.c_void_p, ctypes.c_int]
@@ -391,13 +426,13 @@ class STAPIv2:
         print(args_name)
         print(args_cls)
         print(args_payload)
-        print(args_payload._fields_[1:])
+        print(args_payload._fields_)
         # print(*args)
 
         args_payload.pcxt = self.__pcxt
         for i, arg in enumerate(args):
             setattr(args_payload, 
-                    args_payload._fields_[i + 1][0],
+                    args_payload._fields_[i][0],
                     arg)
             
         # print('\nres')
@@ -452,6 +487,7 @@ class STAPIv2:
                                     args_arr,
                                     num_calls,
                                     ctypes.byref(fail_iteration))
+        # TODO: raise new btach exception with fail_iteration
         self.__check_return_code(code)
 
 

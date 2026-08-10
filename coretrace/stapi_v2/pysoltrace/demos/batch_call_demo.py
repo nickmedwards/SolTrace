@@ -13,7 +13,9 @@ if __name__ == '__main__':
     pcount = ctypes.c_int()
     stapi.batch([
         stapi.generate_api_call(STAPIv2.CALL_ST_READ_INPUT_JSON, f.read()),
-        stapi.generate_api_call(STAPIv2.CALL_ST_NUM_ELEMENTS, ctypes.pointer(pcount))
+        stapi.generate_api_call(STAPIv2.CALL_ST_NUM_ELEMENTS, ctypes.pointer(pcount)),
+        stapi.generate_api_call(STAPIv2.CALL_ST_SIM_SETUP, STAPIv2.ST_RUNNER_TYPE['OPTIX']),
+        stapi.generate_api_call(STAPIv2.CALL_ST_SIM_RUN_V2),
     ])
     f.close()
     count = pcount.value
