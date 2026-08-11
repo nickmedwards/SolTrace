@@ -188,6 +188,11 @@ public:
         return this->my_optical_property_sets.is_at_end(it);
     }
 
+    uint_fast64_t get_number_of_optocal_property_sets()
+    {
+        return this->my_optical_property_sets.get_number_of_items();
+    }
+
     /// @brief Set the number of rays to trace
     /// @param nrays number of rays to trace
     void set_number_of_rays(uint_fast64_t nrays)

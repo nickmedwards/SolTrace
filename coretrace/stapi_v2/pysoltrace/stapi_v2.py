@@ -364,7 +364,7 @@ class STAPIv2:
         # print(args_payload._fields_)
         # print(args)
 
-        args_payload.pcxt = self.__pcxt
+        # args_payload.pcxt = self.__pcxt
         for i, arg in enumerate(args):
             setattr(args_payload, 
                     args_payload._fields_[i][0],

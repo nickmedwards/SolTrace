@@ -68,6 +68,7 @@ enum st_return_code : st_return_t {
 	DATA_NOT_FOUND,
 	RUNNER_NOT_FOUND,
 	RESULT_NOT_FOUND,
+	DATA_INSERTION_FAILURE,
 	RUNNER_INILIALIZE_FAILURE,
 	RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE,
 	RUNNER_SETUP_FAILURE,
@@ -118,6 +119,34 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 ////////////////////////////////
 
 // functions for SolTrace data management
+// functions to add/remove optical properties
+STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt);
+STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name);
+STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
+STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
+STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
+							  st_uint_t 	  idx,
+							  int       	  fb, /* 1=front,2=back */
+							  char      	  dist,
+							  int       	  optnum,
+							  int       	  apgr,
+							  int       	  order,
+							  double    	  rreal,
+							  double    	  rimag,
+							  double    	  ref,
+							  double    	  tra,
+							  double    	  gratingab12[3],
+							  double    	  rmsslope,
+							  double    	  rmsspec,
+							  int       	  userefltable,
+							  int       	  refl_npoints,
+							  double    	  *refl_angles,
+							  double    	  *refls,
+							  int       	  usetranstable,
+							  int       	  trans_npoints,
+							  double    	  *trans_angles,
+							  double    	  *transs);
+
 
 // sun functions
 STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,

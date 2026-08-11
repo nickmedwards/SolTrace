@@ -70,6 +70,65 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 ////////////////////////////////
 
 // functions for SolTrace data management
+// functions to add/remove optical properties
+STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    *num_optics = data->get_number_of_optocal_property_sets();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *num_optics)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string(name));
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+
+    if (res.id < 0) return st_return_code::DATA_INSERTION_FAILURE;
+
+    *num_optics = data->get_number_of_optocal_property_sets();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx)
+{
+    return st_return_code::RETURN_COUNT;
+}
+
+STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt)
+{
+    return st_return_code::RETURN_COUNT;
+}
+
+STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
+							  st_uint_t 	  idx,
+							  int       	  fb, /* 1=front,2=back */
+							  char      	  dist,
+							  int       	  optnum,
+							  int       	  apgr,
+							  int       	  order,
+							  double    	  rreal,
+							  double    	  rimag,
+							  double    	  ref,
+							  double    	  tra,
+							  double    	  gratingab12[3],
+							  double    	  rmsslope,
+							  double    	  rmsspec,
+							  int       	  userefltable,
+							  int       	  refl_npoints,
+							  double    	  *refl_angles,
+							  double    	  *refls,
+							  int       	  usetranstable,
+							  int       	  trans_npoints,
+							  double    	  *trans_angles,
+							  double    	  *transs)
+{
+return st_return_code::RETURN_COUNT;
+}
 
 // sun functions
 std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
