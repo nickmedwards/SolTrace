@@ -2,11 +2,11 @@
 #include "simulation_data/simulation_data_export.hpp"
 #include "simulation_results/simulation_result_export.hpp"
 
-
 #include <iostream>
 #include <optical_properties.hpp>
 #include <sstream>
 #include <stdexcept>
+#include <iomanip>
 
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::Runner::SimulationRunner;
