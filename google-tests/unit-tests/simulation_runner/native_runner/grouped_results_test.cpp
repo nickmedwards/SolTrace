@@ -25,11 +25,14 @@ class grouped_results_NativeRunner_helper {
         static void append(NativeRunner &runner, uint_fast64_t raynum, uint_fast64_t element_id, RayEvent hit_type, glm::dvec3 &hit_point)
         {
             glm::dvec3 cos = {0.0, 0.0, 0.0};
-            auto test = runner.tsys.RayData.Append(0, hit_point, cos, element_id, 0, raynum, hit_type);
+            runner.tsys.RayData.Append(0, hit_point, cos, element_id, 0, raynum, hit_type);
+            if (hit_type == RayEvent::CREATE) ++runner.tsys.SunRayCount;
         }
         static void setUp(NativeRunner &runner) 
         {
             runner.tsys.RayData.SetUp(1, 20000);
+            runner.tsys.Sun.MaxXSun = 1;
+            runner.tsys.Sun.MaxYSun = 1;
         }
 };
 

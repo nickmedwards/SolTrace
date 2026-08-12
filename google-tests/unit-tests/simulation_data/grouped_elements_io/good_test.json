@@ -1,5 +1,5 @@
 {
-    "schema_version": "2025.11.12",
+    "schema_version": "2026.07.15",
     "simulation_parameters": {
         "include_sun_shape_errors": true,
         "include_optical_errors": true,

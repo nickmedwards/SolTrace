@@ -29,7 +29,7 @@ public:
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
     
     // only single elements have groups
-    virtual int8_t get_group() const override { return this->group; }
+    virtual int32_t get_group() const override { return -2; }
 private:
 };
 
