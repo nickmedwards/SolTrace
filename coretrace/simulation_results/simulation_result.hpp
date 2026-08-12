@@ -81,11 +81,11 @@ public:
     void set_sun_sampling_stats(double sun_A_box, uint_fast64_t sun_ray_count);
 
     void set_exceeded_depth_count(uint_fast64_t count) { this->exceeded_depth_count = count; }
-    uint_fast64_t get_exceeded_depth_count() { return this->exceeded_depth_count; }
+    uint_fast64_t get_exceeded_depth_count() const { return this->exceeded_depth_count; }
 
     void set_grouped_results(const std::vector<GroupResult>& grouped_results) { this->grouped_results = grouped_results; }
     std::vector<GroupResult> get_grouped_results() const { return this->grouped_results; }
-    size_t get_number_of_groups() { return this->grouped_results.size(); }
+    size_t get_number_of_groups() const { return this->grouped_results.size(); }
 
 private:
     RayRecordContainer     ray_history;
