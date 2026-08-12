@@ -45,7 +45,7 @@ void OptixRunner::print_timing() const
     };
 
     std::cout << std::fixed << std::setprecision(6);
-    std::cout << "\n=== Report Simultation Summary ===\n";
+    std::cout << "\n=== Report Simulation Summary ===\n";
     std::cout << "  Get Output      : " << t_output << " s  (" << pct(t_output, t_report) << " %)\n";
     std::cout << "  Core for loop   : " << t_loop << " s  (" << pct(t_loop, t_report) << " %)\n";
     std::cout << "  Missed          : " << t_missed << " s  (" << pct(t_missed, t_report) << " %)\n";

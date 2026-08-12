@@ -492,7 +492,7 @@ bool read_element(FILE*                                      fp,
         }
 
         OpticalPropertySet optics_set = optics_iter->second;
-        // should optical interaction type by defined per element?
+        // should optical interaction type be defined per element?
         // this code would mean the optical set interaction type is set by the last seen element of that optical set in the input file
         optics_set.set_interaction_type(interaction);
 

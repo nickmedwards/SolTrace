@@ -46,7 +46,7 @@ namespace SolTrace::Runner
     enum RunnerStatistics
     {
         RAY_RECORDS,    // current default behavior is level = 0, and it reports all ray records
-        GROUPED_COUNTS, // only availible if the runner has been set up with groups
+        GROUPED_COUNTS, // only available if the runner has been set up with groups
         ALL,            // same constraint as above
     };
 
