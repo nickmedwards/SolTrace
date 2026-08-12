@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "records.hpp"
 
