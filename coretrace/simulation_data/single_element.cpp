@@ -35,6 +35,10 @@ SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
     if (jnode.contains("group"))
     {
         this->group = jnode.at("group").get<int32_t>();
+        // if user set a single element to something < -1
+        // it falls out of ungrouped -> == -1 or grouped -> >= 0
+        // assume user meant ungrouped and force to = -1
+        if (this->group < -1) this->group = -1;
     } else {
         this->group = -1;
     }
