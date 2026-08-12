@@ -26,8 +26,6 @@ set(OPTIX_RUNNER_TEST_SRC
     max_ray_depth_test.cpp
     high_flux_solar_furnace_test.cpp
     grouped_results_test.cpp
-    high_flux_solar_furnace_test.cpp
-    grouped_results_test.cpp
 )
 
 add_executable(OptixRunnerUnitTests
