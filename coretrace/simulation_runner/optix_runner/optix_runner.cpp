@@ -511,11 +511,16 @@ SolTrace::Result::RayEvent hit_type_to_ray_event(OptixCSP::HitType hit_type)
 RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
                                             int level)
 {
+    m_timer_report.reset();
+    m_timer_get_output.reset();
+    m_timer_report_loop.reset();
     m_timer_report.start();
+
     // check groups exist if grouped statistics are requested
-    size_t num_groups = m_groups.size();
+    const size_t num_groups = m_groups.size();
     if ((level == RunnerStatistics::GROUPED_COUNTS || level == RunnerStatistics::ALL) && num_groups == 0)
     {
+        m_timer_report.stop();
         return RunnerStatus::ERROR;
     }
     // Declare results
