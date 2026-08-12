@@ -41,8 +41,13 @@ OptixCSP::HitRecord create_hit_record(int32_t element_id, uint8_t hit_type, cons
 class grouped_results_SolTraceSystem_helper 
 {
     public:
-        static void set_hit_records(OptixCSP::SolTraceSystem *sys, const std::vector<OptixCSP::HitRecord> &hit_records) {
+        static void set_hit_records(OptixCSP::SolTraceSystem *sys, const std::vector<OptixCSP::HitRecord> &hit_records) 
+        {
             sys->m_hit_records = hit_records;
+        }
+        static void set_sun(OptixCSP::SolTraceSystem* sys)
+        {
+            sys->m_n_sun_rays = 1;
         }
 };
 
@@ -126,6 +131,7 @@ TEST(grouped_results, counts_test)
     }
 
     grouped_results_SolTraceSystem_helper::set_hit_records(sys, hit_records);
+    grouped_results_SolTraceSystem_helper::set_sun(sys);
 
     SimulationResult result;
     sts = runner.report_simulation(&result, SolTrace::Runner::RunnerStatistics::GROUPED_COUNTS);
