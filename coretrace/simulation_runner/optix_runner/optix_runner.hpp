@@ -81,6 +81,8 @@ public:
     void set_groups(const std::vector<std::set<int32_t>>& groups) { m_groups = groups; }
     void set_groups(const std::vector<std::set<uint_fast64_t>>& groups) 
     { 
+        m_groups.clear();
+        m_groups.reserve(groups.size());
         for (size_t i = 0; i < groups.size(); ++i)
         {
             std::set<int32_t> group_i;
@@ -88,7 +90,7 @@ public:
             {
                 group_i.insert(static_cast<int32_t>(id));
             }
-            m_groups.push_back(group_i);
+            m_groups.push_back(std::move(group_i));
         }
     }
     size_t get_num_groups() const { return m_groups.size(); }
