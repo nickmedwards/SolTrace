@@ -60,7 +60,7 @@ typedef unsigned int st_uint_t;
    i.e. 0 for success, non-zero for failure. */
 typedef st_uint_t st_return_t;
 
-enum st_return_code : st_return_t {
+typedef enum st_return_code : st_return_t {
 	SUCCESS = 0,
 	FAILURE,
 	CANCEL,
