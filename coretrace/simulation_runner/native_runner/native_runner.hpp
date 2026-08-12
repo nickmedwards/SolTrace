@@ -171,6 +171,7 @@ namespace SolTrace::NativeRunner
     private:
             // could use FRIEND_TEST macro, however to avoid linking gtest to prod, forward declare test class and make it a friend
             friend class ::grouped_results_NativeRunner_helper;
+    protected:
         bool ready_to_run;
         bool ready_to_report;
         void set_ready_to_run(bool ready) override { this->ready_to_run = ready; }

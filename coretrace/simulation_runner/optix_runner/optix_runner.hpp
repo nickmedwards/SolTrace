@@ -123,6 +123,7 @@ private:
     OptixCSP::Timer m_timer_get_output;
     OptixCSP::Timer m_timer_report_loop;
 
+protected:
     bool ready_to_run;
     bool ready_to_report;
     void set_ready_to_run(bool ready) override { this->ready_to_run = ready; }

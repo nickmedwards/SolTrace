@@ -74,6 +74,7 @@ enum st_return_code : st_return_t {
 	RUNNER_SETUP_FAILURE,
 	RUNNER_NOT_READY,
 	EXCEPTION,
+	UKNOWN_BATCH_API_CALL_FAILURE,
 
 	WARNING_FELLBACK_FROM_EMBREE,
 	WARNING_FELLBACK_FROM_OPTIX,
@@ -354,11 +355,11 @@ typedef st_return_t (*st_api_func_ptr)(void);
 /* loop, based on the st_api_call tag carried in st_api_call_args.    */
 /* Error codes break the loop, and warning codes are ignored.         */
 /* ------------------------------------------------------------------ */
-STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
-							  st_api_func_ptr* functions, 
-							  void** 	 	   arguments, 
-							  st_uint_t  	   count,
-                              st_uint_t* 	   fail_iteration);
+STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
+							  void** 	 	  arguments, 
+							  st_uint_t  	  count,
+                              st_uint_t* 	  fail_iteration,
+                              bool 			  verbose);
 
 #ifdef __cplusplus
 } /* extern "C" */

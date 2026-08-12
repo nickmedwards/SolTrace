@@ -433,10 +433,10 @@ bool is_error(st_return_t code)
 }
 
 STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
-                              st_api_func_ptr* functions, 
-							  void** arguments, 
-							  st_uint_t num_calls,
-                              st_uint_t* fail_iteration)
+							  void**          arguments, 
+							  st_uint_t       num_calls,
+                              st_uint_t       *fail_iteration,
+                              bool            verbose)
 {
     CONTEXT(pcxt);
 
@@ -450,7 +450,7 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
             // so we can inspect the tag and reach the right payload
             st_api_call_args* call_args = (st_api_call_args*)arguments[i];
             
-            if (cxt->p_cb) 
+            if (verbose && cxt->p_cb) 
             {
                 std::string msg = "batch call " + std::to_string(i);
                 // TODO: magic_enum
@@ -464,158 +464,69 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
                 // sun functions
                 case st_api_call::CALL_ST_SUN:
                 {
-                    // st_sun signature
-                    // -> st_context_v2_t pcxt,
-                    //    int    		  point_source,
-                    //    char   		  shape, 
-                    //    double 		  sigma_halfwidth_csr
-                    st_return_t (*fn)(st_context_v2_t,
-                                      int,
-                                      char,
-                                      double) = 
-                        (st_return_t (*)(st_context_v2_t,
-                                         int,
-                                         char,
-                                         double))functions[i];
-                    code = fn(pcxt,
-                              call_args->payload.sun_args.point_source,
-                              call_args->payload.sun_args.shape,
-                              call_args->payload.sun_args.sigma_halfwidth_csr);
+                    code = st_sun(pcxt,
+                                  call_args->payload.sun_args.point_source,
+                                  call_args->payload.sun_args.shape,
+                                  call_args->payload.sun_args.sigma_halfwidth_csr);
                     break;
                 }
                 case st_api_call::CALL_ST_SUN_XYZ:
                 {
-                    // st_sun_xyz signature
-                    // -> st_context_v2_t pcxt,
-                    //    double 		  x,
-                    //    double 		  y,
-                    //    double 		  z
-                    st_return_t (*fn)(st_context_v2_t,
-                                      double,
-                                      double,
-                                      double) = 
-                        (st_return_t (*)(st_context_v2_t,
-                                         double,
-                                         double,
-                                         double))functions[i];
-                    code = fn(pcxt,
-                              call_args->payload.sun_xyz_args.x,
-                              call_args->payload.sun_xyz_args.y,
-                              call_args->payload.sun_xyz_args.z);
+                    code = st_sun_xyz(pcxt,
+                                      call_args->payload.sun_xyz_args.x,
+                                      call_args->payload.sun_xyz_args.y,
+                                      call_args->payload.sun_xyz_args.z);
                     break;
                 }
                 case st_api_call::CALL_ST_SUN_POSITION:
                 {
-                    // st_sun_position signature
-                    // -> st_context_v2_t pcxt,
-                    //    double   		  lat,
-                    //    double   		  day,
-                    //    double   		  hour,
-                    //    double*  		  x,
-                    //    double*  		  y,
-                    //    double*  		  z
-                    st_return_t (*fn)(st_context_v2_t,
-                                      double,
-                                      double,
-                                      double,
-                                      double*,
-                                      double*,
-                                      double*) = 
-                        (st_return_t (*)(st_context_v2_t,
-                                         double,
-                                         double,
-                                         double,
-                                         double*,
-                                         double*,
-                                         double*))functions[i];
-                    code = fn(pcxt,
-                              call_args->payload.sun_position_args.lat,
-                              call_args->payload.sun_position_args.day,
-                              call_args->payload.sun_position_args.hour,
-                              call_args->payload.sun_position_args.x,
-                              call_args->payload.sun_position_args.y,
-                              call_args->payload.sun_position_args.z);
+                    code = st_sun_position(pcxt,
+                                           call_args->payload.sun_position_args.lat,
+                                           call_args->payload.sun_position_args.day,
+                                           call_args->payload.sun_position_args.hour,
+                                           call_args->payload.sun_position_args.x,
+                                           call_args->payload.sun_position_args.y,
+                                           call_args->payload.sun_position_args.z);
                     break;
                 }
                 case st_api_call::CALL_ST_SUN_USERDATA:
                 {
-                    // st_sun_userdata signature
-                    // -> st_context_v2_t pcxt,
-                    //    st_uint_t 	  npoints,
-                    //    double 		  angle[],
-                    //    double 		  intensity[]
-                    st_return_t (*fn)(st_context_v2_t,
-                                      st_uint_t,
-                                      double[],
-                                      double[]) =
-                        (st_return_t (*)(st_context_v2_t,
-                                      st_uint_t,
-                                      double[],
-                                      double[]))functions[i];
-                    code = fn(pcxt,
-                              call_args->payload.sun_userdata_args.npoints,
-                              call_args->payload.sun_userdata_args.angle,
-                              call_args->payload.sun_userdata_args.intensity);
+                    code = st_sun_userdata(pcxt,
+                                           call_args->payload.sun_userdata_args.npoints,
+                                           call_args->payload.sun_userdata_args.angle,
+                                           call_args->payload.sun_userdata_args.intensity);
                     break;
                 }
         		// functions for simulation data management thru json strings
                 case st_api_call::CALL_ST_READ_INPUT_JSON:
                 {
-                    // st_read_input_json signature
-                    // -> st_context_v2_t pcxt, const char *json
-                    st_return_t (*fn)(st_context_v2_t, const char *) = 
-                        (st_return_t (*)(st_context_v2_t, const char *))functions[i];
-                    code = fn(pcxt, call_args->payload.read_input_json_args.json);
+                    code = st_read_input_json(pcxt, call_args->payload.read_input_json_args.json);
                     break;
                 }
                 // functions for SolTrace data information
                 case st_api_call::CALL_ST_NUM_ELEMENTS:
                 {
-                    // st_num_elements signature
-                    // -> st_context_v2_t pcxt, int *num_elements
-                    st_return_t (*fn)(st_context_v2_t, int *) =
-                        (st_return_t (*)(st_context_v2_t, int *))functions[i];
-                    code = fn(pcxt, call_args->payload.num_elements_args.num_elements);
+                    code = st_num_elements(pcxt, call_args->payload.num_elements_args.num_elements);
                     break;
                 }
                 // Simlulation Runner Functions
                 case st_api_call::CALL_ST_SIM_SETUP:
                 {
-                    // st_sim_setup
-                    // -> st_context_v2_t  pcxt, 
-					// 	  st_runner_type_t runner_type, 
-					// 	  uint_fast64_t    num_threads,
-					// 	  st_uint_t 	   *seeds,
-					// 	  size_t		   num_seeds
-                    st_return_t (*fn)(st_context_v2_t,
-                                      st_runner_type_t,
-                                      uint_fast64_t,
-                                      st_uint_t *,
-                                      size_t) =
-                        (st_return_t (*)(st_context_v2_t,
-                                      st_runner_type_t,
-                                      uint_fast64_t,
-                                      st_uint_t *,
-                                      size_t))functions[i];
-                    code = fn(pcxt, 
-                              call_args->payload.sim_setup_args.runner_type,
-                              call_args->payload.sim_setup_args.num_threads,
-                              call_args->payload.sim_setup_args.seeds,
-                              call_args->payload.sim_setup_args.num_seeds);
+                    code = st_sim_setup(pcxt, 
+                                        call_args->payload.sim_setup_args.runner_type,
+                                        call_args->payload.sim_setup_args.num_threads,
+                                        call_args->payload.sim_setup_args.seeds,
+                                        call_args->payload.sim_setup_args.num_seeds);
                     break;
                 }
                 case st_api_call::CALL_ST_SIM_RUN_V2:
                 {
-                    // st_sim_run_v2
-                    // -> st_context_v2_t pcxt
-                    st_return_t (*fn)(st_context_v2_t) =
-                        (st_return_t (*)(st_context_v2_t))functions[i];
-                    code = fn(pcxt);
+                    code = st_sim_run_v2(pcxt);
                     break;
                 }
                 // Simlulation Results Functions
                 default:
-                    fprintf(stderr, "execute_calls: unknown call type at index %d\n", i);
+                    code = st_return_code::UKNOWN_BATCH_API_CALL_FAILURE;
                     break;
             }
 

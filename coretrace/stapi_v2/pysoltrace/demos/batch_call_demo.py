@@ -12,12 +12,12 @@ if __name__ == '__main__':
     stapi = STAPIv2()
 
     for _ in range(10):
+        t.ic('NO batch')
         stapi.read_input_json('../sample.json')
-        t.ic('no batch')
         count = stapi.num_elements()
         stapi.sim_setup(STC.OPTIX)
         stapi.sim_run_v2()
-        t.oc('no batch')
+        t.oc('NO batch')
 
     for _ in range(10):
         f = open('../sample.json', mode='rb')

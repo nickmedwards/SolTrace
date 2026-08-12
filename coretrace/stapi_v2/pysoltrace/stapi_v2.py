@@ -32,9 +32,11 @@ just_fix_windows_console()
 try:
     import soltrace_constants as _STC
     from point import Point
+    from timer import timer
 except ImportError:
     from . import soltrace_constants as _STC
     from .point import Point
+    from .timer import timer
 
 
 enumify = lambda arr: { k: i for i, k in enumerate(arr) }
@@ -205,9 +207,9 @@ class STAPIv2:
         self.__api_func_ptr = ctypes.CFUNCTYPE(_STC.ST_RETURN_T, ctypes.c_void_p)
         self.__pdll.st_batch.argtypes = [ctypes.c_void_p,
                                          ctypes.POINTER(ctypes.c_void_p),
-                                         ctypes.POINTER(ctypes.c_void_p),
                                          ctypes.c_uint,
-                                         ctypes.POINTER(ctypes.c_uint)]
+                                         ctypes.POINTER(ctypes.c_uint),
+                                         ctypes.c_bool]
         self.__pdll.st_batch.restype  = _STC.ST_RETURN_T
 
     def __free(self):
@@ -352,23 +354,33 @@ class STAPIv2:
 
     def generate_api_call(self, call_type: int, *args):
         if not call_type < _STC.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
-        # print(f'\n\n{_STC.ST_API_CALL_NAME[call_type]}')
-        # call_type = STAPIv2.ST_API_CALL[call_name]
+        
+        _t = timer()
+
+        _t.ic('generate set up')
         rt = _STC.st_api_call_args()
         rt.type = call_type
         args_name, args_cls = rt.payload._fields_[call_type]
         args_payload = getattr(rt.payload, args_name)
+        _t.oc('generate set up')
+        print('\ngenerate')
         # print(args_name)
         # print(args_cls)
         # print(args_payload)
         # print(args_payload._fields_)
         # print(args)
+        # args_payload = args_cls(*args)
 
         # args_payload.pcxt = self.__pcxt
+        _t.ic('setattr')
+
         for i, arg in enumerate(args):
             setattr(args_payload, 
                     args_payload._fields_[i][0],
                     arg)
+        _t.oc('setattr')
+
+        # print(f'\n{_t}')
             
         # print('\nres')
         # for field in args_payload._fields_:
@@ -376,35 +388,38 @@ class STAPIv2:
         #     print(getattr(temp_payload_attr, field[0]))
         # print()
 
-        return _STC.st_api_pair(self.__func_map[call_type], rt)
+        return rt #ctypes.cast(ctypes.byref(rt), ctypes.c_void_p) #_STC.st_api_pair(self.__func_map[call_type], rt)
 
     def dump_batch_args(self):
         for args in self.__stash_batch_args: print(args)
 
     # TODO: include version that calls functions from python for debugging STAPIv2.generate_api_call
-    def batch(self, api_pairs: list[_STC.st_api_pair]):
-        num_calls = len(api_pairs)
-        # unzip pairs
-        func_addrs = []
-        call_args = []
-        for pair in api_pairs:
-            func_addrs.append(ctypes.cast(pair.func, ctypes.c_void_p).value)
-            call_args.append(pair.args)
+    def batch(self, api_calls: list[_STC.st_api_call_args], verbose: bool = False):
+        _t = timer()
 
-        self.__stash_batch_args = call_args
+        _t.ic('set up')
+        num_calls = len(api_calls)
+        self.__stash_batch_args = api_calls
+        _t.oc('set up')
 
-        func_arr = (ctypes.c_void_p * num_calls)(*func_addrs)
+
+        _t.ic('c args set up')
         args_arr = (ctypes.c_void_p * num_calls)(*[
-            ctypes.cast(ctypes.byref(c), ctypes.c_void_p) for c in call_args
+            ctypes.cast(ctypes.byref(c), ctypes.c_void_p) for c in api_calls
         ])
-
         fail_iteration = ctypes.c_uint(0)
+        _t.oc('c args set up')
 
+        _t.ic('batch call')
         code = self.__pdll.st_batch(self.__pcxt,
-                                    func_arr,
+                                    # func_arr,
                                     args_arr,
                                     num_calls,
-                                    ctypes.byref(fail_iteration))
+                                    ctypes.byref(fail_iteration),
+                                    verbose)
+        _t.oc('batch call')
+        # print(f'\n{_t}')
+
         # TODO: raise new btach exception with fail_iteration
         self.__check_return_code(code)
 
