@@ -32,7 +32,7 @@ just_fix_windows_console()
 try:
     import soltrace_constants as _STC
     from point import Point
-    from timer import timer
+    from timer import timer # pyright: ignore[reportMissingModuleSource]
 except ImportError:
     from . import soltrace_constants as _STC
     from .point import Point
@@ -354,7 +354,7 @@ class STAPIv2:
 
     def generate_api_call(self, call_type: int, *args):
         if not call_type < _STC.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
-        
+
         _t = timer()
 
         _t.ic('generate set up')
