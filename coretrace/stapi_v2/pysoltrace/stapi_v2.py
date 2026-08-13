@@ -23,7 +23,6 @@ import atexit, os, pathlib, sys, warnings
 from dataclasses import dataclass
 from typing import Literal
 import orjson # pyright: ignore[reportMissingImports]
-# from ctypes import *
 import ctypes
 c_number = ctypes.c_double
 from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
@@ -33,11 +32,17 @@ try:
     import soltrace_constants as _STC
     from point import Point
     from timer import timer # pyright: ignore[reportMissingModuleSource]
+    from test import dot_h
 except ImportError:
     from . import soltrace_constants as _STC
     from .point import Point
     from .timer import timer
+    from .test import dot_h
 
+
+print(dot_h.__dict__)
+print(dot_h.args_st_sim_run_v2)
+print(dot_h.args_st_sim_run_v2.__dict__)
 
 enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 """make a list of things an enum (ish)"""
@@ -108,7 +113,7 @@ class STAPIv2:
 
     @staticmethod
     def __get_argtypes(args_struct: ctypes.Structure) -> list:
-        return [_STC.ST_CONTEXT_V2_T, *[args[1] for args in args_struct._fields_]]
+        return [dot_h.st_context_v2_t, *[args[1] for args in args_struct._fields_]]
 
     def __setup_dll(self, _lib_path: str = ''):
         print(_lib_path)
