@@ -25,10 +25,13 @@ class grouped_results_EmbreeRunner_helper {
         {
             glm::dvec3 cos = {0.0, 0.0, 0.0};
             runner.tsys.RayData.Append(0, hit_point, cos, element_id, 0, raynum, hit_type);
+            if (hit_type == RayEvent::CREATE) ++runner.tsys.SunRayCount;
         }
         static void setUp(EmbreeRunner &runner) 
         {
             runner.tsys.RayData.SetUp(1, 20000);
+            runner.tsys.Sun.MaxXSun = 1;
+            runner.tsys.Sun.MaxYSun = 1;
         }
 };
 

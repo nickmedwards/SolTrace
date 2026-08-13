@@ -71,44 +71,6 @@ element_id SimulationData::add_element(element_ptr el)
                     
                     this->my_groups[group].insert(id);
                 }
-
-                
-                // if (group > -1 && group < this->current_group)
-                // {
-                //     // TODO: how should i handle errors like this? assert or throw?
-                //     // tried to add an element to a group that was already closed
-                //     std::stringstream ss;
-                //     ss << "Tried to add element (" << id 
-                //         << ") to group (" << (int)group
-                //         << ") which was closed with element (" << this->my_groups[group] << ")";
-                //     throw std::runtime_error(ss.str());
-                // }
-                // else if (group == -1 && this->current_group > -1 && this->my_groups.size() > 0)
-                // {
-                //     // TODO: how should i handle errors like this?
-                //     // tried to add ungrouped elements after groups were added
-                //     std::stringstream ss;
-                //     ss << "Tried to add ungrouped element (" << id 
-                //         << ") after grouped elements were added. "
-                //         << "Please add all ungrouped elements before grouped elements.";           
-                //     throw std::runtime_error(ss.str());
-                // }
-                // else if (group > -1 && group > this->current_group + 1)
-                // {
-                //     // tried to add group before previous group was added
-                //     // ie tried to add group 2 before adding any group 1 elements
-                //     std::stringstream ss;
-                //     ss << "Tried to add element (" << id 
-                //         << ") to group (" << (int)group
-                //         << ") currently on group (" << (int)this->current_group
-                //         << "). Please add groups labeled 0 to N in order.";           
-                //     throw std::runtime_error(ss.str());
-                // }
-                // else if (group > -1 && group == this->current_group + 1)
-                // {
-                //     this->my_groups.push_back(id);
-                //     ++this->current_group;
-                // }
             }
         }
         else
