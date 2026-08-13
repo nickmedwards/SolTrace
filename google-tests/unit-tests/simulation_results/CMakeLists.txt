@@ -7,8 +7,6 @@ include_directories(
     ${TEST_INPUT_DIR}
     ../../../coretrace/simulation_results
     ../../../coretrace/simulation_data
-    ../../../coretrace/simulation_runner
-	../../../coretrace/simulation_runner/optix_runner
 )
 
 # Add test files for simulation_results
@@ -21,13 +19,12 @@ add_executable(SimulationResultsUnitTests
     ${SIMULATION_RESULTS_TEST_SRC}
 )
 
-set(RES_LIBS
+target_link_libraries(
+    SimulationResultsUnitTests
     simdata
     simresult
     GTest::gtest_main
 )
-
-target_link_libraries(SimulationResultsUnitTests ${RES_LIBS})
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_options(SimulationResultsUnitTests PRIVATE --coverage)

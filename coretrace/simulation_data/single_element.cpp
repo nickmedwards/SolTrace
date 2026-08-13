@@ -20,10 +20,10 @@ SingleElement::SingleElement() : ElementBase(),
 
 SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
     const OpticalPropertySetResolver& resolve_optics) : ElementBase(jnode),
-                                                                    aperture(nullptr),
-                                                                    surface(nullptr),
-                                                                    opt_id(OPTICS_ID_UNASSIGNED),
-                                                                    group(-1)
+                                                        aperture(nullptr),
+                                                        surface(nullptr),
+                                                        opt_id(OPTICS_ID_UNASSIGNED),
+                                                        group(-1)
 {
     this->set_aperture(Aperture::make_aperture_from_json(jnode.at("aperture")));
     this->set_surface(make_surface_from_json(jnode.at("surface")));
@@ -39,7 +39,9 @@ SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
         // it falls out of ungrouped -> == -1 or grouped -> >= 0
         // assume user meant ungrouped and force to = -1
         if (this->group < -1) this->group = -1;
-    } else {
+    } 
+    else
+    {
         this->group = -1;
     }
 }
