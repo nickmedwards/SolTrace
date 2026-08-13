@@ -2,7 +2,7 @@
 import ctypes, os, sys
 sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 
-from pysoltrace import STAPIv2, soltrace_constants as STC
+from pysoltrace import STAPIv2, soltrace_constants as STC, dot_h
 
 from pysoltrace.timer import timer
 
@@ -15,7 +15,7 @@ if __name__ == '__main__':
         t.ic('NO batch')
         stapi.read_input_json('../sample.json')
         count = stapi.num_elements()
-        stapi.sim_setup(STC.OPTIX)
+        stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
         stapi.sim_run_v2()
         t.oc('NO batch')
 
@@ -24,10 +24,10 @@ if __name__ == '__main__':
         t.ic('batch')
         pcount = ctypes.c_int()
         stapi.batch([
-            stapi.generate_api_call(STC.CALL_ST_READ_INPUT_JSON, f.read()),
-            stapi.generate_api_call(STC.CALL_ST_NUM_ELEMENTS, ctypes.pointer(pcount)),
-            stapi.generate_api_call(STC.CALL_ST_SIM_SETUP, STC.OPTIX),
-            stapi.generate_api_call(STC.CALL_ST_SIM_RUN_V2),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_READ_INPUT_JSON, f.read()),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_NUM_ELEMENTS, ctypes.pointer(pcount)),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.OPTIX),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2),
         ])
         t.oc('batch')
 

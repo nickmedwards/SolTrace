@@ -82,7 +82,7 @@ typedef enum st_return_code : st_return_t {
 	WARNING_SUN_SHAPE_IGNORED,
 
 	RETURN_COUNT /* sentinel (not a valid return type) */
-};
+} st_return_code;
 
 #ifndef DEFAULT_NUM_THREADS
 #define DEFAULT_NUM_THREADS 8

@@ -95,16 +95,14 @@ locations). All of them can also be overridden per-deployment via the
 
 from __future__ import annotations
 
-import ctypes
-import enum
-import os
-import re
-import sys
-import warnings
+import ctypes, enum, os, re, sys, warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__all__ = ["dot_h", "locate_header", "reload_header_defs"]
+from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
+just_fix_windows_console()
+
+__all__ = ["dot_h", "found_in", "locate_header", "reload_header_defs"]
 
 # ---------------------------------------------------------------------------
 # Configuration -- edit these for your project
@@ -160,10 +158,8 @@ def locate_header(filename: str = _HEADER_FILENAME) -> Path:
             return candidate.resolve()
 
     searched = "\n  ".join(str(c) for c in candidates)
-    raise FileNotFoundError(
-        f"Could not locate header '{filename}'. Set {_ENV_HEADER_PATH} to an "
-        f"explicit path, or place the header in one of:\n  {searched}"
-    )
+    raise FileNotFoundError(f"Could not locate header '{filename}'. Set {_ENV_HEADER_PATH} to an "
+                            f"explicit path, or place the header in one of:\n  {searched}")
 
 
 # ---------------------------------------------------------------------------
@@ -201,12 +197,6 @@ _BASE_CTYPES: Dict[str, Optional[type]] = {
     "uint32_t": ctypes.c_uint32,
     "int64_t": ctypes.c_int64,
     "uint64_t": ctypes.c_uint64,
-    # <cstdint> "_fast"/"_least" family: the C++ standard only guarantees a
-    # *minimum* width, actual size is implementation defined. These reflect
-    # the common glibc/MSVC convention on 64-bit targets (fast8/least8 stay
-    # 8-bit; fast16/32/64 and least64 widen to 64-bit). If your toolchain's
-    # ABI differs, override these entries before importing, or verify with
-    # a `static_assert(sizeof(...) == N)` in your C++ build.
     "int_fast8_t": ctypes.c_int8,
     "uint_fast8_t": ctypes.c_uint8,
     "int_fast16_t": ctypes.c_int64,
@@ -267,14 +257,12 @@ def _split_type_and_name(rest: str) -> Optional[Tuple[str, str]]:
     return type_str, name
 
 
-def _resolve_ctype(
-    type_str: str,
-    typedef_raw: Dict[str, str],
-    enum_ctypes: Dict[str, Any],
-    resolved_cache: Dict[str, Any],
-    _stack: frozenset = frozenset(),
-    struct_ctypes: Optional[Dict[str, Any]] = None,
-):
+def _resolve_ctype(type_str: str,
+                   typedef_raw: Dict[str, str],
+                   enum_ctypes: Dict[str, Any],
+                   resolved_cache: Dict[str, Any],
+                   _stack: frozenset = frozenset(),
+                   struct_ctypes: Optional[Dict[str, Any]] = None):
     """Map a C type string to a ctypes type.
 
     This is the recursive, memoized alias resolver: when `base` turns out
@@ -301,23 +289,23 @@ def _resolve_ctype(
     s = _WS_RE.sub(" ", s.replace("*", " ")).strip()
     base = s
 
+    def ptr_wrap(type, count):
+        for _ in range(count): type = ctypes.POINTER(type)
+        return type 
+
     if base == "void":
         if ptr_count == 0:
             return None
-        ctype = ctypes.c_void_p
-        for _ in range(ptr_count - 1):
-            ctype = ctypes.POINTER(ctype)
-        return ctype
+        return ptr_wrap(ctypes.c_void_p, ptr_count - 1)
 
     if base == "char" and ptr_count == 1:
         return ctypes.c_char_p
 
     if base in _stack:
-        warnings.warn(
-            f"chedder: cyclic typedef chain detected at '{base}'; "
-            f"treating as opaque void*-sized value.",
-            stacklevel=2,
-        )
+        warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                      f"cyclic typedef chain detected at '{base}'; "
+                      f"treating as opaque void*-sized value.",
+                      stacklevel=2)
         ctype = ctypes.c_void_p
     elif base in resolved_cache:
         # Memoization hit -- this alias's chain was already walked.
@@ -327,10 +315,12 @@ def _resolve_ctype(
     elif base in struct_ctypes:
         ctype = struct_ctypes[base]
     elif base in typedef_raw:
-        ctype = _resolve_ctype(
-            typedef_raw[base], typedef_raw, enum_ctypes, resolved_cache,
-            _stack | {base}, struct_ctypes,
-        )
+        ctype = _resolve_ctype(typedef_raw[base], 
+                               typedef_raw, 
+                               enum_ctypes, 
+                               resolved_cache,
+                               _stack | {base}, 
+                               struct_ctypes)
         resolved_cache[base] = ctype  # memoize before returning
     elif base in _BASE_CTYPES and _BASE_CTYPES[base] is not None:
         ctype = _BASE_CTYPES[base]
@@ -340,17 +330,14 @@ def _resolve_ctype(
         # pointer-sized handle; this keeps parsing resilient instead of
         # failing the whole header on one exotic or externally-defined type.
         if ptr_count == 0:
-            warnings.warn(
-                f"chedder: unknown non-pointer type '{type_str}', "
-                f"treating as opaque void*-sized value.",
-                stacklevel=2,
-            )
+            warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                          f"unknown non-pointer type '{type_str}', "
+                          f"treating as opaque void*-sized value.",
+                          stacklevel=2)
         ctype = ctypes.c_void_p
         ptr_count = max(ptr_count - 1, 0)
 
-    for _ in range(ptr_count):
-        ctype = ctypes.POINTER(ctype)
-    return ctype
+    return ptr_wrap(ctype, ptr_count)
 
 
 # ---------------------------------------------------------------------------
@@ -427,15 +414,13 @@ def _strip_comments(text: str) -> str:
 
 def _parse_define_value(value: str) -> any:
     expr = value.strip()
-    print(expr)
     if not len(expr): return None
     try:
         return eval(expr, {"__builtins__": {}}, {})  # noqa: S307
     except Exception:
-        warnings.warn(
-            f"chedder: could not evaluate #define expression '{expr}'.",
-            stacklevel=2,
-        )
+        warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                      f"could not evaluate #define expression '{expr}'.",
+                      stacklevel=2)
         return expr
 
 def _parse_enum_body(body: str) -> Dict[str, int]:
@@ -452,11 +437,10 @@ def _parse_enum_body(body: str) -> Dict[str, int]:
             try:
                 value = eval(expr, {"__builtins__": {}}, dict(members))  # noqa: S307
             except Exception:
-                warnings.warn(
-                    f"chedder: could not evaluate enum expression "
-                    f"'{expr}' for member '{name}'; using auto-increment.",
-                    stacklevel=2,
-                )
+                warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                              f"could not evaluate enum expression "
+                              f"'{expr}' for member '{name}'; using auto-increment.",
+                              stacklevel=2)
                 value = next_value
         else:
             name = entry
@@ -518,12 +502,11 @@ def _parse_field_stmt(stmt: str) -> List[Tuple[str, str, Optional[str]]]:
         if idx == 0:
             split = _split_type_and_name(decl)
             if split is None:
-                warnings.warn(
-                    f"chedder: could not parse struct field "
-                    f"'{stmt}'; skipping it (this may misalign the ctypes "
-                    f"layout for the rest of the struct).",
-                    stacklevel=2,
-                )
+                warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                              f"could not parse struct field '{stmt}'; "
+                              f"skipping it (this may misalign the ctypes "
+                              f"layout for the rest of the struct).",
+                              stacklevel=2)
                 return results
             shared_type, name = split
             field_type = shared_type
@@ -534,11 +517,10 @@ def _parse_field_stmt(stmt: str) -> List[Tuple[str, str, Optional[str]]]:
                 ptr_prefix += "*"
                 nm = nm[1:].strip()
             if shared_type is None or not _IDENTIFIER_RE.match(nm):
-                warnings.warn(
-                    f"chedder: could not parse struct field "
-                    f"'{part}' in '{stmt}'; skipping it.",
-                    stacklevel=2,
-                )
+                warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                              f"could not parse struct field "
+                              f"'{part}' in '{stmt}'; skipping it.",
+                              stacklevel=2)
                 continue
             name = nm
             field_type = f"{shared_type} {ptr_prefix}".strip() if ptr_prefix else shared_type
@@ -568,11 +550,10 @@ def _parse_compound_body(body: str) -> List[Tuple]:
             open_idx = m.end() - 1
             close_idx = _find_matching_brace(body, open_idx)
             if close_idx is None:
-                warnings.warn(
-                    f"chedder: unterminated nested {kind} body; "
-                    f"skipping the rest of this member list.",
-                    stacklevel=2,
-                )
+                warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                              f"unterminated nested {kind} body; "
+                              f"skipping the rest of this member list.",
+                              stacklevel=2)
                 break
             inner_body = body[open_idx + 1:close_idx]
             nested_members = _parse_compound_body(inner_body)
@@ -586,11 +567,10 @@ def _parse_compound_body(body: str) -> List[Tuple]:
                 anon_end = body.find(";", close_idx + 1)
                 trailing = body[close_idx + 1:anon_end].strip() if anon_end != -1 else ""
                 if trailing:
-                    warnings.warn(
-                        f"chedder: could not parse nested {kind} "
-                        f"member declarator '{trailing}'; skipping.",
-                        stacklevel=2,
-                    )
+                    warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                                  f"chedder: could not parse nested {kind} "
+                                  f"member declarator '{trailing}'; skipping.",
+                                  stacklevel=2)
                 else:
                     members.append(("compound", None, kind, nested_members))
                 i = (anon_end + 1) if anon_end != -1 else n
@@ -611,17 +591,23 @@ def _parse_compound_body(body: str) -> List[Tuple]:
 
 
 class _ParsedHeader:
-    __slots__ = ("defines", "enums", "enum_underlying", "funcptrs", "typedefs", "structs")
+    __slots__ = (
+        "defines",
+        "enums",
+        "enum_underlying",
+        "funcptrs",
+        "typedefs",
+        "path",
+        "structs"
+    )
 
-    def __init__(
-        self,
-        defines: Dict[str, any],
-        enums: Dict[str, Dict[str, int]],
-        enum_underlying: Dict[str, Optional[str]],
-        funcptrs: Dict[str, Tuple[str, List[str]]],
-        typedefs: Dict[str, str],
-        structs: Dict[str, Tuple[Optional[str], str, List[Tuple]]],
-    ):
+    def __init__(self,
+                 defines: Dict[str, any],
+                 enums: Dict[str, Dict[str, int]],
+                 enum_underlying: Dict[str, Optional[str]],
+                 funcptrs: Dict[str, Tuple[str, List[str]]],
+                 typedefs: Dict[str, str],
+                 structs: Dict[str, Tuple[Optional[str], str, List[Tuple]]]):
         self.defines = defines
         self.enums = enums
         self.enum_underlying = enum_underlying
@@ -631,6 +617,127 @@ class _ParsedHeader:
         # member_list is the recursive structure _parse_compound_body
         # produces (see its docstring).
         self.structs = structs
+
+
+def _type_label(ctype: Any) -> str:
+    """Short human-readable label for a ctypes/enum type -- used when we're
+    not expanding it further (base ctypes types have no sub-structure to
+    expand)."""
+    if ctype is None:
+        return "void"
+    return getattr(ctype, "__name__", None) or repr(ctype)
+ 
+ 
+def _describe_member(name: str,
+                     value: Any,
+                     value_to_name: Dict[int, str],
+                     seen: frozenset,
+                     indent: str = "",
+                     depth: int = 0) -> List[str]:
+    """Recursively describe one member. If `value` (after unwrapping any
+    pointer layers) is itself present in `value_to_name` -- i.e. it's
+    another member of the same HeaderDefs, whether that's a struct/union
+    field referencing a named struct/enum, or a typedef aliasing another
+    named type directly -- it gets expanded in place (fields, enum
+    members, etc.) rather than just named. `seen` breaks a self-reference
+    (e.g. a linked-list node's own pointer-to-itself field) by printing a
+    plain reference instead of expanding again once a type reappears
+    within its own expansion chain."""
+    _name = Fore.MAGENTA + name
+
+    if depth > 1: return [f"{indent}{_name}{Style.RESET_ALL}"]
+    
+    ptr_prefix = ""
+    target = value
+    while isinstance(target, type) and issubclass(target, ctypes._Pointer):
+        ptr_prefix += "*"
+        target = getattr(target, "_type_", None)
+    suffix = f" {ptr_prefix}" if ptr_prefix else ""
+    suffix += Style.RESET_ALL
+ 
+    if isinstance(target, type) and issubclass(target, enum.IntEnum):
+        members_desc = ", ".join(f"{m.name}={m.value}" for m in target)
+        ctype = getattr(target, "_ctype_", ctypes.c_int)
+        return [f"{indent}{_name}{suffix}: {Fore.RED}enum {{{members_desc}}} [ctype={_type_label(ctype)}]"]
+ 
+    if isinstance(target, type) and issubclass(target, (ctypes.Structure, ctypes.Union)):
+        kind = f'{Fore.RED}{"union" if issubclass(target, ctypes.Union) else "struct"}'
+        tid = id(target)
+        if tid in seen:
+            canonical = value_to_name.get(tid, target.__name__)
+            return [f"{indent}{_name}{suffix}: {kind} {target.__name__}{Style.RESET_ALL} (already expanded above, see '{canonical}')"]
+        lines = [f"{indent}{_name}{suffix}: {kind}{Style.RESET_ALL} {{"]
+        applied = getattr(target, "_field_defaults_", {})
+        unresolved = getattr(target, "_unresolved_defaults_", {})
+        anon = set(getattr(target, "_anonymous_", ()))
+        for fname, fctype, *_rest in getattr(target, "_fields_", []):
+            field_label = f"{fname} (anonymous)" if fname in anon else fname
+            if fname in applied:
+                field_label += f" = {applied[fname]!r}"
+            elif fname in unresolved:
+                field_label += f" = {unresolved[fname]} (unresolved)"
+            lines.extend(
+                _describe_member(field_label,
+                                 fctype,
+                                 value_to_name,
+                                 seen | {tid},
+                                 indent + "    ",
+                                 depth + 1)
+            )
+        if not getattr(target, "_fields_", []):
+            lines.append(f"{indent}    (empty)")
+        lines.append(f"{indent}}}")
+        return lines
+ 
+    if isinstance(target, type) and issubclass(target, ctypes._CFuncPtr):
+        restype = getattr(target, "_restype_", None)
+        argtypes = getattr(target, "_argtypes_", ())
+        arg_desc = ", ".join(_type_label(a) for a in argtypes) or "void"
+        return [f"{indent}{_name}{Style.RESET_ALL}: {Fore.RED}function pointer ({arg_desc}){Style.RESET_ALL} -> {_type_label(restype)}"]
+ 
+    # Plain ctypes simple type (or unresolved/opaque placeholder). Still
+    # note when it's literally the same object as another named member
+    # (e.g. two typedefs both aliasing the same base ctype).
+    label = f'{Fore.RED}{_type_label(target)}{Style.RESET_ALL}'
+    same_as = value_to_name.get(id(target)) if target is not None else None
+    if same_as and same_as != name:
+        return [f"{indent}{_name}{suffix}: {label}  (same as '{same_as}')"]
+    return [f"{indent}{_name}{suffix}: {label}"]
+ 
+ 
+def found_in(header_defs: type) -> str:
+    """Return a flat, human-readable listing of everything found in the
+    header and exposed on `header_defs` (typically HeaderDefs) -- plain
+    typedefs, enums, structs/unions, and function pointer types together,
+    in declaration order, with no typedef/enum/struct grouping.
+ 
+    Introspects `header_defs` itself rather than this module's internal
+    parse state, so it also works correctly on a class returned by
+    reload_header_defs() rather than only the module-level HeaderDefs.
+ 
+    A member whose value is itself another member of `header_defs` -- a
+    typedef that directly aliases another named type
+    (`typedef empty_args args_st_sim_run_v2;`), or a struct/union field
+    whose type is itself a named struct/union/enum exposed on
+    `header_defs`, including through a pointer (`node_t* head;`) -- is
+    expanded inline instead of just being named.
+ 
+    Usage:
+        from cheader_bindings import HeaderDefs, found_in
+        print(found_in(HeaderDefs))
+    """
+    members = {k: v for k, v in vars(header_defs).items() if not k.startswith("__")}
+    value_to_name: Dict[int, str] = {}
+    for k, v in members.items():
+        value_to_name.setdefault(id(v), k)
+ 
+    lines: List[str] = []
+    for name, value in members.items():
+        lines.extend(_describe_member(name, value, value_to_name, frozenset()))
+
+    header = f"Parsed header: {locate_header().name}"
+    header += f"\n{'-' * len(header)}\n"
+    return header + "\n".join(lines)
 
 
 def _parse_header_text(header_path: Path) -> _ParsedHeader:
@@ -672,26 +779,29 @@ def _parse_header_text(header_path: Path) -> _ParsedHeader:
         open_idx = match.end() - 1
         close_idx = _find_matching_brace(clean, open_idx)
         if close_idx is None:
-            warnings.warn(
-                f"chedder: unterminated {kind} body near offset "
-                f"{match.start()}; skipping.",
-                stacklevel=2,
-            )
+            warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                          f"unterminated {kind} body near offset "
+                          f"{match.start()}; skipping.",
+                          stacklevel=2)
             continue
         name_match = _NAME_SEMI_RE.match(clean, close_idx + 1)
         if not name_match:
-            warnings.warn(
-                f"chedder: could not find a typedef alias name "
-                f"for the {kind} near offset {match.start()}; skipping.",
-                stacklevel=2,
-            )
+            warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                          f"could not find a typedef alias name "
+                          f"for the {kind} near offset {match.start()}; skipping.",
+                          stacklevel=2)
             continue
         name = name_match.group("name")
         inner_body = clean[open_idx + 1:close_idx]
         members = _parse_compound_body(inner_body)
         structs[name] = (tag, kind, members)
 
-    return _ParsedHeader(defines, enums, enum_underlying, funcptrs, typedefs, structs)
+    return _ParsedHeader(defines,
+                         enums,
+                         enum_underlying,
+                         funcptrs,
+                         typedefs,
+                         structs)
 
 
 # ---------------------------------------------------------------------------
@@ -750,10 +860,12 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
     resolved_typedefs: Dict[str, Any] = {}
     for name in parsed.typedefs:
         if name not in resolved_typedefs:
-            resolved_typedefs[name] = _resolve_ctype(
-                parsed.typedefs[name], parsed.typedefs, {}, resolved_typedefs,
-                frozenset({name}), struct_ctypes,
-            )
+            resolved_typedefs[name] = _resolve_ctype(parsed.typedefs[name], 
+                                                     parsed.typedefs, 
+                                                     {}, 
+                                                     resolved_typedefs,
+                                                     frozenset({name}), 
+                                                     struct_ctypes)
 
     # Step 3: each enum's underlying ctype: explicit 'enum NAME : UNDERLYING'
     # if the header gave one (itself possibly a typedef chain, resolved via
@@ -761,10 +873,12 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
     resolved_enum_ctypes: Dict[str, Any] = {}
     for name, underlying_str in parsed.enum_underlying.items():
         if underlying_str:
-            resolved_enum_ctypes[name] = _resolve_ctype(
-                underlying_str, parsed.typedefs, {}, resolved_typedefs,
-                frozenset(), struct_ctypes,
-            )
+            resolved_enum_ctypes[name] = _resolve_ctype(underlying_str, 
+                                                        parsed.typedefs, 
+                                                        {}, 
+                                                        resolved_typedefs,
+                                                        frozenset(), 
+                                                        struct_ctypes)
         else:
             resolved_enum_ctypes[name] = ctypes.c_int
 
@@ -786,10 +900,12 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
         for idx, member in enumerate(members):
             if member[0] == "field":
                 _, fname, type_str, default_expr = member
-                field_ctype = _resolve_ctype(
-                    type_str, parsed.typedefs, resolved_enum_ctypes, resolved_typedefs,
-                    frozenset(), struct_ctypes,
-                )
+                field_ctype = _resolve_ctype(type_str,
+                                             parsed.typedefs,
+                                             resolved_enum_ctypes,
+                                             resolved_typedefs,
+                                             frozenset(),
+                                             struct_ctypes)
                 ctypes_fields.append((fname, field_ctype if field_ctype is not None else ctypes.c_void_p))
                 if default_expr is not None:
                     value, ok = _eval_default_expr(default_expr, default_expr_ns)
@@ -812,9 +928,9 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
                 nested_cls._field_defaults_ = nested_applied
                 nested_cls._unresolved_defaults_ = nested_unresolved
                 if nested_applied:
-                    nested_cls.__init__ = _make_struct_init(
-                        nested_base, nested_applied, [f[0] for f in nested_fields]
-                    )
+                    nested_cls.__init__ = _make_struct_init(nested_base,
+                                                            nested_applied, 
+                                                            [f[0] for f in nested_fields])
                 ctypes_fields.append((field_name, nested_cls))
                 if anonymous:
                     anon_names.append(field_name)
@@ -831,7 +947,9 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
         cls._unresolved_defaults_ = unresolved
         if applied:
             base = ctypes.Union if kind == "union" else ctypes.Structure
-            cls.__init__ = _make_struct_init(base, applied, [f[0] for f in fields])
+            cls.__init__ = _make_struct_init(base,
+                                             applied,
+                                             [f[0] for f in fields])
 
     enum_classes: Dict[str, type] = {}
     for name, members in parsed.enums.items():
@@ -842,32 +960,40 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
     funcptr_types: Dict[str, type] = {}
     for name, (ret_str, arg_strs) in parsed.funcptrs.items():
         ret_ctype = (
-            _resolve_ctype(
-                ret_str, parsed.typedefs, resolved_enum_ctypes, resolved_typedefs,
-                frozenset(), struct_ctypes,
-            )
+            _resolve_ctype(ret_str,
+                           parsed.typedefs,
+                           resolved_enum_ctypes,
+                           resolved_typedefs,
+                           frozenset(), 
+                           struct_ctypes)
             if ret_str and ret_str != "void"
             else None
         )
         arg_ctypes = [
-            _resolve_ctype(
-                _strip_param_name(a), parsed.typedefs, resolved_enum_ctypes, resolved_typedefs,
-                frozenset(), struct_ctypes,
-            )
+            _resolve_ctype(_strip_param_name(a),
+                           parsed.typedefs,
+                           resolved_enum_ctypes,
+                           resolved_typedefs,
+                           frozenset(),
+                           struct_ctypes)
             for a in arg_strs
         ]
         funcptr_types[name] = ctypes.CFUNCTYPE(ret_ctype, *arg_ctypes)
 
     namespace = {
+        'DEFINES': [*parsed.defines.keys()],
+        'TYPEDEFS': [*resolved_typedefs.keys()],
+        'STRUCS': [*struct_classes.keys()],
+        'ENUMS': [*enum_classes.keys()],
+        'FUNCPTRS': [*funcptr_types.keys()],
         **parsed.defines,
         **resolved_typedefs,
         **struct_classes,
         **enum_classes,
         **funcptr_types,
-        "__slots__": (),
+        "__slots__": ()
     }
     return type(class_name, (object,), namespace)
-
 
 def reload_header_defs(header_filename: str = _HEADER_FILENAME) -> type:
     """Re-locate and re-parse the header. Rebinds the module-level
@@ -891,52 +1017,5 @@ _header_path = locate_header()
 _parsed = _parse_header_text(_header_path)
 dot_h = _build_namespace(_parsed)
 
-
-def _describe_members(members: List[Tuple], indent: str = "    ") -> str:
-    lines = []
-    for member in members:
-        if member[0] == "field":
-            _, fname, ftype, fdefault = member
-            default_desc = f" = {fdefault}" if fdefault is not None else ""
-            lines.append(f"{indent}{ftype} {fname}{default_desc};")
-        else:
-            _, cname, kind, nested = member
-            label = cname if cname is not None else "(anonymous)"
-            lines.append(f"{indent}{kind} {{ ... }} {label};")
-            lines.append(_describe_members(nested, indent + "    "))
-    return "\n".join(lines)
-
-
 if __name__ == "__main__":
-    print(f"Parsed header: {_header_path}")
-
-    print("Defines")
-    print(_parsed.defines)
-    for dname in _parsed.defines:
-        print(f"  {dname} -> {getattr(dot_h, dname)}")
-
-    print("Typedefs:")
-    for tname in _parsed.typedefs:
-        print(f"  {tname} -> {getattr(dot_h, tname)}")
-
-    print("Enums:")
-    for ename, ecls in _parsed.enums.items():
-        emembers = ", ".join(f"{m}={v}" for m, v in ecls.items())
-        underlying = _parsed.enum_underlying.get(ename)
-        suffix = f" : {underlying}" if underlying else ""
-        print(f"  {ename}{suffix}: {emembers}  [ctype={getattr(dot_h, ename)._ctype_}]")
-
-    print("Function pointer typedefs:")
-    for fname, (ret, args) in _parsed.funcptrs.items():
-        print(f"  {fname}: {ret} (*)({', '.join(args) or 'void'})")
-
-    print("Structs/unions:")
-    for sname, (tag, kind, members) in _parsed.structs.items():
-        tag_desc = f" (tag={tag})" if tag and tag != sname else ""
-        cls = getattr(dot_h, sname)
-        print(f"  {kind} {sname}{tag_desc}:")
-        print(_describe_members(members) or "    (empty)")
-        if cls._field_defaults_:
-            print(f"    applied defaults: {cls._field_defaults_}")
-        if cls._unresolved_defaults_:
-            print(f"    unresolved defaults: {cls._unresolved_defaults_}")
+    print(found_in(dot_h))

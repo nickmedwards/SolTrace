@@ -32,17 +32,15 @@ try:
     import soltrace_constants as _STC
     from point import Point
     from timer import timer # pyright: ignore[reportMissingModuleSource]
-    from test import dot_h
+    from chedder import dot_h, found_in
 except ImportError:
     from . import soltrace_constants as _STC
     from .point import Point
     from .timer import timer
-    from .test import dot_h
+    from .chedder import dot_h, found_in
 
 
-print(dot_h.__dict__)
-print(dot_h.args_st_sim_run_v2)
-print(dot_h.args_st_sim_run_v2.__dict__)
+print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
 
 enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 """make a list of things an enum (ish)"""
@@ -186,7 +184,7 @@ class STAPIv2:
         # functions for SolTrace runner management #
         ############################################
 
-        self.__pdll.st_sim_setup.argtypes       = self.__get_argtypes(_STC.args_st_sim_setup)
+        self.__pdll.st_sim_setup.argtypes       = self.__get_argtypes(dot_h.args_st_sim_setup)
         self.__pdll.st_sim_setup.restype        = _STC.ST_RETURN_T
         self.__func_map[_STC.CALL_ST_SIM_SETUP] = self.__pdll.st_sim_setup
 
@@ -435,10 +433,10 @@ if __name__ == "__main__":
     stapi.read_input_json('./sample.json')
     count = stapi.num_elements()
     print(count)
-    # stapi.sim_setup(NATIVE)
-    # stapi.sim_run_v2()
-    # stapi.sim_report()
-    # stapi.write_results_csv('./sample.csv')
+    stapi.sim_setup(_STC.NATIVE)
+    stapi.sim_run_v2()
+    stapi.sim_report()
+    stapi.write_results_csv('./sample.csv')
 
 
     # currently not building Embrre - emits warning
