@@ -2,7 +2,7 @@
 import ctypes, os, sys
 sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 
-from pysoltrace import STAPIv2, soltrace_constants as STC, dot_h
+from pysoltrace import STAPIv2, dot_h
 
 from pysoltrace.timer import timer
 

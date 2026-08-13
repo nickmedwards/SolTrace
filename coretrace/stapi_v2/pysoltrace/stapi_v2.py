@@ -29,15 +29,15 @@ from colorama import just_fix_windows_console, Fore, Back, Style # pyright: igno
 just_fix_windows_console()
 
 try:
+    from chedder import dot_h, found_in
     import soltrace_constants as _STC
     from point import Point
     from timer import timer # pyright: ignore[reportMissingModuleSource]
-    from chedder import dot_h, found_in
 except ImportError:
+    from .chedder import dot_h, found_in
     from . import soltrace_constants as _STC
     from .point import Point
     from .timer import timer
-    from .chedder import dot_h, found_in
 
 
 print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
@@ -114,8 +114,6 @@ class STAPIv2:
         return [dot_h.st_context_v2_t, *[args[1] for args in args_struct._fields_]]
 
     def __setup_dll(self, _lib_path: str = ''):
-        print(_lib_path)
-        print(os.path.exists(_lib_path))
         if not os.path.exists(_lib_path):
             raise FileNotFoundError(f'Could not find DLL at {_lib_path}')
 
@@ -131,14 +129,18 @@ class STAPIv2:
         # functions for SolTrace context management #
         #############################################
 
-        self.__pdll.st_create_context.argtypes = [ctypes.POINTER(_STC.ST_CONTEXT_V2_T),
+        # warning that: "The function "POINTER" is deprecated ctypes.POINTER with string"
+        # dot_h.st_context_v2_t is <class 'ctypes.c_void_p'> which is not deprecated
+        # see ctypes entry for more information on the following Python docs page
+        # here: https://docs.python.org/3/whatsnew/3.14.html#new-deprecations 
+        self.__pdll.st_create_context.argtypes = [ctypes.POINTER(dot_h.st_context_v2_t),
                                                   ctypes.CFUNCTYPE(ctypes.c_int,
                                                                    ctypes.c_char_p,
                                                                    ctypes.c_char_p)]
-        self.__pdll.st_create_context.restype  = _STC.ST_RETURN_T
+        self.__pdll.st_create_context.restype  = dot_h.st_return_t
 
         self.__pdll.st_free_context.argtypes = [ctypes.c_void_p]
-        self.__pdll.st_free_context.restype  = _STC.ST_RETURN_T
+        self.__pdll.st_free_context.restype  = dot_h.st_return_t
 
         ##########################################
         # functions for SolTrace data management #
@@ -148,72 +150,72 @@ class STAPIv2:
         # sun functions #
         #################
 
-        self.__pdll.st_sun.argtypes       = self.__get_argtypes(_STC.args_st_sun)
-        self.__pdll.st_sun.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_SUN] = self.__pdll.st_sun
+        self.__pdll.st_sun.argtypes = self.__get_argtypes(dot_h.args_st_sun)
+        self.__pdll.st_sun.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_SUN] = self.__pdll.st_sun
 
-        self.__pdll.st_sun_xyz.argtypes       = self.__get_argtypes(_STC.args_st_sun_xyz)
-        self.__pdll.st_sun_xyz.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_SUN_XYZ] = self.__pdll.st_sun_xyz
+        self.__pdll.st_sun_xyz.argtypes = self.__get_argtypes(dot_h.args_st_sun_xyz)
+        self.__pdll.st_sun_xyz.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_SUN_XYZ] = self.__pdll.st_sun_xyz
 
-        self.__pdll.st_sun_position.argtypes       = self.__get_argtypes(_STC.args_st_sun_position)
-        self.__pdll.st_sun_position.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_SUN_POSITION] = self.__pdll.st_sun_position
+        self.__pdll.st_sun_position.argtypes = self.__get_argtypes(dot_h.args_st_sun_position)
+        self.__pdll.st_sun_position.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_SUN_POSITION] = self.__pdll.st_sun_position
 
-        self.__pdll.st_sun_userdata.argtypes       = self.__get_argtypes(_STC.args_st_sun_userdata)
-        self.__pdll.st_sun_userdata.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
+        self.__pdll.st_sun_userdata.argtypes = self.__get_argtypes(dot_h.args_st_sun_userdata)
+        self.__pdll.st_sun_userdata.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
 
         ##############################################################
         # functions for simulation data management thru json strings #
         ##############################################################
 
-        self.__pdll.st_read_input_json.argtypes       = self.__get_argtypes(_STC.args_st_read_input_json)
-        self.__pdll.st_read_input_json.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_READ_INPUT_JSON] = self.__pdll.st_read_input_json
+        self.__pdll.st_read_input_json.argtypes = self.__get_argtypes(dot_h.args_st_read_input_json)
+        self.__pdll.st_read_input_json.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_READ_INPUT_JSON] = self.__pdll.st_read_input_json
 
         ###########################################
         # functions for SolTrace data information #
         ###########################################
 
-        self.__pdll.st_num_elements.argtypes       = self.__get_argtypes(_STC.args_st_num_elements)
-        self.__pdll.st_num_elements.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_NUM_ELEMENTS] = self.__pdll.st_num_elements
+        self.__pdll.st_num_elements.argtypes = self.__get_argtypes(dot_h.args_st_num_elements)
+        self.__pdll.st_num_elements.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_NUM_ELEMENTS] = self.__pdll.st_num_elements
 
         ############################################
         # functions for SolTrace runner management #
         ############################################
 
-        self.__pdll.st_sim_setup.argtypes       = self.__get_argtypes(dot_h.args_st_sim_setup)
-        self.__pdll.st_sim_setup.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_SIM_SETUP] = self.__pdll.st_sim_setup
+        self.__pdll.st_sim_setup.argtypes = self.__get_argtypes(dot_h.args_st_sim_setup)
+        self.__pdll.st_sim_setup.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_SIM_SETUP] = self.__pdll.st_sim_setup
 
-        self.__pdll.st_sim_run_v2.argtypes       = self.__get_argtypes(_STC.args_st_sim_run_v2)
-        self.__pdll.st_sim_run_v2.restype        = _STC.ST_RETURN_T
-        self.__func_map[_STC.CALL_ST_SIM_RUN_V2] = self.__pdll.st_sim_run_v2
+        self.__pdll.st_sim_run_v2.argtypes = self.__get_argtypes(dot_h.args_st_sim_run_v2)
+        self.__pdll.st_sim_run_v2.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_SIM_RUN_V2] = self.__pdll.st_sim_run_v2
 
         # TODO: include enum-ish of reporting levels
         self.__pdll.st_sim_report.argtypes = [ctypes.c_void_p, ctypes.c_int]
-        self.__pdll.st_sim_report.restype  = _STC.ST_RETURN_T
+        self.__pdll.st_sim_report.restype  = dot_h.st_return_t
 
         #############################################
         # functions for SolTrace results management #
         #############################################
 
         self.__pdll.st_write_results_csv.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
-        self.__pdll.st_write_results_csv.restype  = _STC.ST_RETURN_T
+        self.__pdll.st_write_results_csv.restype  = dot_h.st_return_t
 
         ############################################
         # function for batching SolTrace API calls #
         ############################################
 
-        self.__api_func_ptr = ctypes.CFUNCTYPE(_STC.ST_RETURN_T, ctypes.c_void_p)
+        self.__api_func_ptr = ctypes.CFUNCTYPE(dot_h.st_return_t, ctypes.c_void_p)
         self.__pdll.st_batch.argtypes = [ctypes.c_void_p,
                                          ctypes.POINTER(ctypes.c_void_p),
                                          ctypes.c_uint,
                                          ctypes.POINTER(ctypes.c_uint),
                                          ctypes.c_bool]
-        self.__pdll.st_batch.restype  = _STC.ST_RETURN_T
+        self.__pdll.st_batch.restype  = dot_h.st_return_t
 
     def __free(self):
         code = self.__pdll.st_free_context(self.__pcxt)
@@ -356,17 +358,17 @@ class STAPIv2:
     #####################
 
     def generate_api_call(self, call_type: int, *args):
-        if not call_type < _STC.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
+        if not call_type < dot_h.st_api_call.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
 
         _t = timer()
 
         _t.ic('generate set up')
-        rt = _STC.st_api_call_args()
+        rt = dot_h.st_api_call_args()
         rt.type = call_type
         args_name, args_cls = rt.payload._fields_[call_type]
         args_payload = getattr(rt.payload, args_name)
         _t.oc('generate set up')
-        print('\ngenerate')
+        # print('\ngenerate')
         # print(args_name)
         # print(args_cls)
         # print(args_payload)

@@ -39,7 +39,8 @@
 #     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
 import ctypes, random
 from typing import Literal
-from . import soltrace_constants as _STC
+from .chedder import dot_h
+# from . import soltrace_constants as _STC
 from . import soltrace_json as st_json
 from .point import Point
 from . import math_utils
@@ -230,11 +231,11 @@ class _Sun:
 
     def Create(self, stapi: STAPIv2, _do: bool = True):
         calls = [
-            stapi.generate_api_call(_STC.CALL_ST_SUN,
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN,
                                     self.point_source,
                                     self.shape[0],
                                     self.sigma),
-            stapi.generate_api_call(_STC.CALL_ST_SUN_XYZ,
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_XYZ,
                                     self.position.x,
                                     self.position.y,
                                     self.position.z)
@@ -242,7 +243,7 @@ class _Sun:
         if (npoints := len(self.user_intensity_table)) > 2 and self.shape.lower()[0] == 'd':
             _angle     = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[0]))
             _intensity = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[1]))
-            calls.append(stapi.generate_api_call(_STC.CALL_ST_SUN_USERDATA,
+            calls.append(stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_USERDATA,
                                                  npoints,
                                                  _angle,
                                                  _intensity))
