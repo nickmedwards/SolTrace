@@ -172,6 +172,19 @@ public:
     const OpticalPropertySet* get_optical_property_set(const Element& el) const;
     OpticalPropertySet* get_mutable_optical_property_set(const Element& el);
 
+    /// @brief Remove the OpticalPropertySet corresponding to the unique identifier `id`
+    /// @param id unique identifier of the OpticalPropertySet to remove
+    /// @return true if the element was removed, false otherwise
+    auto remove_optical_property_set(ray_source_id id)
+    {
+        return this->my_optical_property_sets.remove_item(id);
+    }
+
+    void clear_optical_property_sets()
+    {
+        this->my_optical_property_sets.clear();
+    }
+
     /// @brief Get an iterator that can be used to access all 
     ///  optical property sets owned by this SimulationData object.
     /// @return iterator

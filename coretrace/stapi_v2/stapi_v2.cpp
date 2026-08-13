@@ -96,12 +96,22 @@ STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *n
 
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx)
 {
-    return st_return_code::RETURN_COUNT;
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    int removed = data->remove_optical_property_set(idx);
+
+    // only warn if requested to remove optical property set that doesn't exist
+    return removed > 0 ? st_return_code::SUCCESS : st_return_code::WARNING_NOT_FOUND;
 }
 
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt)
 {
-    return st_return_code::RETURN_COUNT;
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    data->clear_optical_property_sets();
+    return st_return_code::SUCCESS;
 }
 
 STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
@@ -127,7 +137,49 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
 							  double    	  *trans_angles,
 							  double    	  *transs)
 {
-return st_return_code::RETURN_COUNT;
+    /* ignoring arguments (no longer used, silently ignore):
+       optnum      -> OpticSurfNumber
+       apgr        -> ApertureStopOrGratingType
+       order       -> DiffractionOrder
+       gratingab12 -> AB12
+
+       warning arguments (no longer used, but related to reflectivity/transmissivity):
+       userefltable  -> UseReflectivityTable
+       refl_npoints
+       refl_angles   -> ReflectivityTable
+       refls         -> ReflectivityTable
+       usetranstable -> UseTransmissivityTable
+       trans_npoints
+       trans_angles  -> TransmissivityTable
+       transs        -> TransmissivityTable
+    */
+   
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    std::shared_ptr<OpticalPropertySet> existing_set; 
+    for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
+    {
+        if (it->first == idx)
+            existing_set = it->second;
+    }
+
+    if (!existing_set) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    OpticalSide side = fb == 1 ? OpticalSide::Front : OpticalSide::Back;
+    existing_set->set_properties(side,
+                                 char_to_distribution(dist),
+                                 tra,
+                                 ref,
+                                 rmsslope,
+                                 rmsspec);
+    // see simdata_io.cpp -> read_optic_surface, comment
+    // that imaginary part of refractive index is not used
+    existing_set->set_refraction_indices(rreal, rreal);
+
+    if (userefltable || usetranstable) return st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED;
+
+    return st_return_code::SUCCESS;
 }
 
 // sun functions
@@ -215,9 +267,9 @@ STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
 									 double          lat,
 									 double          day,
 									 double          hour,
-									 double*         x,
-									 double*         y,
-									 double*         z)
+									 double          *x,
+									 double          *y,
+									 double          *z)
 {
     /* TODO: make st_sun_position_v2 that take a 
 	computes the sun vector xyz given arguments
