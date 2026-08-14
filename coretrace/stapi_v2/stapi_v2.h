@@ -51,13 +51,13 @@ NOTE: may change name convention from marking _v2 to _v1
  st_sun_xyz					[x]			[x]			[x]			  [x]		  [x]		  [x]
  st_sun_position			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_sun_userdata			[x]			[x]			[x]			  [x]		  [x]		  [x]
- st_num_intersections		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_locations				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_cosines					[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_elementmap				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_stagemap				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_raynumbers				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sun_stats				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_num_intersections		[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_locations				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_cosines					[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_elementmap				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_stagemap				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_raynumbers				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sun_stats				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_sim_params				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_sim_errors				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_sim_run					[2]			[2]			[2]			  [2]		  [2]		  [2]
@@ -198,6 +198,14 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
 
 // functions for simulation data management directly
+STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
+								   int 			   raycount,
+								   int 			   maxcount,
+								   int 			   include_dynamic_group);
+STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
+								   int 			   include_sun_shape,
+								   int 			   include_optics);
+
 // functions to add/remove/set optical properties
 STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt);
 STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name);
@@ -293,11 +301,31 @@ STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level);
 // Simlulation Results Functions //
 ///////////////////////////////////
 
+// functions for dumping results to file
 // TODO: add st_write_results_json once element_groups pr is merged
 STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt, 
 										  const char 	  *filename, 
 										  int 			  precision = 12);
 
+// functions to get results directly
+STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, int *num_intersections);
+STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
+									 double 		 *loc_x,
+									 double 		 *loc_y,
+									 double 		 *loc_z);
+STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
+							 	   double 		   *cos_x,
+							 	   double 		   *cos_y,
+							 	   double 		   *cos_z);
+STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, int *element_map);
+STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, int *stage_map);
+STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, int *ray_numbers);
+STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
+									 double 		 *xmin,
+									 double 		 *xmax,
+									 double 		 *ymin,
+									 double 		 *ymax,
+									 int 			 *nsunrays);
 /*
 create simualtion information -> st_context_v2_t st_create_context_v2();
 free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):

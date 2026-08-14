@@ -376,67 +376,75 @@ STAPI_V2 st_return_t st_element_aperture_params(st_context_v2_t pcxt, st_uint_t 
     element_ptr el = data->get_element(idx);
     aperture_ptr ap = el->get_aperture();
 
-    switch (ap->get_type())
+    try 
     {
-        case ApertureType::ANNULUS:
+        switch (ap->get_type())
         {
-            auto annulus = std::dynamic_pointer_cast<Annulus>(ap);
-            annulus->inner_radius = params[0];
-            annulus->outer_radius = params[1];
-            annulus->arc_angle    = params[2];
-            break;
+            case ApertureType::ANNULUS:
+            {
+                auto annulus = std::dynamic_pointer_cast<Annulus>(ap);
+                annulus->inner_radius = params[0];
+                annulus->outer_radius = params[1];
+                annulus->arc_angle    = params[2];
+                break;
+            }
+            case ApertureType::CIRCLE:
+            {
+                auto circle = std::dynamic_pointer_cast<Circle>(ap);
+                circle->diameter= params[0];
+                break;
+            }
+            case ApertureType::HEXAGON:
+            {
+                auto hexagon = std::dynamic_pointer_cast<Hexagon>(ap);
+                hexagon->circumscribe_diameter = params[0];
+                break;
+            }
+            case ApertureType::RECTANGLE:
+            {
+                auto rectangle = std::dynamic_pointer_cast<Rectangle>(ap);
+                rectangle->set_x_length(params[0]);
+                rectangle->set_y_length(params[1]);
+                rectangle->set_x_coord(-params[0] / 2);
+                rectangle->set_y_coord(-params[1] / 2);
+                break;
+            }
+            case ApertureType::EQUILATERAL_TRIANGLE:
+            {
+                auto equilateral_triangle = std::dynamic_pointer_cast<EquilateralTriangle>(ap);
+                equilateral_triangle->circumscribe_diameter = params[0];
+                break;
+            }
+            case ApertureType::IRREGULAR_TRIANGLE:
+            {
+                auto irregular_triangle = std::dynamic_pointer_cast<IrregularTriangle>(ap);
+                irregular_triangle->x1 = params[0];
+                irregular_triangle->y1 = params[1];
+                irregular_triangle->x2 = params[2];
+                irregular_triangle->y2 = params[3];
+                irregular_triangle->x3 = params[4];
+                irregular_triangle->y3 = params[5];
+                break;
+            }
+            case ApertureType::IRREGULAR_QUADRILATERAL:
+            {
+                auto irregular_quadrilateral = std::dynamic_pointer_cast<IrregularQuadrilateral>(ap);
+                irregular_quadrilateral->x1 = params[0];
+                irregular_quadrilateral->y1 = params[1];
+                irregular_quadrilateral->x2 = params[2];
+                irregular_quadrilateral->y2 = params[3];
+                irregular_quadrilateral->x3 = params[4];
+                irregular_quadrilateral->y3 = params[5];
+                irregular_quadrilateral->x4 = params[6];
+                irregular_quadrilateral->y4 = params[7];
+                break;
+            }
         }
-        case ApertureType::CIRCLE:
-        {
-            auto circle = std::dynamic_pointer_cast<Circle>(ap);
-            circle->diameter= params[0];
-            break;
-        }
-        case ApertureType::HEXAGON:
-        {
-            auto hexagon = std::dynamic_pointer_cast<Hexagon>(ap);
-            hexagon->circumscribe_diameter = params[0];
-            break;
-        }
-        case ApertureType::RECTANGLE:
-        {
-            auto rectangle = std::dynamic_pointer_cast<Rectangle>(ap);
-            rectangle->set_x_length(params[0]);
-            rectangle->set_y_length(params[1]);
-            rectangle->set_x_coord(-params[0] / 2);
-            rectangle->set_y_coord(-params[1] / 2);
-            break;
-        }
-        case ApertureType::EQUILATERAL_TRIANGLE:
-        {
-            auto equilateral_triangle = std::dynamic_pointer_cast<EquilateralTriangle>(ap);
-            equilateral_triangle->circumscribe_diameter = params[0];
-            break;
-        }
-        case ApertureType::IRREGULAR_TRIANGLE:
-        {
-            auto irregular_triangle = std::dynamic_pointer_cast<IrregularTriangle>(ap);
-            irregular_triangle->x1 = params[0];
-            irregular_triangle->y1 = params[1];
-            irregular_triangle->x2 = params[2];
-            irregular_triangle->y2 = params[3];
-            irregular_triangle->x3 = params[4];
-            irregular_triangle->y3 = params[5];
-            break;
-        }
-        case ApertureType::IRREGULAR_QUADRILATERAL:
-        {
-            auto irregular_quadrilateral = std::dynamic_pointer_cast<IrregularQuadrilateral>(ap);
-            irregular_quadrilateral->x1 = params[0];
-            irregular_quadrilateral->y1 = params[1];
-            irregular_quadrilateral->x2 = params[2];
-            irregular_quadrilateral->y2 = params[3];
-            irregular_quadrilateral->x3 = params[4];
-            irregular_quadrilateral->y3 = params[5];
-            irregular_quadrilateral->x4 = params[6];
-            irregular_quadrilateral->y4 = params[7];
-            break;
-        }
+    }
+    catch (const std::invalid_argument& e)
+    {
+        if (cxt->p_cb) cxt->p_cb("set aperture parameters", e.what());
+		return st_return_code::INVALID_ARGUMENTS;
     }
 
     return st_return_code::SUCCESS;
@@ -511,38 +519,47 @@ STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t i
     element_ptr el = data->get_element(idx);
     surface_ptr surf = el->get_surface();
 
-    switch (surf->get_type())
+    try 
     {
-        case SurfaceType::CONE:
+        switch (surf->get_type())
         {
-            auto cone = std::dynamic_pointer_cast<Cone>(surf);
-            cone->half_angle = params[0];
-            break;
-        }
-        case SurfaceType::CYLINDER:
-        {
-            auto cylinder = std::dynamic_pointer_cast<Cylinder>(surf);
-            cylinder->radius = params[0];
-            break;
-        }
-        case SurfaceType::FLAT:
-        {
-            break;
-        }
-        case SurfaceType::PARABOLA:
-        {
-            auto parabola = std::dynamic_pointer_cast<Parabola>(surf);
-            parabola->focal_length_x = params[0];
-            parabola->focal_length_y = params[1];
-            break;
-        }
-        case SurfaceType::SPHERE:
-        {
-            auto sphere = std::dynamic_pointer_cast<Sphere>(surf);
-            sphere->vertex_curv = params[0];
-            break;
+            case SurfaceType::CONE:
+            {
+                auto cone = std::dynamic_pointer_cast<Cone>(surf);
+                cone->half_angle = params[0];
+                break;
+            }
+            case SurfaceType::CYLINDER:
+            {
+                auto cylinder = std::dynamic_pointer_cast<Cylinder>(surf);
+                cylinder->radius = params[0];
+                break;
+            }
+            case SurfaceType::FLAT:
+            {
+                break;
+            }
+            case SurfaceType::PARABOLA:
+            {
+                auto parabola = std::dynamic_pointer_cast<Parabola>(surf);
+                parabola->focal_length_x = params[0];
+                parabola->focal_length_y = params[1];
+                break;
+            }
+            case SurfaceType::SPHERE:
+            {
+                auto sphere = std::dynamic_pointer_cast<Sphere>(surf);
+                sphere->vertex_curv = params[0];
+                break;
+            }
         }
     }
+    catch (const std::invalid_argument& e)
+    {
+        if (cxt->p_cb) cxt->p_cb("set surface parameters", e.what());
+		return st_return_code::INVALID_ARGUMENTS;
+    }
+    
     return st_return_code::SUCCESS;
 }
 
@@ -861,6 +878,139 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
     RESULT(cxt);
 
     ST_WRAP_CB_TRY_CATCH(result->write_csv_file(filename, precision), cxt->p_cb);
+    return st_return_code::SUCCESS;
+}
+
+// functions to get results directly
+STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    *num_intersections = result->get_number_of_records();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
+									 double 		 *loc_x,
+									 double 		 *loc_y,
+									 double 		 *loc_z)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    std::vector<double> x, y, z;
+    glm::dvec3 loc;
+    for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            loc = (*jt)->location;
+            x.push_back(loc[0]);
+            y.push_back(loc[1]);
+            z.push_back(loc[2]);
+        }
+    }
+
+    loc_x = x.data();
+    loc_y = y.data();
+    loc_z = z.data();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
+							 	   double 		   *cos_x,
+							 	   double 		   *cos_y,
+							 	   double 		   *cos_z)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    std::vector<double> x, y, z;
+    glm::dvec3 cosine;
+    for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            cosine = (*jt)->direction;
+            x.push_back(cosine[0]);
+            y.push_back(cosine[1]);
+            z.push_back(cosine[2]);
+        }
+    }
+
+    cos_x = x.data();
+    cos_y = y.data();
+    cos_z = z.data();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, int *element_map)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    std::vector<int> els;
+    for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            els.push_back((int)(*jt)->element);
+        }
+    }
+
+    element_map = els.data();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, int *stage_map)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    // deprecating stages return array of 0s
+    stage_map = new int[result->get_number_of_records()]{};
+
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, int *ray_numbers)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    std::vector<int> nums;
+    for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            nums.push_back((int)rec->id);
+        }
+    }
+
+    ray_numbers = nums.data();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
+									 double 		 *xmin,
+									 double 		 *xmax,
+									 double 		 *ymin,
+									 double 		 *ymax,
+									 int 			 *nsunrays)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    *xmin = 0;
+    *ymin = 0;
+    result->get_sun_dimensions(*xmax, *ymax);
+    *nsunrays = result->get_sun_ray_count();
+
     return st_return_code::SUCCESS;
 }
 
