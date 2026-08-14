@@ -179,6 +179,7 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
        optnum      -> OpticSurfNumber
        apgr        -> ApertureStopOrGratingType
        order       -> DiffractionOrder
+       rimag       -> RefractiveIndex[1]
        gratingab12 -> AB12
 
        warning arguments (no longer used, but related to reflectivity/transmissivity):
@@ -195,6 +196,7 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
     CONTEXT(pcxt);
     DATA(cxt);
 
+    st_return_code code = st_return_code::SUCCESS;
     mut_optical_set_ptr existing_set; 
     for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
     {
@@ -203,10 +205,25 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
     }
 
     if (!existing_set) return st_return_code::DATA_VALUE_NOT_FOUND;
+    
+    DistributionType dist_type = char_to_distribution(dist);
+    if (dist_type == DistributionType::UNKNOWN) return st_return_code::INVALID_ARGUMENTS;
+    // if either optical table is requested default to 
+    // values at normal incidence angle and emit warning
+    if (userefltable && refl_npoints != 0)
+    {
+        ref = refls[0];
+        code = st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED;
+    }
+    if (usetranstable && trans_npoints != 0) 
+    {
+        tra = transs[0];
+        code = st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED;
+    }
 
     OpticalSide side = fb == 1 ? OpticalSide::Front : OpticalSide::Back;
     existing_set->set_properties(side,
-                                 char_to_distribution(dist),
+                                 dist_type,
                                  tra,
                                  ref,
                                  rmsslope,
@@ -215,9 +232,7 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
     // that imaginary part of refractive index is not used
     existing_set->set_refraction_indices(rreal, rreal);
 
-    if (userefltable || usetranstable) return st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED;
-
-    return st_return_code::SUCCESS;
+    return code;
 }
 
 // functions to add/remove elements

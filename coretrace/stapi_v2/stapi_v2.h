@@ -207,8 +207,8 @@ STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
 								   int 			   include_optics);
 
 // functions to add/remove/set optical properties
-STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt);
-STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name);
+STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics);
+STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *num_optics);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
 STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
