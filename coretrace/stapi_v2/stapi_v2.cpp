@@ -70,6 +70,17 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 ////////////////////////////////
 
 // functions for SolTrace data management
+// functions for simulation data management thru json strings
+STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
+{
+	CONTEXT(pcxt);
+    DATA(cxt);
+    
+    ST_WRAP_CB_TRY_CATCH(data->import_json_string(json), cxt->p_cb);
+    return st_return_code::SUCCESS;
+}
+
+// functions for simulation data management directly
 // functions to add/remove optical properties
 STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics)
 {
@@ -181,6 +192,294 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
 
     return st_return_code::SUCCESS;
 }
+
+// functions to add/remove elements
+STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    *num_elements = data->get_number_of_elements();
+    return st_return_code::SUCCESS;
+}
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int *num_elements)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    // TODO in simulation_data.cpp saying add_element will be throwable in the future
+    ST_WRAP_CB_TRY_CATCH(data->add_element(make_element<SingleElement>()), cxt->p_cb);
+    *num_elements = data->get_number_of_elements();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num)
+{
+    // assumes single elements
+    // TODO: make over functions for adding different types of elements
+    if (num < 1) return st_return_code::INVALID_ARGUMENTS;
+
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    for (st_uint_t i = 0; i < num; ++i)
+        ST_WRAP_CB_TRY_CATCH(data->add_element(make_element<SingleElement>()), cxt->p_cb);
+    
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    uint_fast64_t removed = data->remove_element(idx);
+
+    if (removed == 0) return st_return_code::WARNING_NOT_FOUND;
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    uint_fast64_t num_elements = data->get_number_of_elements();
+
+    for (uint_fast64_t i = 0; i < num_elements; ++i)
+        data->remove_element(i); 
+
+    return st_return_code::SUCCESS;
+}
+
+// functions to modify elements
+STAPI_V2 st_return_t st_element_enabled(st_context_v2_t pcxt, st_uint_t idx, int enabled)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    if (enabled) el->unmark_virtual();
+    else el->mark_virtual();
+
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_xyz(st_context_v2_t pcxt, 
+									st_uint_t idx,
+									double x,
+									double y,
+									double z)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    element_ptr el = data->get_element(idx);
+    el->set_origin(x, y, z);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_aim(st_context_v2_t pcxt, 
+									st_uint_t idx,
+									double ax,
+									double ay,
+									double az)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    el->set_aim_vector(ax, ay, az);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_zrot(st_context_v2_t pcxt, st_uint_t idx, double zrot)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    element_ptr el = data->get_element(idx);
+    el->set_zrot_radians(zrot);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, char ap)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    element_ptr el = data->get_element(idx);
+    ApertureType ap_type = char_to_aperture(ap);
+    if (ap_type == ApertureType::APERTURE_UNKNOWN) return st_return_code::INVALID_ARGUMENTS;
+
+    switch (ap_type)
+    {
+        case ApertureType::ANNULUS:
+        {
+            el->set_aperture(make_aperture<Annulus>());
+            break;
+        }
+        case ApertureType::CIRCLE:
+        {
+            el->set_aperture(make_aperture<Circle>());
+            break;
+        }
+        case ApertureType::HEXAGON:
+        {
+            el->set_aperture(make_aperture<EquilateralTriangle>());
+            break;
+        }
+        case ApertureType::RECTANGLE:
+        {
+            el->set_aperture(make_aperture<Hexagon>());
+            break;
+        }
+        case ApertureType::EQUILATERAL_TRIANGLE:
+        {
+            el->set_aperture(make_aperture<Rectangle>());
+            break;
+        }
+        /* commented out in aperture.hpp, but this is what it would be
+        case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
+        {
+            el->set_aperture(make_aperture<SingleAxisCurvatureSection>());
+            break;
+        }                                                                   */
+        case ApertureType::IRREGULAR_TRIANGLE:
+        {
+            el->set_aperture(make_aperture<IrregularTriangle>());
+            break;
+        }
+        case ApertureType::IRREGULAR_QUADRILATERAL:
+        {
+            el->set_aperture(make_aperture<IrregularQuadrilateral>());
+            break;
+        }
+        // handle above
+        // case ApertureType::APERTURE_UNKNOWN:
+    }
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_aperture_params(st_context_v2_t pcxt, st_uint_t idx, double params[8])
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    element_ptr el = data->get_element(idx);
+    aperture_ptr ap = el->get_aperture();
+
+    switch (ap->get_type())
+    {
+        case ApertureType::ANNULUS:
+        {
+            auto annulus = std::dynamic_pointer_cast<Annulus>(ap);
+            annulus->inner_radius = params[0];
+            annulus->outer_radius = params[1];
+            annulus->arc_angle    = params[2];
+            break;
+        }
+        case ApertureType::CIRCLE:
+        {
+            auto circle = std::dynamic_pointer_cast<Circle>(ap);
+            circle->diameter= params[0];
+            break;
+        }
+        case ApertureType::HEXAGON:
+        {
+            auto hexagon = std::dynamic_pointer_cast<Hexagon>(ap);
+            hexagon->circumscribe_diameter = params[0];
+            break;
+        }
+        case ApertureType::RECTANGLE:
+        {
+            auto rectangle = std::dynamic_pointer_cast<Rectangle>(ap);
+            rectangle->set_x_length(params[0]);
+            rectangle->set_y_length(params[1]);
+            rectangle->set_x_coord(-params[0] / 2);
+            rectangle->set_y_coord(-params[1] / 2);
+            break;
+        }
+        case ApertureType::EQUILATERAL_TRIANGLE:
+        {
+            auto equilateral_triangle = std::dynamic_pointer_cast<EquilateralTriangle>(ap);
+            equilateral_triangle->circumscribe_diameter = params[0];
+            break;
+        }
+        case ApertureType::IRREGULAR_TRIANGLE:
+        {
+            auto irregular_triangle = std::dynamic_pointer_cast<IrregularTriangle>(ap);
+            irregular_triangle->x1 = params[0];
+            irregular_triangle->y1 = params[1];
+            irregular_triangle->x2 = params[2];
+            irregular_triangle->y2 = params[3];
+            irregular_triangle->x3 = params[4];
+            irregular_triangle->y3 = params[5];
+            break;
+        }
+        case ApertureType::IRREGULAR_QUADRILATERAL:
+        {
+            auto irregular_quadrilateral = std::dynamic_pointer_cast<IrregularQuadrilateral>(ap);
+            irregular_quadrilateral->x1 = params[0];
+            irregular_quadrilateral->y1 = params[1];
+            irregular_quadrilateral->x2 = params[2];
+            irregular_quadrilateral->y2 = params[3];
+            irregular_quadrilateral->x3 = params[4];
+            irregular_quadrilateral->y3 = params[5];
+            irregular_quadrilateral->x4 = params[6];
+            irregular_quadrilateral->y4 = params[7];
+            break;
+        }
+    }
+
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_surface(st_context_v2_t pcxt, st_uint_t idx, char surf)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    return st_return_code::RETURN_COUNT;
+}
+
+STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t idx, double params[8])
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    return st_return_code::RETURN_COUNT;
+}
+
+STAPI_V2 st_return_t st_element_surface_file(st_context_v2_t pcxt, st_uint_t idx, const char *file)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    return st_return_code::RETURN_COUNT;
+}
+
+STAPI_V2 st_return_t st_element_interaction(st_context_v2_t pcxt, st_uint_t idx, int type)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    return st_return_code::RETURN_COUNT;
+}
+
+STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt, st_uint_t idx, const char *name)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    return st_return_code::RETURN_COUNT;
+}
+
 
 // sun functions
 std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
@@ -317,25 +616,10 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
-// functions for simulation data management thru json strings
-STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
-{
-	CONTEXT(pcxt);
-    DATA(cxt);
-    
-    ST_WRAP_CB_TRY_CATCH(data->import_json_string(json), cxt->p_cb);
-    return st_return_code::SUCCESS;
-}
+
 
 // functions for SolTrace data information
-STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
-{
-    CONTEXT(pcxt);
-    DATA(cxt);
 
-    *num_elements = data->get_number_of_elements();
-    return st_return_code::SUCCESS;
-}
 
 //////////////////////////////////
 // Simlulation Runner Functions //
@@ -478,6 +762,9 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 /////////////////////////
 // Batch api call work //
 /////////////////////////
+
+// could upgrade by moving non macro stuff to internal _st_* functions and fetch 
+// full context at the beginning of the for loop
 
 bool is_error(st_return_t code)
 {

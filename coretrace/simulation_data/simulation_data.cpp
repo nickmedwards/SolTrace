@@ -184,7 +184,10 @@ uint_fast64_t SimulationData::remove_element(element_id id)
 
     if (el != nullptr)
     {
-        this->my_elements.remove_item(id);
+        uint_fast64_t removed = this->my_elements.remove_item(id);
+
+        if (removed == 0) return 0;
+
         el->set_id(ELEMENT_ID_UNASSIGNED);
         if (el->is_composite())
         {

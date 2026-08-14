@@ -2,70 +2,76 @@
 STCORE_API: version 2
 functions for interacting with new SimulationData/Runner/Results structure through json
 
-recreate stapi.h functions TODO list (x: done, 2: tagged with _v2, s: skipped, T: TODO, blank: not done)
-[x] - st_create_context
-[x] - st_free_context
-[ ] - st_num_messages
-[ ] - st_message
-[ ] - st_clear_messages
-[s] - st_dump
-[s] - st_load_file
-[s] - st_write_output
-[s] - st_reset
-[x] - st_num_optics
-[x] - st_add_optic
-[x] - st_delete_optic
-[x] - st_clear_optics
-[x] - st_optic
-[] - st_num_stages
-[] - st_add_stage
-[] - st_add_stages
-[] - st_delete_stage
-[] - st_clear_stages
-[] - st_stage_xyz
-[] - st_stage_aim
-[] - st_stage_zrot
-[] - st_stage_flags
-[x] - st_num_elements
-[] - st_add_element
-[] - st_add_elements
-[] - st_delete_element
-[] - st_clear_elements
-[] - st_element_enabled
-[] - st_element_xyz
-[] - st_element_aim
-[] - st_element_zrot
-[] - st_element_aperture
-[] - st_element_aperture_params
-[] - st_element_surface
-[] - st_element_surface_params
-[] - st_element_surface_file
-[] - st_element_interaction
-[] - st_element_optic
-[x] - st_sun
-[x] - st_sun_xyz
-[x] - st_sun_position
-[x] - st_sun_userdata
-[] - st_num_intersections
-[] - st_locations
-[] - st_cosines
-[] - st_elementmap
-[] - st_stagemap
-[] - st_raynumbers
-[] - st_sun_stats
-[] - st_sim_params
-[] - st_sim_errors
-[2] - st_sim_run
-[] - st_sim_run_with_refactor
-[] - st_sim_run_SolTrace20
-[] - st_sim_run_data
-[] - st_calc_euler_angles
-[] - st_transform_to_local
-[] - st_transform_to_reference
-[] - st_matrix_vector_mult
-[] - st_calc_transform_matrices
-[] - st_matrix_transpose
-*/
+recreate stapi.h functions TODO list 
+(x: done, 2: tagged with _v2, -: skipped, T: TODO, blank: not done)
+NOTE: may change name convention from marking _v2 to _v1
+
+ function name		| stapi_v2.h/cpp | tested | stapi_v2.py | h/cpp batch | py batch | legacy.py
+-------------------------------------------------------------------------------------------------
+ st_create_context			[x]			[x]			[x]			  [-]		  [-]		  [x]
+ st_free_context			[x]			[x]			[x]			  [-]		  [-]		  [x]
+ st_num_messages			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_message					[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_clear_messages			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_dump					[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_load_file				[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_write_output			[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_reset					[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_num_optics				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_add_optic				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_delete_optic			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_clear_optics			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_optic					[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_num_stages				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_add_stage				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_add_stages				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_delete_stage			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_clear_stages			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_stage_xyz				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_stage_aim				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_stage_zrot				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_stage_flags				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_num_elements			[x]			[x]			[x]			  [x]		  [x]		  [x]
+ st_add_element				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_add_elements			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_delete_element			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_clear_elements			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_enabled			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_xyz				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_aim				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_zrot			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_aperture		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_aperture_params	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_surface			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_surface_params	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_surface_file	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_interaction		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_element_optic			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sun						[x]			[x]			[x]			  [x]		  [x]		  [x]
+ st_sun_xyz					[x]			[x]			[x]			  [x]		  [x]		  [x]
+ st_sun_position			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sun_userdata			[x]			[x]			[x]			  [x]		  [x]		  [x]
+ st_num_intersections		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_locations				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_cosines					[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_elementmap				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_stagemap				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_raynumbers				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sun_stats				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sim_params				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sim_errors				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sim_run					[2]			[2]			[2]			  [2]		  [2]		  [2]
+ st_sim_run_with_refactor	[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_sim_run_SolTrace20		[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_sim_run_data			[-]			[-]			[-]			  [-]		  [-]		  [-]
+ st_calc_euler_angles		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_transform_to_local		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_transform_to_reference	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_matrix_vector_mult		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_calc_transform_matrices	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_matrix_transpose		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+-------------------------------------------------------------------------------------------------
+ */
 
 #ifndef __soltraceapi_v2_h
 #define __soltraceapi_v2_h
@@ -132,6 +138,7 @@ typedef enum st_return_code : st_return_t {
 	DATA_NOT_FOUND,
 	RUNNER_NOT_FOUND,
 	RESULT_NOT_FOUND,
+	INVALID_ARGUMENTS,
 	DATA_INSERTION_FAILURE,
 	DATA_VALUE_NOT_FOUND,
 	RUNNER_INILIALIZE_FAILURE,
@@ -187,7 +194,11 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 ////////////////////////////////
 
 // functions for SolTrace data management
-// functions to add/remove optical properties
+// functions for simulation data management thru json strings
+STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
+
+// functions for simulation data management directly
+// functions to add/remove/set optical properties
 STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt);
 STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
@@ -215,6 +226,32 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
 							  double    	  *trans_angles,
 							  double    	  *transs);
 
+// functions to add/remove elements
+STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int *num_elements);
+STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int *num_elements);
+STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx);
+STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt);
+// functions to modify elements
+STAPI_V2 st_return_t st_element_enabled(st_context_v2_t pcxt, st_uint_t idx, int enabled);
+STAPI_V2 st_return_t st_element_xyz(st_context_v2_t pcxt, 
+									st_uint_t idx,
+									double x,
+									double y,
+									double z);
+STAPI_V2 st_return_t st_element_aim(st_context_v2_t pcxt, 
+									st_uint_t idx,
+									double ax,
+									double ay,
+									double az);
+STAPI_V2 st_return_t st_element_zrot(st_context_v2_t pcxt, st_uint_t idx, double zrot);
+STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, char ap);
+STAPI_V2 st_return_t st_element_aperture_params(st_context_v2_t pcxt, st_uint_t idx, double params[8]);
+STAPI_V2 st_return_t st_element_surface(st_context_v2_t pcxt, st_uint_t idx, char surf);
+STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t idx, double params[8]);
+STAPI_V2 st_return_t st_element_surface_file(st_context_v2_t pcxt, st_uint_t idx, const char *file);
+STAPI_V2 st_return_t st_element_interaction(st_context_v2_t pcxt, st_uint_t idx, int type); /* 1=refract, 2=reflect */
+STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt, st_uint_t idx, const char *name);
 
 // sun functions
 STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
@@ -236,12 +273,6 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 									 st_uint_t 		 npoints,
 									 double 		 angle[],
 									 double 		 intensity[]);
-
-// functions for simulation data management thru json strings
-STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
-
-// functions for SolTrace data information
-STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
 
 //////////////////////////////////
 // Simlulation Runner Functions //

@@ -117,13 +117,13 @@ class _Face:
     
     def __repr__(self) -> str:
         pairs = [
-            ('Distribution Type', _Face.CHAR_TO_NAME[self.dist_type]),
-            ('Refraction Real', self.refraction_real),
-            ('Reflectivity', self.reflectivity),
-            ('Transmissivity', self.transmissivity),
-            ('Slope Error', self.slope_error),
-            ('Specularity Error', self.spec_error),
-            ('Use Reflectivity Table', self.userefltable), 
+            ('Distribution Type',        _Face.CHAR_TO_NAME[self.dist_type]),
+            ('Refraction Real',          self.refraction_real),
+            ('Reflectivity',             self.reflectivity),
+            ('Transmissivity',           self.transmissivity),
+            ('Slope Error',              self.slope_error),
+            ('Specularity Error',        self.spec_error),
+            ('Use Reflectivity Table',   self.userefltable), 
             ('Use Transmissivity Table', self.usetranstable),
         ]
         if self.usetranstable: pairs.append(('Transmissivity Table', self.transtable))

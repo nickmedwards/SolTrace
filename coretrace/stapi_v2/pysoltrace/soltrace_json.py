@@ -2,6 +2,14 @@
 your home for creating and checking the compatability your soltrace json files
 
 TODO: a checker for save_to_json
+TODO: chedder, maybe:
+        struct json_keys {
+            static constexpr const char is_stage[] = "is_stage";
+            static constexpr const char is_composite[] = "is_composite";
+            static constexpr const char active[] = "active";
+        };
+        would need to check regex for parsing static/constexpr
+        and a way to remap the ctypes as a type
 """
 
 #################
