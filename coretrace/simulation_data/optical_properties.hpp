@@ -38,6 +38,8 @@ namespace SolTrace::Data
     struct OpticalPropertySetReference;
     using OpticalPropertySetContainer = Container<optics_id, OpticalPropertySet>;
     using OpticalPropertySetResolver = std::function<OpticalPropertySetReference(const optics_id)>;
+    using optical_set_ptr = std::shared_ptr<const OpticalPropertySet>;
+    using mut_optical_set_ptr = std::shared_ptr<OpticalPropertySet>;
 
     enum class InteractionType
     {
@@ -344,6 +346,11 @@ namespace SolTrace::Data
         const std::string get_name() const
         {
             return this->my_name;
+        }
+        
+        void set_name(std::string name)
+        {
+            this->my_name = name;
         }
 
         void get_refraction_indices(double& rfront, double& rback) const

@@ -68,7 +68,7 @@ public:
         return this->opt_id;
     }
 
-    std::shared_ptr<const OpticalPropertySet> get_optical_property_set() const override
+    optical_set_ptr get_optical_property_set() const override
     {
         return this->optical_property_set.lock();
     }

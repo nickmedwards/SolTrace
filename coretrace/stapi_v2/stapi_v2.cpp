@@ -168,7 +168,7 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
     CONTEXT(pcxt);
     DATA(cxt);
 
-    std::shared_ptr<OpticalPropertySet> existing_set; 
+    mut_optical_set_ptr existing_set; 
     for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
     {
         if (it->first == idx)
@@ -308,38 +308,43 @@ STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, ch
     CONTEXT(pcxt);
     DATA(cxt);
 
+    st_return_code code = st_return_code::SUCCESS;
     element_ptr el = data->get_element(idx);
     ApertureType ap_type = char_to_aperture(ap);
-    if (ap_type == ApertureType::APERTURE_UNKNOWN) return st_return_code::INVALID_ARGUMENTS;
 
+    // instead of trying to get around validate(), set dummy values that pass validate()
+    // users of api have been calling this function to intialize the aperature, and 
+    // st_element_aperture_params to set the aperture parameters, so dummy values should 
+    // be reset by previous required pattern. 
     switch (ap_type)
     {
         case ApertureType::ANNULUS:
         {
-            el->set_aperture(make_aperture<Annulus>());
+            el->set_aperture(make_aperture<Annulus>(0, 1, 360));
             break;
         }
         case ApertureType::CIRCLE:
         {
-            el->set_aperture(make_aperture<Circle>());
+            el->set_aperture(make_aperture<Circle>(1));
             break;
         }
         case ApertureType::HEXAGON:
         {
-            el->set_aperture(make_aperture<EquilateralTriangle>());
+            el->set_aperture(make_aperture<EquilateralTriangle>(1));
             break;
         }
         case ApertureType::RECTANGLE:
         {
-            el->set_aperture(make_aperture<Hexagon>());
+            el->set_aperture(make_aperture<Hexagon>(1));
             break;
         }
         case ApertureType::EQUILATERAL_TRIANGLE:
         {
-            el->set_aperture(make_aperture<Rectangle>());
+            el->set_aperture(make_aperture<Rectangle>(1, 1));
             break;
         }
-        /* commented out in aperture.hpp, but this is what it would be
+        /* commented out in aperture.hpp, but this is what it would be.
+           handled by default.
         case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
         {
             el->set_aperture(make_aperture<SingleAxisCurvatureSection>());
@@ -347,18 +352,20 @@ STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, ch
         }                                                                   */
         case ApertureType::IRREGULAR_TRIANGLE:
         {
-            el->set_aperture(make_aperture<IrregularTriangle>());
+            el->set_aperture(make_aperture<IrregularTriangle>(0, 0, 1, 0, 0, 1));
             break;
         }
         case ApertureType::IRREGULAR_QUADRILATERAL:
         {
-            el->set_aperture(make_aperture<IrregularQuadrilateral>());
+            el->set_aperture(make_aperture<IrregularQuadrilateral>(0, 0, 1, 0, 0, 1, 1, 1));
             break;
         }
-        // handle above
+        // handle by default.
         // case ApertureType::APERTURE_UNKNOWN:
+        default:
+            code = st_return_code::INVALID_ARGUMENTS;
     }
-    return st_return_code::SUCCESS;
+    return code;
 }
 
 STAPI_V2 st_return_t st_element_aperture_params(st_context_v2_t pcxt, st_uint_t idx, double params[8])
@@ -440,8 +447,60 @@ STAPI_V2 st_return_t st_element_surface(st_context_v2_t pcxt, st_uint_t idx, cha
     CONTEXT(pcxt);
     DATA(cxt);
     
+    st_return_code code = st_return_code::SUCCESS;
     element_ptr el = data->get_element(idx);
-    return st_return_code::RETURN_COUNT;
+    SurfaceType surf_type = char_to_surface(surf);
+    if (surf_type == SurfaceType::SURFACE_UNKNOWN) return st_return_code::INVALID_ARGUMENTS;
+
+    switch (surf_type)
+    {
+        case SurfaceType::CONE:
+        {
+            el->set_surface(make_surface<Cone>(90));
+            break;
+        }
+        case SurfaceType::CYLINDER:
+        {
+            el->set_surface(make_surface<Cylinder>(1));
+            break;
+        }
+        case SurfaceType::FLAT:
+        {
+            el->set_surface(make_surface<Flat>());
+            break;
+        }
+        case SurfaceType::PARABOLA:
+        {
+            el->set_surface(make_surface<Parabola>(1, 1));
+            break;
+        }
+        case SurfaceType::SPHERE:
+        {
+            el->set_surface(make_surface<Sphere>(1));
+            break;
+        }
+        /* not implemented yet, would look something like below.
+           handled by default.
+        
+        case SurfaceType::HYPER:
+        {
+            el->set_surface(make_surface<>());
+            break;
+        }
+        case SurfaceType::GENERAL_SPENCER_MURTY:
+        {
+            el->set_surface(make_surface<>());
+            break;
+        }
+        case SurfaceType::TORUS:
+        {
+            el->set_surface(make_surface<>());
+            break;
+        }                                                           */
+        default:
+            code = st_return_code::INVALID_ARGUMENTS;
+    }
+    return code;
 }
 
 STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t idx, double params[8])
@@ -450,16 +509,53 @@ STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t i
     DATA(cxt);
     
     element_ptr el = data->get_element(idx);
-    return st_return_code::RETURN_COUNT;
+    surface_ptr surf = el->get_surface();
+
+    switch (surf->get_type())
+    {
+        case SurfaceType::CONE:
+        {
+            auto cone = std::dynamic_pointer_cast<Cone>(surf);
+            cone->half_angle = params[0];
+            break;
+        }
+        case SurfaceType::CYLINDER:
+        {
+            auto cylinder = std::dynamic_pointer_cast<Cylinder>(surf);
+            cylinder->radius = params[0];
+            break;
+        }
+        case SurfaceType::FLAT:
+        {
+            break;
+        }
+        case SurfaceType::PARABOLA:
+        {
+            auto parabola = std::dynamic_pointer_cast<Parabola>(surf);
+            parabola->focal_length_x = params[0];
+            parabola->focal_length_y = params[1];
+            break;
+        }
+        case SurfaceType::SPHERE:
+        {
+            auto sphere = std::dynamic_pointer_cast<Sphere>(surf);
+            sphere->vertex_curv = params[0];
+            break;
+        }
+    }
+    return st_return_code::SUCCESS;
 }
 
 STAPI_V2 st_return_t st_element_surface_file(st_context_v2_t pcxt, st_uint_t idx, const char *file)
 {
+    /* currently none of the surface types that used this function in v1 are implemented.
+       format strings for parsing various file types are in input.cpp -> ReadSurfaceFile.
     CONTEXT(pcxt);
     DATA(cxt);
     
-    element_ptr el = data->get_element(idx);
-    return st_return_code::RETURN_COUNT;
+    
+    element_ptr el = data->get_element(idx);                                               */
+    return st_return_code::INVALID_ARGUMENTS;
 }
 
 STAPI_V2 st_return_t st_element_interaction(st_context_v2_t pcxt, st_uint_t idx, int type)
@@ -468,7 +564,12 @@ STAPI_V2 st_return_t st_element_interaction(st_context_v2_t pcxt, st_uint_t idx,
     DATA(cxt);
     
     element_ptr el = data->get_element(idx);
-    return st_return_code::RETURN_COUNT;
+    mut_optical_set_ptr opt_prop = data->get_mutable_optical_property_set(*el);
+    if (opt_prop == nullptr) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    /* 1=refract, 2=reflect */
+    opt_prop->set_interaction_type(type == 1 ? InteractionType::REFRACTION : InteractionType::REFLECTION);
+    return st_return_code::SUCCESS;
 }
 
 STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt, st_uint_t idx, const char *name)
@@ -477,7 +578,11 @@ STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt, st_uint_t idx, const
     DATA(cxt);
     
     element_ptr el = data->get_element(idx);
-    return st_return_code::RETURN_COUNT;
+    mut_optical_set_ptr opt_prop = data->get_mutable_optical_property_set(*el);
+    if (opt_prop == nullptr) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    opt_prop->set_name(std::string(name));
+    return st_return_code::SUCCESS;
 }
 
 

@@ -429,7 +429,7 @@ namespace SolTrace::EmbreeRunner
                     }
 
                     // Get optics and check for absorption
-                    decltype(&Stage->ElementList[0]->Optics) optics_set = nullptr;
+                    optical_set_ptr optics_set = nullptr;
                     RayEvent rev = RayEvent::VIRTUAL;
                     if (Stage->Virtual)
                     {
@@ -441,7 +441,7 @@ namespace SolTrace::EmbreeRunner
                     {
                         telement_ptr const& optelm =
                             Stage->ElementList[LastElementNumber - 1];
-                        optics_set = &optelm->Optics;
+                        optics_set = static_cast<optical_set_ptr>(&optelm->Optics);
 
                         bool good;
                         {
