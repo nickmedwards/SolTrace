@@ -79,6 +79,7 @@ namespace SolTrace::NativeRunner
         this->tsys.sim_raycount = sim_params.number_of_rays;
         this->tsys.sim_raymax = sim_params.max_number_of_rays;
         this->tsys.seed = sim_params.seed;
+        this->as_power_tower = sim_params.as_power_tower;
         return RunnerStatus::SUCCESS;
     }
 

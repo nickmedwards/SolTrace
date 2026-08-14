@@ -81,6 +81,33 @@ STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
 }
 
 // functions for simulation data management directly
+STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
+								   int 			   raycount,
+								   int 			   maxcount,
+								   int 			   include_dynamic_group)
+{
+	CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+    sim_params.number_of_rays     = raycount;
+    sim_params.max_number_of_rays = maxcount;
+    sim_params.as_power_tower     = include_dynamic_group;
+    return st_return_code::SUCCESS;
+}
+STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
+								   int 			   include_sun_shape,
+								   int 			   include_optics)
+{
+	CONTEXT(pcxt);
+    DATA(cxt);
+    
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+    sim_params.include_sun_shape_errors = include_sun_shape;
+    sim_params.include_optical_errors   = include_optics;
+    return st_return_code::SUCCESS;
+}
+
 // functions to add/remove optical properties
 STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics)
 {
