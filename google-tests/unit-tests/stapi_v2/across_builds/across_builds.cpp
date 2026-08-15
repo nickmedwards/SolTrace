@@ -54,16 +54,12 @@ st_return_t check_optical_side(optical_set_ptr  set,
         return 1;
     }
     return 0;
-//     get_reflectivity
-// get_transmissivity
-// get_error_distribution
-// get_slope_error
-// get_specularity_error
 }
 
 ////////////////////////////////
 // Simlulation Data Functions //
 ////////////////////////////////
+
 // functions for simulation data management thru json strings
 st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt)
 {

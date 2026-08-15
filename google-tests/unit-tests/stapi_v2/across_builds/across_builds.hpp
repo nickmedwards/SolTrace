@@ -30,13 +30,21 @@ json load_json();
 // Simlulation Data Functions //
 ////////////////////////////////
 
+// functions for simulation data management thru json strings
+st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
+
+// functions for simulation data management directly
+st_return_t call_stapi_v2_sim_params(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt);
+
+// function for optical properties
+st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt);
+
 // sun functions
 st_return_t call_stapi_v2_sun(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt);
 
-// functions for simulation data management thru json strings
-st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
 
 //////////////////////////////////
 // Simlulation Runner Functions //
