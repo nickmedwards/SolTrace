@@ -38,8 +38,7 @@ namespace SolTrace::Data
     struct OpticalPropertySetReference;
     using OpticalPropertySetContainer = Container<optics_id, OpticalPropertySet>;
     using OpticalPropertySetResolver = std::function<OpticalPropertySetReference(const optics_id)>;
-    using optical_set_ptr = std::shared_ptr<const OpticalPropertySet>;
-    using mut_optical_set_ptr = std::shared_ptr<OpticalPropertySet>;
+
 
     enum class InteractionType
     {
@@ -455,6 +454,9 @@ namespace SolTrace::Data
         friend std::ostream& operator<<(std::ostream& os,
             const OpticalPropertiesFace& op);
     };
+
+    using optical_set_ptr = typename std::shared_ptr<const OpticalPropertySet>;
+    using mut_optical_set_ptr = typename std::shared_ptr<OpticalPropertySet>;
 
 } // namespace SolTrace::Data
 

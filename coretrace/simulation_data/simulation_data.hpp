@@ -307,6 +307,33 @@ public:
         return this->my_parameters.sim_dt.my_time;
     }
 
+    const bool get_include_sun_shape_errors() const
+    {
+        return this->my_parameters.include_sun_shape_errors;
+    }
+    void set_include_sun_shape_errors(bool e)
+    {
+        this->my_parameters.include_sun_shape_errors = e;
+    }
+
+    const bool get_include_optical_errors() const
+    {
+        return this->my_parameters.include_optical_errors;
+    }
+    void set_include_optical_errors(bool e)
+    {
+        this->my_parameters.include_optical_errors = e;
+    }
+    
+    const bool get_as_power_tower() const
+    {
+        return this->my_parameters.as_power_tower;
+    }
+    void set_as_power_tower(bool pt)
+    {
+        this->my_parameters.as_power_tower = pt;
+    }
+
     SimulationParameters &get_simulation_parameters()
     {
         return this->my_parameters;

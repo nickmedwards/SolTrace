@@ -110,27 +110,33 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
     st_uint_t idx = 0;
     int       fb = 1; /* 1=front,2=back */
     char      dist = 'g';
-    int       optnum, apgr, order = 0;
+    int       optnum = 0;
+    int       apgr = 0;
+    int       order = 0;
     double    rreal = 1;
     double    rimag = 0;
-    double    ref, tra = .5;
+    double    ref = .5;
+    double    tra = .5;
     double    gratingab12[3] = { 0, 0, 0 };
-    double    rmsslope, rmsspec = .5;
-    int       userefltable, refl_npoints = 0;
-    double    *refl_angles;
+    double    rmsslope = .5;
+    double    rmsspec = .5;
+    int       userefltable = 0;
+    int       refl_npoints = 0;
+    double    *refl_angles = nullptr;
     double    refls[1] = { .25 };
-    int       usetranstable, trans_npoints = 0;
-    double    *trans_angles;
+    int       usetranstable = 0;
+    int       trans_npoints = 0;
+    double    *trans_angles = nullptr;
     double    transs[1] = { .25 };
     
     // check no optics set
-    int *num;
+    int *num = nullptr;
     st_num_optics(pcxt, num);
-    st_return_t code = check(num, 0);
+    st_return_t code = check(*num, 0);
 
     // check add optic -> expect st_return_code::SUCCESS
     code += st_add_optic(pcxt, "test1", num);
-    code += check(num, 1);
+    code += check(*num, 1);
     
     // check name was set and faces are default
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -204,18 +210,18 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
 
     // add an optical set to remove and still test clear
     code += st_add_optic(pcxt, "test2", num);
-    code += check(num, 2);
+    code += check(*num, 2);
     // expect -> st_return_code::SUCCESS
     code += st_delete_optic(pcxt, 1);
 
     st_num_optics(pcxt, num);
-    code = check(num, 1);
+    code = check(*num, 1);
 
     // test clear
     // expect -> st_return_code::SUCCESS
     code += st_clear_optics(pcxt);
     st_num_optics(pcxt, num);
-    code = check(num, 0);
+    code = check(*num, 0);
     
     return code;
 }
