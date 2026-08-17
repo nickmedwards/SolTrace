@@ -2,7 +2,7 @@
 
 #include "across_builds.hpp"
 
-TEST(optix_data_tests, data_params)
+TEST(all_runners_data_tests, data_params)
 {
     SETUP_TEST_CXT();
 
@@ -12,7 +12,7 @@ TEST(optix_data_tests, data_params)
     CLEANUP_TEST_CXT();
 }
 
-TEST(optix_data_tests, data_errors)
+TEST(all_runners_data_tests, data_errors)
 {
     SETUP_TEST_CXT();
 
@@ -22,7 +22,7 @@ TEST(optix_data_tests, data_errors)
     CLEANUP_TEST_CXT();
 }
 
-TEST(optix_data_tests, data_optics)
+TEST(all_runners_data_tests, data_optics)
 {
     SETUP_TEST_CXT();
 
@@ -31,6 +31,17 @@ TEST(optix_data_tests, data_optics)
                     + st_return_code::INVALID_ARGUMENTS
                     + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
                     + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
+                    + st_return_code::WARNING_NOT_FOUND);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(all_runners_data_tests, data_elements_tests)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_all_elements(pcxt);
+    EXPECT_EQ(code, 3 * st_return_code::INVALID_ARGUMENTS
                     + st_return_code::WARNING_NOT_FOUND);
 
     CLEANUP_TEST_CXT();

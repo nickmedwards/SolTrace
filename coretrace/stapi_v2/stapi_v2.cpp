@@ -244,18 +244,49 @@ STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
     *num_elements = data->get_number_of_elements();
     return st_return_code::SUCCESS;
 }
-STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int *num_elements)
+
+const OpticalPropertySetReference get_optics_ref_by_id(SimulationData *data, int_fast64_t opt_id)
+{
+    optical_set_ptr existing_set;
+    for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
+    {
+        if (it->first == opt_id)
+            existing_set = it->second;
+    }
+
+    if (!existing_set) {
+        OpticalPropertySetReference ref;
+        ref.id = SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED;
+        // ref.optical_property_set = nullptr;
+        return ref;
+    }
+
+    return data->find_or_add_optical_property_set(*existing_set);
+}
+
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int_fast64_t opt_id, int *num_elements)
 {
     CONTEXT(pcxt);
     DATA(cxt);
 
+    const OpticalPropertySetReference existing_set = get_optics_ref_by_id(data, opt_id);
+    if (existing_set.id == SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED)
+        return st_return_code::DATA_VALUE_NOT_FOUND;
+
     // TODO in simulation_data.cpp saying add_element will be throwable in the future
-    ST_WRAP_CB_TRY_CATCH(data->add_element(make_element<SingleElement>()), cxt->p_cb);
+    element_ptr el = make_element<SingleElement>();
+    // set values for aperture and surface so enforce_user_fields_set doesn't 
+    // cause insertion to fail using previous soltrace api pattern, no real way
+    // around now requiring optical property set.
+    el->set_optical_property_set(existing_set);
+    el->set_aperture(make_aperture<Rectangle>(1, 1));
+    el->set_surface(make_surface<Flat>());
+    ST_WRAP_CB_TRY_CATCH(data->add_element(el), cxt->p_cb);
     *num_elements = data->get_number_of_elements();
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num)
+STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int_fast64_t opt_id, int *num_elements)
 {
     // assumes single elements
     // TODO: make over functions for adding different types of elements
@@ -264,9 +295,23 @@ STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num)
     CONTEXT(pcxt);
     DATA(cxt);
     
-    for (st_uint_t i = 0; i < num; ++i)
-        ST_WRAP_CB_TRY_CATCH(data->add_element(make_element<SingleElement>()), cxt->p_cb);
+    const OpticalPropertySetReference existing_set = get_optics_ref_by_id(data, opt_id);
+    if (existing_set.id == SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED)
+        return st_return_code::DATA_VALUE_NOT_FOUND;
     
+    for (st_uint_t i = 0; i < num; ++i)
+    {
+        element_ptr el = make_element<SingleElement>();
+        // set values for aperture and surface so enforce_user_fields_set doesn't 
+        // cause insertion to fail using previous soltrace api pattern, no real way
+        // around now requiring optical property set.
+        el->set_optical_property_set(existing_set);
+        el->set_aperture(make_aperture<Rectangle>(1, 1));
+        el->set_surface(make_surface<Flat>());
+        ST_WRAP_CB_TRY_CATCH(data->add_element(el), cxt->p_cb);
+    }
+    
+    *num_elements = data->get_number_of_elements();
     return st_return_code::SUCCESS;
 }
 
@@ -286,10 +331,8 @@ STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt)
     CONTEXT(pcxt);
     DATA(cxt);
 
-    uint_fast64_t num_elements = data->get_number_of_elements();
-
-    for (uint_fast64_t i = 0; i < num_elements; ++i)
-        data->remove_element(i); 
+    for (auto it = data->get_iterator(); !data->is_at_end(it); ++it)
+        data->remove_element(it->first); 
 
     return st_return_code::SUCCESS;
 }
@@ -300,9 +343,12 @@ STAPI_V2 st_return_t st_element_enabled(st_context_v2_t pcxt, st_uint_t idx, int
     CONTEXT(pcxt);
     DATA(cxt);
     
-    element_ptr el = data->get_element(idx);
-    if (enabled) el->unmark_virtual();
-    else el->mark_virtual();
+    element_ptr p_el = data->get_element(idx);
+    if (!p_el) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    auto el = p_el.get();
+    if (enabled) el->enable();
+    else el->disable();
 
     return st_return_code::SUCCESS;
 }
@@ -317,6 +363,8 @@ STAPI_V2 st_return_t st_element_xyz(st_context_v2_t pcxt,
     DATA(cxt);
 
     element_ptr el = data->get_element(idx);
+    if (!el) return st_return_code::DATA_VALUE_NOT_FOUND;
+
     el->set_origin(x, y, z);
     return st_return_code::SUCCESS;
 }
@@ -331,6 +379,8 @@ STAPI_V2 st_return_t st_element_aim(st_context_v2_t pcxt,
     DATA(cxt);
     
     element_ptr el = data->get_element(idx);
+    if (!el) return st_return_code::DATA_VALUE_NOT_FOUND;
+
     el->set_aim_vector(ax, ay, az);
     return st_return_code::SUCCESS;
 }
@@ -341,7 +391,9 @@ STAPI_V2 st_return_t st_element_zrot(st_context_v2_t pcxt, st_uint_t idx, double
     DATA(cxt);
 
     element_ptr el = data->get_element(idx);
-    el->set_zrot_radians(zrot);
+    if (!el) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    el->set_zrot(zrot);
     return st_return_code::SUCCESS;
 }
 
@@ -350,9 +402,12 @@ STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, ch
     CONTEXT(pcxt);
     DATA(cxt);
 
-    st_return_code code = st_return_code::SUCCESS;
-    element_ptr el = data->get_element(idx);
+    element_ptr p_el = data->get_element(idx);
+    if (!p_el) return st_return_code::DATA_VALUE_NOT_FOUND;
+    
+    auto el = p_el.get();
     ApertureType ap_type = char_to_aperture(ap);
+    st_return_code code = st_return_code::SUCCESS;
 
     // instead of trying to get around validate(), set dummy values that pass validate()
     // users of api have been calling this function to intialize the aperature, and 
@@ -372,17 +427,17 @@ STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, ch
         }
         case ApertureType::HEXAGON:
         {
-            el->set_aperture(make_aperture<EquilateralTriangle>(1));
+            el->set_aperture(make_aperture<Hexagon>(1));
             break;
         }
         case ApertureType::RECTANGLE:
         {
-            el->set_aperture(make_aperture<Hexagon>(1));
+            el->set_aperture(make_aperture<Rectangle>(1, 1));
             break;
         }
         case ApertureType::EQUILATERAL_TRIANGLE:
         {
-            el->set_aperture(make_aperture<Rectangle>(1, 1));
+            el->set_aperture(make_aperture<EquilateralTriangle>(1));
             break;
         }
         /* commented out in aperture.hpp, but this is what it would be.
@@ -399,7 +454,7 @@ STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, ch
         }
         case ApertureType::IRREGULAR_QUADRILATERAL:
         {
-            el->set_aperture(make_aperture<IrregularQuadrilateral>(0, 0, 1, 0, 0, 1, 1, 1));
+            el->set_aperture(make_aperture<IrregularQuadrilateral>(0, 0, 1, 0, 1, 1, 0, 1));
             break;
         }
         // handle by default.

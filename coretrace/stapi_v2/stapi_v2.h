@@ -17,11 +17,11 @@ NOTE: may change name convention from marking _v2 to _v1
  st_load_file				[-]			[-]			[-]			  [-]		  [-]		  [-]
  st_write_output			[-]			[-]			[-]			  [-]		  [-]		  [-]
  st_reset					[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_num_optics				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_add_optic				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_delete_optic			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_clear_optics			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_optic					[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_num_optics				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
+ st_add_optic				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
+ st_delete_optic			[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
+ st_clear_optics			[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
+ st_optic					[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
  st_num_stages				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_add_stage				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_add_stages				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
@@ -58,8 +58,8 @@ NOTE: may change name convention from marking _v2 to _v1
  st_stagemap				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_raynumbers				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_sun_stats				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sim_params				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sim_errors				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sim_params				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
+ st_sim_errors				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
  st_sim_run					[2]			[2]			[2]			  [2]		  [2]		  [2]
  st_sim_run_with_refactor	[-]			[-]			[-]			  [-]		  [-]		  [-]
  st_sim_run_SolTrace20		[-]			[-]			[-]			  [-]		  [-]		  [-]
@@ -236,8 +236,8 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
 
 // functions to add/remove elements
 STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
-STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int *num_elements);
-STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int *num_elements);
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int_fast64_t opt_id, int *num_elements);
+STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int_fast64_t opt_id, int *num_elements);
 STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt);
 // functions to modify elements
