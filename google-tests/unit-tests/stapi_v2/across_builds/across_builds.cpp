@@ -72,7 +72,7 @@ st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_sim_params(st_context_v2_t pcxt)
 {
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
-    const SimulationParameters params = cxt->p_data->get_simulation_parameters();
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
 
     // test that initialized with defaults
     st_return_t code = check(params.number_of_rays, 10000);
@@ -90,7 +90,7 @@ st_return_t call_stapi_v2_sim_params(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt)
 {
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
-    const SimulationParameters params = cxt->p_data->get_simulation_parameters();
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
 
     // test that initialized with defaults
     st_return_t code = check(params.include_sun_shape_errors, false);
