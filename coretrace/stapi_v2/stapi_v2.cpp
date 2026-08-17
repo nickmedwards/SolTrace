@@ -206,8 +206,8 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
 
     if (!existing_set) return st_return_code::DATA_VALUE_NOT_FOUND;
     
+    if (dist != 'g' && dist != 'p' && dist != 'f' && dist != 'd') return st_return_code::INVALID_ARGUMENTS;
     DistributionType dist_type = char_to_distribution(dist);
-    if (dist_type == DistributionType::UNKNOWN) return st_return_code::INVALID_ARGUMENTS;
     // if either optical table is requested default to 
     // values at normal incidence angle and emit warning
     if (userefltable && refl_npoints != 0)

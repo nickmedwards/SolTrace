@@ -122,21 +122,21 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
     double    rmsspec = .5;
     int       userefltable = 0;
     int       refl_npoints = 0;
-    double    *refl_angles = nullptr;
+    double    refl_angles[1] = { 0 };
     double    refls[1] = { .25 };
     int       usetranstable = 0;
     int       trans_npoints = 0;
-    double    *trans_angles = nullptr;
+    double    trans_angles[1] = { 0 };
     double    transs[1] = { .25 };
     
     // check no optics set
-    int *num = nullptr;
-    st_num_optics(pcxt, num);
-    st_return_t code = check(*num, 0);
+    int num = -1;
+    st_num_optics(pcxt, &num);
+    st_return_t code = check(num, 0);
 
     // check add optic -> expect st_return_code::SUCCESS
-    code += st_add_optic(pcxt, "test1", num);
-    code += check(*num, 1);
+    code += st_add_optic(pcxt, "test1", &num);
+    code += check(num, 1);
     
     // check name was set and faces are default
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -181,7 +181,7 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
                      refl_angles, refls, 
                      userefltable, trans_npoints, 
                      trans_angles, transs);
-    code += check_optical_side(opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, 0.5, 0.25, 0, 0);
+    code += check_optical_side(opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, 0.5, 0.25, 0.5, 0.5);
     
     // expect -> st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
     // transmission table
@@ -192,7 +192,7 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
                      refl_angles, refls, 
                      1, 1, 
                      trans_angles, transs);
-    code += check_optical_side(opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, 0.25, 0.5, 0, 0);
+    code += check_optical_side(opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, 0.25, 0.5, 0.5, 0.5);
 
     // expect -> st_return_code::SUCCESS
     code += st_optic(pcxt, idx, 2, dist, optnum, apgr, 
@@ -202,26 +202,26 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
                      refl_angles, refls, 
                      userefltable, trans_npoints, 
                      trans_angles, transs);
-    code += check_optical_side(opt_set, OpticalSide::Back, DistributionType::GAUSSIAN, 0.5, 0.5, 0, 0);
+    code += check_optical_side(opt_set, OpticalSide::Back, DistributionType::GAUSSIAN, 0.5, 0.5, 0.5, 0.5);
 
     // test removing optics
     // expect -> st_return_code::WARNING_NOT_FOUND
     code += st_delete_optic(pcxt, 1);
 
     // add an optical set to remove and still test clear
-    code += st_add_optic(pcxt, "test2", num);
-    code += check(*num, 2);
+    code += st_add_optic(pcxt, "test2", &num);
+    code += check(num, 2);
     // expect -> st_return_code::SUCCESS
     code += st_delete_optic(pcxt, 1);
 
-    st_num_optics(pcxt, num);
-    code = check(*num, 1);
+    st_num_optics(pcxt, &num);
+    code += check(num, 1);
 
     // test clear
     // expect -> st_return_code::SUCCESS
     code += st_clear_optics(pcxt);
-    st_num_optics(pcxt, num);
-    code = check(*num, 0);
+    st_num_optics(pcxt, &num);
+    code += check(num, 0);
     
     return code;
 }
@@ -234,7 +234,7 @@ st_return_t call_stapi_v2_sun(st_context_v2_t pcxt)
     st_return_t code = (st_return_t)cxt->p_data->get_number_of_ray_sources();
 
     // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
-    code += st_sun(pcxt, 0, (char)"", 0);
+    code += st_sun(pcxt, 0, ' ', 0);
     auto sun_0 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     SunShape shape = sun_0->get_shape();
     double sigma = sun_0->get_sigma();
@@ -242,7 +242,7 @@ st_return_t call_stapi_v2_sun(st_context_v2_t pcxt)
     if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
 
     // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
-    code += st_sun(pcxt, 1, (char)"", 0);
+    code += st_sun(pcxt, 1, ' ', 0);
     auto sun_1 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     shape = sun_1->get_shape();
     sigma = sun_1->get_sigma();
