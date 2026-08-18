@@ -44,6 +44,7 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt);
 
 // sun functions
+st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt);

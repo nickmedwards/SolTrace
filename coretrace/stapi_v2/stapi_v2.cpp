@@ -118,6 +118,54 @@ STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics)
     return st_return_code::SUCCESS;
 }
 
+STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt, 
+												   args_optical_properties_set *opt_set,
+												   args_optical_properties_face *front, 
+												   args_optical_properties_face *back, 
+												   int *num_optics)
+{
+    auto check_type_char = [](char type) 
+    {
+        return type != 'g' && type != 'p' && type != 'f' && type != 'd';
+    };
+
+    if (check_type_char(front->error_distribution_type)) return st_return_code::INVALID_ARGUMENTS;
+    if (check_type_char(back->error_distribution_type)) return st_return_code::INVALID_ARGUMENTS;
+
+    InteractionType inter_type = opt_set->type == 0 ? InteractionType::REFLECTION : InteractionType::REFRACTION;
+    OpticalPropertySet opt(inter_type,
+                           opt_set->refraction_index_front,
+                           opt_set->refraction_index_back,
+                           std::string(opt_set->name));
+    
+    DistributionType dist_type = char_to_distribution(front->error_distribution_type);
+
+    opt.set_properties(OpticalSide::Front,
+                       dist_type,
+                       front->transmissivity,
+                       front->reflectivity,
+                       front->slope_error,
+                       front->specularity_error);
+
+    DistributionType dist_type = char_to_distribution(back->error_distribution_type);
+
+    opt.set_properties(OpticalSide::Back,
+                       dist_type,
+                       back->transmissivity,
+                       back->reflectivity,
+                       back->slope_error,
+                       back->specularity_error);
+    
+    CONTEXT(pcxt);
+    DATA(cxt);
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+
+    if (res.id < 0) return st_return_code::DATA_INSERTION_FAILURE;
+
+    *num_optics = data->get_number_of_optocal_property_sets();
+    return st_return_code::SUCCESS;
+}
+
 STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *num_optics)
 {
     CONTEXT(pcxt);
@@ -708,6 +756,81 @@ std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
     
     ray_source_ptr sun_ptr = data->get_ray_source(0);
     return std::dynamic_pointer_cast<Sun>(sun_ptr);
+}
+
+STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, st_add_sun_args *args)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    st_return_t code = st_return_code::SUCCESS;
+    auto sun = get_or_create_sun(data);
+
+    sun->set_position(args->x, args->y, args->z);
+
+    if (args->npoints)
+    {
+        std::vector<double> v_angle(args->angle, 
+                                    args->angle + args->npoints);
+        std::vector<double> v_intensity(args->intensity, 
+                                        args->intensity + args->npoints);
+        ST_WRAP_CB_TRY_CATCH(sun->set_shape(SunShape::USER_DEFINED,
+                                            0, 0, 0,
+                                            v_angle, 
+                                            v_intensity),
+                            cxt->p_cb);
+    }
+    else
+    {
+        SunShape sun_shape = SunShape::GAUSSIAN;
+        double s_hw_csr = args->sigma_halfwidth_csr;
+        switch (args->shape)
+        {
+            /* default to gaussian shape, 
+            using default to add warning */
+            case 'g':
+            case 'G':
+                // sun_shape = SunShape::GAUSSIAN;
+                break;
+            case 'p':
+            case 'P':
+                sun_shape = SunShape::PILLBOX;
+                break;
+            /* currently no set_limbdarkend_distribution
+            function is implemented, so ignore and 
+            emit warning
+            case 'l':
+            case 'L':
+            {
+                sun_shape = SunShape::LIMBDARKENED;
+                break;
+            }                                           */
+            case 'b':
+            case 'B':
+                sun_shape = SunShape::BUIE_CSR;
+                break;
+            /* user defined sun shape goes thru same 
+            Sun::set_shape, emit warning because not 
+            enough information from this signiture, 
+            maybe add defaults?                      
+            case 'u':
+            case 'U':                             */
+        default:
+            // warning code default to gaussian, default sigma = 4.65
+            sun_shape = SunShape::GAUSSIAN;
+            s_hw_csr = 4.65;
+            code = st_return_code::WARNING_SUN_SHAPE_IGNORED;
+            break;
+        }
+
+        auto sun = get_or_create_sun(data);
+        sun->set_shape(sun_shape, 
+                       s_hw_csr,
+                       s_hw_csr,
+                       s_hw_csr);
+    }
+
+    return code;
 }
 
 STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,

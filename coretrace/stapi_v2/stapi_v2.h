@@ -123,7 +123,7 @@ using SolTrace::Runner::SimulationRunner;
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
 
-typedef unsigned int st_uint_t;
+typedef uint32_t st_uint_t;
 
 /* changing return code convention from v1
    to be in line with industry convention.
@@ -208,6 +208,25 @@ STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
 
 // functions to add/remove/set optical properties
 STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics);
+typedef struct args_optical_properties_face {
+	double transmissivity;
+	double reflectivity;
+	double slope_error;
+	double specularity_error;
+	char   error_distribution_type;
+} args_optical_properties_face;
+typedef struct args_optical_properties_set {
+	const char *name;
+	double 	   refraction_index_front;
+	double 	   refraction_index_back;
+	st_uint_t  type; // 0 = reflection, otherwise refraction
+} args_optical_properties_set;
+
+STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt, 
+												   args_optical_properties_set *opt_set,
+												   args_optical_properties_face *front, 
+												   args_optical_properties_face *back, 
+												   int *num_optics);
 STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *num_optics);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
@@ -262,6 +281,18 @@ STAPI_V2 st_return_t st_element_interaction(st_context_v2_t pcxt, st_uint_t idx,
 STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt, st_uint_t idx, const char *name);
 
 // sun functions
+typedef struct st_add_sun_args {
+	double* angle;
+	double* intensity;
+	st_uint_t npoints;
+	double x;
+	double y;
+	double z;
+	double sigma_halfwidth_csr;
+	char shape;
+} st_add_sun_args;
+
+STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, st_add_sun_args *args);
 STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
 							int    			point_source,
 							char   			shape, 

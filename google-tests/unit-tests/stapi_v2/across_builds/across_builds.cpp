@@ -422,6 +422,131 @@ st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt)
     return code;
 }
 // sun functions
+st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    // expect == 0
+    st_return_t code = (st_return_t)cxt->p_data->get_number_of_ray_sources();
+
+    double good_angles[3]      = {0, 1, 2};
+    double good_intensities[3] = {0, 1, 2};
+    double bad_intensities[2]  = {0, -1};
+
+    st_add_sun_args args = {good_angles, bad_intensities, 3, 608, 303, 1000, 5, ' '};
+
+    // test bad intensitites
+    // expect += st_return_code::EXCEPTION
+    code += st_add_sun(pcxt, &args);
+
+    auto sun_0 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    auto xyz = sun_0->get_position();
+    // expect position to be what was set
+    if (xyz[0] != 608 || xyz[1] != 303 || xyz[2] != 1000) ++code;
+    std::vector<double> angles, intensities;
+    sun_0->get_user_data(angles, intensities);
+    // expect vectors of no size
+    if (angles.size() || intensities.size()) ++code;
+
+    // test good intensities
+    // expect += st_return_code::SUCCESS
+    args.intensity = good_intensities;
+    code += st_add_sun(pcxt, &args);
+    
+    sun_0->get_user_data(angles, intensities);
+    if (angles[0] != good_angles[0]
+        || angles[1] != good_angles[1]
+        || angles[2] != good_angles[2]
+        || intensities[0] != intensities[0]
+        || intensities[1] != intensities[1]
+        || intensities[2] != intensities[2]) ++code;
+
+    // test built in shapes
+    args.npoints = 0;
+    
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    code += st_add_sun(pcxt, &args);
+    auto sun_1 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    SunShape shape = sun_1->get_shape();
+    double sigma = sun_1->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+    // expect sun opbject to be same
+    if (sun_0 != sun_1) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += st_return_code::SUCCESS
+    args.shape = 'g';
+    code += st_add_sun(pcxt, &args);
+    auto sun_2 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_2->get_shape();
+    sigma = sun_2->get_sigma();
+    // expect both of these to equal args
+    if (shape != SunShape::GAUSSIAN || sigma != 5) ++code;
+    // expect sun opbject to be same
+    if (sun_1 != sun_2) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += st_return_code::SUCCESS
+    args.shape = 'p';
+    code += st_add_sun(pcxt, &args);
+    auto sun_3 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_3->get_shape();
+    double hw = sun_3->get_half_width();
+    // expect both of these to equal args
+    if (shape != SunShape::PILLBOX || hw != 5) ++code;
+    // expect sun opbject to be same
+    if (sun_2 != sun_3) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    args.shape = 'l';
+    code += st_add_sun(pcxt, &args);
+    auto sun_4 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_4->get_shape();
+    sigma = sun_4->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+    // expect sun opbject to be same
+    if (sun_3 != sun_4) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += 0
+    args.shape = 'b';
+    args.sigma_halfwidth_csr = .5;
+    code += st_add_sun(pcxt, &args);
+    auto sun_5 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_5->get_shape();
+    double csr = sun_5->get_circumsolar_ratio();
+    // expect both of these to equal args
+    if (shape != SunShape::BUIE_CSR || csr != .5) ++code;
+    // expect sun opbject to be same
+    if (sun_4 != sun_5) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+    // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
+    args.shape = 'u';
+    code += st_add_sun(pcxt, &args);
+    auto sun_6 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
+    shape = sun_6->get_shape();
+    sigma = sun_6->get_sigma();
+    // expect both of these to equal defaults
+    if (shape != SunShape::GAUSSIAN || sigma != 4.65) ++code;
+    // expect sun opbject to be same
+    if (sun_5 != sun_6) ++code;
+    // expect one ray source
+    code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
+
+
+    // expect == 3 * st_return_code::WARNING_SUN_SHAPE_IGNORED
+    //           + st_return_code::EXCEPTION
+    return code;
+}
+
 st_return_t call_stapi_v2_sun(st_context_v2_t pcxt)
 {
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
