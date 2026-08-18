@@ -104,6 +104,43 @@ st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt)
 }
 
 // functions to add/remove/set optical properties
+st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    auto get_last_opt_set = [data]()
+    {
+        optical_set_ptr opt_set;
+        for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
+            opt_set = it->second;
+        return opt_set;
+    };
+
+    args_optical_properties_set set = {"test1", 1.1, 1.1, 1};
+    args_optical_properties_face f = {.5, .5, .5, .5, 'g'};
+    args_optical_properties_face b = {.25, .25, .25, .25, 'g'};
+
+    // check no optics set
+    int num = -1;
+    st_num_optics(pcxt, &num);
+    st_return_t code = check(num, 0);
+
+    // test add refractive set
+    // expect += st_return_code::SUCCESS
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += check(num, 1);
+
+    // check values were set
+    auto last_opt_set = get_last_opt_set();
+    code += check(last_opt_set->get_name(), "test1");
+    code += check(last_opt_set->get_interaction_type(), InteractionType::REFRACTION);
+    code += check_optical_side(last_opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, .5, .5, .5, .5);
+    code += check_optical_side(last_opt_set, OpticalSide::Back, DistributionType::GAUSSIAN, .25, .25, .25, .25);
+
+    set.type = 0;
+    // test add reflective set
+}
+
 st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
 {
     // set up arguments for st_optic
