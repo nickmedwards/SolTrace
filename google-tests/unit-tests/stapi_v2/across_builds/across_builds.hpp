@@ -42,6 +42,7 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt);
 
 // functions for elements
+st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt);
 
 // sun functions

@@ -311,6 +311,138 @@ const OpticalPropertySetReference get_optics_ref_by_id(SimulationData *data, int
     return data->find_or_add_optical_property_set(*existing_set);
 }
 
+int32_t num_aperture_params(ApertureType type)
+{
+    int32_t rt = -1;
+    
+    switch (type)
+    {
+        case ApertureType::CIRCLE:
+        case ApertureType::EQUILATERAL_TRIANGLE:
+        case ApertureType::HEXAGON:
+        {
+            rt = 1;
+            break;
+        }
+        case ApertureType::RECTANGLE:
+        {
+            rt = 2;
+            break;
+        }
+        case ApertureType::ANNULUS:
+        case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
+        {
+            rt = 3;
+            break;
+        }
+        case ApertureType::IRREGULAR_TRIANGLE:
+        {
+            rt = 6;
+            break;
+        }
+        case ApertureType::IRREGULAR_QUADRILATERAL:
+        {
+            rt = 8;
+            break;
+        }
+        default:
+            rt = -1;
+            break;
+        }
+    return rt;
+}
+
+int32_t num_surface_params(SurfaceType type)
+{
+    int32_t rt = -1;
+
+    switch (type)
+    {
+        case SurfaceType::FLAT:
+        {
+            rt = 0;
+            break;
+        }
+        case SurfaceType::CONE:
+        case SurfaceType::CYLINDER:
+        case SurfaceType::SPHERE:
+        {
+            rt = 1;
+            break;
+        }
+        case SurfaceType::PARABOLA:
+        {
+            rt = 2;
+            break;
+        }
+        case SurfaceType::HYPER:
+        case SurfaceType::GENERAL_SPENCER_MURTY:
+        case SurfaceType::TORUS:
+        default:
+            rt = -1; // Not implemented yet
+            break;
+    }
+
+    return rt;
+}
+
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, 
+									args_element *args, 
+									int_fast64_t opt_id,
+									double a_params[8],
+									double s_params[8],
+									int *num_elements)
+{
+    using SolTrace::Data::Aperture;
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    // check that inputs are good
+    const OpticalPropertySetReference existing_set = get_optics_ref_by_id(data, opt_id);
+    if (existing_set.id == SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED)
+        return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    ApertureType a_type = char_to_aperture(args->ap);
+    SurfaceType s_type = char_to_surface(args->surf);
+    int32_t num_a_params = num_aperture_params(a_type);
+    int32_t num_s_params = num_surface_params(s_type);
+    if (num_a_params < 0 || num_s_params < 0) return st_return_code::INVALID_ARGUMENTS;
+
+    std::vector<double> _a_params(a_params, a_params + num_a_params);
+    std::vector<double> _s_params(s_params, s_params + num_s_params);
+    aperture_ptr ap;
+    surface_ptr surf;
+    try
+    {
+        ap = Aperture::make_aperture_from_type(a_type, _a_params);
+        surf = SolTrace::Data::make_surface_from_type(s_type, _s_params);
+    }
+    catch (const std::invalid_argument& e)
+    {
+        if (cxt->p_cb) cxt->p_cb("geometry creation", e.what());
+        return st_return_code::INVALID_ARGUMENTS;
+    }
+
+    element_ptr el = make_element<SingleElement>();
+    
+    el->set_origin(args->x, args->y, args->z);
+    el->set_aim_vector(args->ax, args->ay, args->az);
+    el->set_zrot(args->zrot);
+    if (args->enabled_flag) el->enable();
+    else                    el->disable();
+    if (args->virtual_flag) el->mark_virtual();
+    else                    el->unmark_virtual();
+    
+    el->set_optical_property_set(existing_set);
+    el->set_aperture(ap);
+    el->set_surface(surf);
+    // TODO in simulation_data.cpp saying add_element will be throwable in the future
+    ST_WRAP_CB_TRY_CATCH(data->add_element(el), cxt->p_cb);
+
+    *num_elements = data->get_number_of_elements();
+    return st_return_code::SUCCESS;
+}
+
 STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int_fast64_t opt_id, int *num_elements)
 {
     CONTEXT(pcxt);

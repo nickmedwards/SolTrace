@@ -164,6 +164,7 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
     code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
     code += check(num, 2);
 
+    // expect == 2 * st_return_code::INVALID_ARGUMENTS
     return code;
 }
 
@@ -290,6 +291,92 @@ st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
 }
 
 // functions to add/remove/modify elements
+st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt)
+{
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+
+    // check no elements set
+    int num = -1;
+    st_num_elements(pcxt, &num);
+    st_return_t code = check(num, 0);
+
+    // set element to non default values
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // test good element
+    // expect += st_return_code::SUCCESS
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+
+    // test values set
+    element_ptr el = data->get_element(1);
+    auto sel = std::dynamic_pointer_cast<SingleElement>(el);
+    code += check(sel->is_enabled(), false);
+    code += check(sel->is_virtual(), true);
+    auto origin = sel->get_origin_ref();
+    auto aim = sel->get_aim_vector_ref();
+    auto zrot = sel->get_zrot();
+    code += check(origin[0], 2);
+    code += check(origin[1], 2);
+    code += check(origin[2], 2);
+    code += check(aim[0], 2);
+    code += check(aim[1], 2);
+    code += check(aim[2], 2);
+    code += check(zrot, 2);
+
+    aperture_ptr ap = sel->get_aperture();
+    code += check(ap->my_type, ApertureType::CIRCLE);
+    auto circle = std::dynamic_pointer_cast<Circle>(ap);
+    code += check(circle->diameter, 2);
+
+    surface_ptr surf = sel->get_surface();
+    code += check(surf->my_type, SurfaceType::PARABOLA);
+    auto parabola = std::dynamic_pointer_cast<Parabola>(surf);
+    code += check(parabola->focal_length_x, 1. / 4.);
+    code += check(parabola->focal_length_y, 1. / 4.);
+
+    // try bad optical id
+    // expect code += st_return_code::DATA_VALUE_NOT_FOUND
+    code += st_add_element(pcxt, &el_args, res.id + 1, a_params, s_params, &num);
+    code += check(num, 1);
+
+    // try bad aperture type
+    // expect code += st_return_code::INVALID_ARGUMENTS
+    el_args.ap = 'z';
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+    el_args.ap = 'c';
+    
+    // try bad surface type
+    // expect code += st_return_code::INVALID_ARGUMENTS
+    el_args.surf = 'z';
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+    el_args.surf = 'p';
+    
+    // try bad aperture params
+    // expect code += st_return_code::INVALID_ARGUMENTS
+    double bad_a_params[1] = { -2 };
+    code += st_add_element(pcxt, &el_args, res.id, bad_a_params, s_params, &num);
+    code += check(num, 1);
+
+    // try bad surface params
+    // expect code += st_return_code::INVALID_ARGUMENTS
+    double bad_s_params[2] = { std::numeric_limits<double>::quiet_NaN(), 2 };
+    code += st_add_element(pcxt, &el_args, res.id, a_params, bad_s_params, &num);
+    code += check(num, 1);
+
+    // expect == st_return_code::DATA_VALUE_NOT_FOUND
+    //         + 4 * st_return_code::INVALID_ARGUMENTS 
+    return code;
+}
+
 st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt)
 {
     // set up dummy optical properties
@@ -484,6 +571,7 @@ st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt)
     // + st_return_code::INVALID_ARGUMENTS
     return code;
 }
+
 // sun functions
 st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 {

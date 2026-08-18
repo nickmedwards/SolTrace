@@ -257,7 +257,25 @@ STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
 
 // functions to add/remove elements
 STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
-STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, int_fast64_t opt_id, int *num_elements);
+typedef struct args_element {
+	double x;
+	double y;
+	double z;
+	double ax;
+	double ay;
+	double az;
+	double zrot;
+	bool   enabled_flag;
+	bool   virtual_flag;
+	char   ap;
+	char   surf;
+} args_element;
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, 
+									args_element *args, 
+									int_fast64_t opt_id,
+									double a_params[8],
+									double s_params[8],
+									int *num_elements);
 STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int_fast64_t opt_id, int *num_elements);
 STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt);

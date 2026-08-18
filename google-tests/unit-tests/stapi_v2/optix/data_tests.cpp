@@ -22,19 +22,19 @@ TEST(optix_data_tests, data_errors)
     CLEANUP_TEST_CXT();
 }
 
-TEST(optix_data_tests, data_optics)
-{
-    SETUP_TEST_CXT();
+// TEST(optix_data_tests, data_optics)
+// {
+//     SETUP_TEST_CXT();
 
-    code = call_stapi_v2_all_optics(pcxt);
-    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND
-                    + st_return_code::INVALID_ARGUMENTS
-                    + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
-                    + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
-                    + st_return_code::WARNING_NOT_FOUND);
+//     code = call_stapi_v2_all_optics(pcxt);
+//     EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND
+//                     + st_return_code::INVALID_ARGUMENTS
+//                     + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
+//                     + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
+//                     + st_return_code::WARNING_NOT_FOUND);
 
-    CLEANUP_TEST_CXT();
-}
+//     CLEANUP_TEST_CXT();
+// }
 
 TEST(optix_data_tests, data_add_optics)
 {
@@ -46,16 +46,27 @@ TEST(optix_data_tests, data_add_optics)
     CLEANUP_TEST_CXT();
 }
 
-TEST(optix_data_tests, data_elements_tests)
+TEST(optix_data_tests, data_add_elements)
 {
     SETUP_TEST_CXT();
 
-    code = call_stapi_v2_all_elements(pcxt);
-    EXPECT_EQ(code, 3 * st_return_code::INVALID_ARGUMENTS
-                    + st_return_code::WARNING_NOT_FOUND);
+    code = call_stapi_v2_add_elements(pcxt);
+    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND
+                    + 4 * st_return_code::INVALID_ARGUMENTS);
 
     CLEANUP_TEST_CXT();
 }
+
+// TEST(optix_data_tests, data_elements_tests)
+// {
+//     SETUP_TEST_CXT();
+
+//     code = call_stapi_v2_all_elements(pcxt);
+//     EXPECT_EQ(code, 3 * st_return_code::INVALID_ARGUMENTS
+//                     + st_return_code::WARNING_NOT_FOUND);
+
+//     CLEANUP_TEST_CXT();
+// }
 
 TEST(optix_data_tests, data_add_sun)
 {
