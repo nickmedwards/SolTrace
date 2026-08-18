@@ -36,6 +36,17 @@ TEST(optix_data_tests, data_optics)
     CLEANUP_TEST_CXT();
 }
 
+TEST(optix_data_tests, data_elements_tests)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_all_elements(pcxt);
+    EXPECT_EQ(code, 3 * st_return_code::INVALID_ARGUMENTS
+                    + st_return_code::WARNING_NOT_FOUND);
+
+    CLEANUP_TEST_CXT();
+}
+
 TEST(optix_data_tests, data_sun_setup)
 {
     SETUP_TEST_CXT();

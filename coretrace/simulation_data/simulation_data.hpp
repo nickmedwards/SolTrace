@@ -38,6 +38,22 @@ public:
     SimulationData();
     virtual ~SimulationData();
 
+    /// @brief enforce that all user fields are set and coordinate
+    ///        retations are calculated
+    // for added robustness and user flexibility consilidate enforcing
+    // that elements are ready for the runner to one function.
+    // adds robustness because calling from Native/OptixRunner::setup_elements
+    // is actually when the fields need to be set by.
+    // the current implementation: 
+    // - misses enforcing in SimulationData::replace_element
+    // - misses enforcing data->get_number_of_elements() <= 0 in
+    //   OptixRunner::setup_elements
+    // - requires addtional checks that optical property sets exists when 
+    //   implying they are unnecessary
+    // adds flexibility to users by making SimulationData more freeform
+    // before being sent to the runner
+    void SimulationData::enforce_elements_ready();
+
     /// @brief Add the given RaySource to the simulation data
     /// @param src RaySource to add
     /// @return unique identifier for the RaySource

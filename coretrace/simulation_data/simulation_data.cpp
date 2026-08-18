@@ -24,6 +24,36 @@ SimulationData::~SimulationData()
     return;
 }
 
+void SimulationData::enforce_elements_ready()
+{
+    if (this->get_number_of_elements() <= 0)
+    {
+        throw std::invalid_argument("SimulationData has no elements.");
+    }
+
+    element_ptr el;
+    for (auto it = this->get_iterator(); !this->is_at_end(it); ++it)
+    {
+        el = it->second;
+        // Check that all fields required from the user have been specified
+        el->enforce_user_fields_set();
+        // Make sure coordinate stuff has been computed
+        el->compute_coordinate_rotations();
+        if (el->is_composite())
+        {
+            composite_element_ptr cptr =
+                std::dynamic_pointer_cast<CompositeElement>(el);
+            element_ptr sub_el;
+            for (auto cit = cptr->get_iterator(); !cptr->is_at_end(cit); ++cit)
+            {
+                sub_el = it->second;
+                sub_el->enforce_user_fields_set();
+                sub_el->compute_coordinate_rotations();
+            }
+        }
+    }
+}
+
 element_id SimulationData::add_element(element_ptr el)
 {
     element_id id = ELEMENT_ERROR;
