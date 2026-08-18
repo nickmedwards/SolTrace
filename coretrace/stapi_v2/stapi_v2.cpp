@@ -584,12 +584,14 @@ STAPI_V2 st_return_t st_element_aperture_params(st_context_v2_t pcxt, st_uint_t 
                 irregular_quadrilateral->y4 = params[7];
                 break;
             }
+            default:
+                return st_return_code::INVALID_ARGUMENTS;
         }
     }
     catch (const std::invalid_argument& e)
     {
         if (cxt->p_cb) cxt->p_cb("set aperture parameters", e.what());
-		return st_return_code::INVALID_ARGUMENTS;
+		return st_return_code::DATA_INSERTION_FAILURE;
     }
 
     return st_return_code::SUCCESS;
@@ -697,12 +699,14 @@ STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t i
                 sphere->vertex_curv = params[0];
                 break;
             }
+            default:
+                return st_return_code::INVALID_ARGUMENTS;
         }
     }
     catch (const std::invalid_argument& e)
     {
         if (cxt->p_cb) cxt->p_cb("set surface parameters", e.what());
-		return st_return_code::INVALID_ARGUMENTS;
+		return st_return_code::DATA_INSERTION_FAILURE;
     }
     
     return st_return_code::SUCCESS;
