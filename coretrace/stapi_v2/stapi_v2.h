@@ -2,6 +2,8 @@
 STCORE_API: version 2
 functions for interacting with new SimulationData/Runner/Results structure through json
 
+this was the wrong approach, spoof these on the python side, implement functions that make sense for the current structures, make diagram
+
 recreate stapi.h functions TODO list 
 (x: done, 2: tagged with _v2, -: skipped, T: TODO, blank: not done)
 NOTE: may change name convention from marking _v2 to _v1
