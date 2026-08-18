@@ -223,37 +223,13 @@ typedef struct args_optical_properties_set {
 	double 	   refraction_index_back;
 	st_uint_t  type; // 0 = reflection, otherwise refraction
 } args_optical_properties_set;
-
 STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt, 
 												   args_optical_properties_set *opt_set,
 												   args_optical_properties_face *front, 
 												   args_optical_properties_face *back, 
 												   int *num_optics);
-STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *num_optics);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
-STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
-							  st_uint_t 	  idx,
-							  int       	  fb, /* 1=front,2=back */
-							  char      	  dist,
-							  int       	  optnum,
-							  int       	  apgr,
-							  int       	  order,
-							  double    	  rreal,
-							  double    	  rimag,
-							  double    	  ref,
-							  double    	  tra,
-							  double    	  gratingab12[3],
-							  double    	  rmsslope,
-							  double    	  rmsspec,
-							  int       	  userefltable,
-							  int       	  refl_npoints,
-							  double    	  *refl_angles,
-							  double    	  *refls,
-							  int       	  usetranstable,
-							  int       	  trans_npoints,
-							  double    	  *trans_angles,
-							  double    	  *transs);
 
 // functions to add/remove elements
 STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);

@@ -165,20 +165,6 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_t st_add_optic(st_context_v2_t pcxt, const char *name, int *num_optics)
-{
-    CONTEXT(pcxt);
-    DATA(cxt);
-
-    OpticalPropertySet opt(InteractionType::REFLECTION, std::string(name));
-    OpticalPropertySetReference res = data->add_optical_property_set(opt);
-
-    if (res.id < 0) return st_return_code::DATA_INSERTION_FAILURE;
-
-    *num_optics = data->get_number_of_optocal_property_sets();
-    return st_return_code::SUCCESS;
-}
-
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx)
 {
     CONTEXT(pcxt);
@@ -197,89 +183,6 @@ STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt)
 
     data->clear_optical_property_sets();
     return st_return_code::SUCCESS;
-}
-
-STAPI_V2 st_return_t st_optic(st_context_v2_t pcxt,
-							  st_uint_t 	  idx,
-							  int       	  fb, /* 1=front,2=back */
-							  char      	  dist,
-							  int       	  optnum,
-							  int       	  apgr,
-							  int       	  order,
-							  double    	  rreal,
-							  double    	  rimag,
-							  double    	  ref,
-							  double    	  tra,
-							  double    	  gratingab12[3],
-							  double    	  rmsslope,
-							  double    	  rmsspec,
-							  int       	  userefltable,
-							  int       	  refl_npoints,
-							  double    	  *refl_angles,
-							  double    	  *refls,
-							  int       	  usetranstable,
-							  int       	  trans_npoints,
-							  double    	  *trans_angles,
-							  double    	  *transs)
-{
-    /* ignoring arguments (no longer used, silently ignore):
-       optnum      -> OpticSurfNumber
-       apgr        -> ApertureStopOrGratingType
-       order       -> DiffractionOrder
-       rimag       -> RefractiveIndex[1]
-       gratingab12 -> AB12
-
-       warning arguments (no longer used, but related to reflectivity/transmissivity):
-       userefltable  -> UseReflectivityTable
-       refl_npoints
-       refl_angles   -> ReflectivityTable
-       refls         -> ReflectivityTable
-       usetranstable -> UseTransmissivityTable
-       trans_npoints
-       trans_angles  -> TransmissivityTable
-       transs        -> TransmissivityTable
-    */
-   
-    CONTEXT(pcxt);
-    DATA(cxt);
-
-    st_return_code code = st_return_code::SUCCESS;
-    mut_optical_set_ptr existing_set; 
-    for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
-    {
-        if (it->first == idx)
-            existing_set = it->second;
-    }
-
-    if (!existing_set) return st_return_code::DATA_VALUE_NOT_FOUND;
-    
-    if (dist != 'g' && dist != 'p' && dist != 'f' && dist != 'd') return st_return_code::INVALID_ARGUMENTS;
-    DistributionType dist_type = char_to_distribution(dist);
-    // if either optical table is requested default to 
-    // values at normal incidence angle and emit warning
-    if (userefltable && refl_npoints != 0)
-    {
-        ref = refls[0];
-        code = st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED;
-    }
-    if (usetranstable && trans_npoints != 0) 
-    {
-        tra = transs[0];
-        code = st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED;
-    }
-
-    OpticalSide side = fb == 1 ? OpticalSide::Front : OpticalSide::Back;
-    existing_set->set_properties(side,
-                                 dist_type,
-                                 tra,
-                                 ref,
-                                 rmsslope,
-                                 rmsspec);
-    // see simdata_io.cpp -> read_optic_surface, comment
-    // that imaginary part of refractive index is not used
-    existing_set->set_refraction_indices(rreal, rreal);
-
-    return code;
 }
 
 // functions to add/remove elements

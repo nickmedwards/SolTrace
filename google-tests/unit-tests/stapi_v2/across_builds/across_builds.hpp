@@ -43,6 +43,7 @@ st_return_t call_stapi_v2_remove_optics(st_context_v2_t pcxt);
 
 // functions for elements
 st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt);
+// TODO: turn into individual tests
 st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt);
 
 // sun functions
