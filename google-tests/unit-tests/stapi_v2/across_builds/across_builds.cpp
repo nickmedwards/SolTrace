@@ -137,8 +137,34 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
     code += check_optical_side(last_opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, .5, .5, .5, .5);
     code += check_optical_side(last_opt_set, OpticalSide::Back, DistributionType::GAUSSIAN, .25, .25, .25, .25);
 
-    set.type = 0;
     // test add reflective set
+    set.type = 0;
+    set.name = "test2";
+    // expect += st_return_code::SUCCESS
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += check(num, 2);
+
+    // check values were set
+    last_opt_set = get_last_opt_set();
+    code += check(last_opt_set->get_name(), "test2");
+    code += check(last_opt_set->get_interaction_type(), InteractionType::REFLECTION);
+    code += check_optical_side(last_opt_set, OpticalSide::Front, DistributionType::GAUSSIAN, .5, .5, .5, .5);
+    code += check_optical_side(last_opt_set, OpticalSide::Back, DistributionType::GAUSSIAN, .25, .25, .25, .25);
+
+    // set bad distribution characters for front
+    f.error_distribution_type = 'z';
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += check(num, 2);
+
+    // set bad distribution characters for back
+    f.error_distribution_type = 'g';
+    b.error_distribution_type = 'z';
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += check(num, 2);
+
+    return code;
 }
 
 st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)

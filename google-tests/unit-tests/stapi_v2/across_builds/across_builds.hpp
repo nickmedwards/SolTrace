@@ -38,6 +38,7 @@ st_return_t call_stapi_v2_sim_params(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt);
 
 // function for optical properties
+st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt);
 
 // functions for elements

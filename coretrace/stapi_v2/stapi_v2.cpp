@@ -124,33 +124,32 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt,
 												   args_optical_properties_face *back, 
 												   int *num_optics)
 {
-    auto check_type_char = [](char type) 
+    auto bad_type_char = [](char type) 
     {
         return type != 'g' && type != 'p' && type != 'f' && type != 'd';
     };
 
-    if (check_type_char(front->error_distribution_type)) return st_return_code::INVALID_ARGUMENTS;
-    if (check_type_char(back->error_distribution_type)) return st_return_code::INVALID_ARGUMENTS;
+    if (bad_type_char(front->error_distribution_type) 
+        || bad_type_char(back->error_distribution_type)) 
+        return st_return_code::INVALID_ARGUMENTS;
 
-    InteractionType inter_type = opt_set->type == 0 ? InteractionType::REFLECTION : InteractionType::REFRACTION;
+    InteractionType inter_type = opt_set->type == 0 
+                                 ? InteractionType::REFLECTION
+                                 : InteractionType::REFRACTION;
     OpticalPropertySet opt(inter_type,
                            opt_set->refraction_index_front,
                            opt_set->refraction_index_back,
                            std::string(opt_set->name));
     
-    DistributionType dist_type = char_to_distribution(front->error_distribution_type);
-
     opt.set_properties(OpticalSide::Front,
-                       dist_type,
+                       char_to_distribution(front->error_distribution_type),
                        front->transmissivity,
                        front->reflectivity,
                        front->slope_error,
                        front->specularity_error);
 
-    DistributionType dist_type = char_to_distribution(back->error_distribution_type);
-
     opt.set_properties(OpticalSide::Back,
-                       dist_type,
+                       char_to_distribution(back->error_distribution_type),
                        back->transmissivity,
                        back->reflectivity,
                        back->slope_error,
