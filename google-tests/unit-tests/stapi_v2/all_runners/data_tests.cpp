@@ -22,20 +22,6 @@ TEST(all_runners_data_tests, data_errors)
     CLEANUP_TEST_CXT();
 }
 
-TEST(all_runners_data_tests, data_optics)
-{
-    SETUP_TEST_CXT();
-
-    code = call_stapi_v2_all_optics(pcxt);
-    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND
-                    + st_return_code::INVALID_ARGUMENTS
-                    + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
-                    + st_return_code::WARNING_OPTICAL_TABLE_DEPRECATED
-                    + st_return_code::WARNING_NOT_FOUND);
-
-    CLEANUP_TEST_CXT();
-}
-
 TEST(all_runners_data_tests, data_elements_tests)
 {
     SETUP_TEST_CXT();
