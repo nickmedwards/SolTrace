@@ -871,10 +871,9 @@ STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, st_add_sun_args *args)
     return code;
 }
 
-STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
-							int             point_source,
-							char            shape, 
-							double          sigma_halfwidth_csr)
+STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,
+							      char            shape, 
+							      double          sigma_halfwidth_csr)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -1314,14 +1313,14 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
             switch (call_args->type) {
         		// Simlulation Data Functions
                 // sun functions
-                case st_api_call::CALL_ST_SUN:
-                {
-                    code = st_sun(pcxt,
-                                  call_args->payload.sun_args.point_source,
-                                  call_args->payload.sun_args.shape,
-                                  call_args->payload.sun_args.sigma_halfwidth_csr);
-                    break;
-                }
+                // case st_api_call::CALL_ST_SUN:
+                // {
+                //     code = st_sun(pcxt,
+                //                   call_args->payload.sun_args.point_source,
+                //                   call_args->payload.sun_args.shape,
+                //                   call_args->payload.sun_args.sigma_halfwidth_csr);
+                //     break;
+                // }
                 case st_api_call::CALL_ST_SUN_XYZ:
                 {
                     code = st_sun_xyz(pcxt,

@@ -75,15 +75,15 @@ TEST(optix_data_tests, data_add_sun)
     CLEANUP_TEST_CXT();
 }
 
-// TEST(optix_data_tests, data_sun_setup)
-// {
-//     SETUP_TEST_CXT();
+TEST(optix_data_tests, data_sun_shape)
+{
+    SETUP_TEST_CXT();
 
-//     code = call_stapi_v2_sun(pcxt);
-//     EXPECT_EQ(code, 4 * st_return_code::WARNING_SUN_SHAPE_IGNORED);
+    code = call_stapi_v2_sun_shape(pcxt);
+    EXPECT_EQ(code, 3 * st_return_code::WARNING_SUN_SHAPE_IGNORED);
 
-//     CLEANUP_TEST_CXT();
-// }
+    CLEANUP_TEST_CXT();
+}
 
 // TEST(optix_data_tests, data_sun_xyz)
 // {

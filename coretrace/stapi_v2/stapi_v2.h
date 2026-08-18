@@ -287,12 +287,10 @@ typedef struct st_add_sun_args {
 	double sigma_halfwidth_csr;
 	char shape;
 } st_add_sun_args;
-
 STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, st_add_sun_args *args);
-STAPI_V2 st_return_t st_sun(st_context_v2_t pcxt,
-							int    			point_source,
-							char   			shape, 
-							double 			sigma_halfwidth_csr);
+STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,
+								  char   		  shape, 
+								  double 		  sigma_halfwidth_csr);
 STAPI_V2 st_return_t st_sun_xyz(st_context_v2_t pcxt,
 								double 			x,
 								double 			y,
