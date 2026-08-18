@@ -46,6 +46,16 @@ TEST(optix_data_tests, data_add_optics)
     CLEANUP_TEST_CXT();
 }
 
+TEST(optix_data_tests, data_remove_optics)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_remove_optics(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
 TEST(optix_data_tests, data_add_elements)
 {
     SETUP_TEST_CXT();

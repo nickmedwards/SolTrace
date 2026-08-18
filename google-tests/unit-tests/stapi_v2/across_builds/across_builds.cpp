@@ -168,6 +168,40 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
     return code;
 }
 
+st_return_t call_stapi_v2_remove_optics(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    args_optical_properties_set set = {"test1", 1.1, 1.1, 0};
+    args_optical_properties_face f = {.5, .5, .5, .5, 'g'};
+    args_optical_properties_face b = {.25, .25, .25, .25, 'g'};
+
+    // check no optics set
+    int num = -1;
+    st_num_optics(pcxt, &num);
+    st_return_t code = check(num, 0);
+
+    // expect += st_return_code::SUCCESS
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += check(num, 1);
+    
+    // expect += st_return_code::SUCCESS
+    code += st_clear_optics(pcxt);
+    st_num_optics(pcxt, &num);
+    code += check(num, 0);
+
+    // expect += st_return_code::SUCCESS
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += check(num, 1);
+    
+    // expect += st_return_code::SUCCESS
+    code += st_delete_optic(pcxt, 1);
+    st_num_optics(pcxt, &num);
+    code += check(num, 0);
+    
+    return code;
+}
+
 st_return_t call_stapi_v2_all_optics(st_context_v2_t pcxt)
 {
     // set up arguments for st_optic
