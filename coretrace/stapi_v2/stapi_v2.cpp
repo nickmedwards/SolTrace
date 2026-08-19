@@ -109,7 +109,7 @@ STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
 }
 
 // functions to add/remove optical properties
-STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics)
+STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, uint_fast64_t *num_optics)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -122,7 +122,7 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt,
 												   args_optical_properties_set *opt_set,
 												   args_optical_properties_face *front, 
 												   args_optical_properties_face *back, 
-												   int *num_optics)
+												   uint_fast64_t *num_optics)
 {
     auto bad_type_char = [](char type) 
     {
@@ -186,7 +186,7 @@ STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt)
 }
 
 // functions to add/remove elements
-STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements)
+STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, uint_fast64_t *num_elements)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -294,7 +294,7 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
 									int_fast64_t opt_id,
 									double a_params[8],
 									double s_params[8],
-									int *num_elements)
+									uint_fast64_t *num_elements)
 {
     using SolTrace::Data::Aperture;
     CONTEXT(pcxt);

@@ -16,26 +16,7 @@ except ImportError:
 # st_return_code name/message set up #
 ######################################
 
-ST_RETURN_CODE_NAME = {
-    # success code
-    dot_h.st_return_code.SUCCESS:                                      'SUCCESS',
-    # error codes
-    dot_h.st_return_code.FAILURE:                                      'FAILURE',
-    dot_h.st_return_code.CANCEL:                                       'CANCEL',
-    dot_h.st_return_code.CONTEXT_NOT_FOUND:                            'CONTEXT_NOT_FOUND',
-    dot_h.st_return_code.DATA_NOT_FOUND:                               'DATA_NOT_FOUND',
-    dot_h.st_return_code.RUNNER_NOT_FOUND:                             'RUNNER_NOT_FOUND',
-    dot_h.st_return_code.RESULT_NOT_FOUND:                             'RESULT_NOT_FOUND',
-    dot_h.st_return_code.RUNNER_INILIALIZE_FAILURE:                    'RUNNER_INILIALIZE_FAILURE',
-    dot_h.st_return_code.RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE: 'RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE',
-    dot_h.st_return_code.RUNNER_SETUP_FAILURE:                         'RUNNER_SETUP_FAILURE',
-    dot_h.st_return_code.RUNNER_NOT_READY:                             'RUNNER_NOT_READY',
-    dot_h.st_return_code.EXCEPTION:                                    'EXCEPTION',
-    # warning codes
-    dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:                 'WARNING_FELLBACK_FROM_EMBREE',
-    dot_h.st_return_code.WARNING_FELLBACK_FROM_OPTIX:                  'WARNING_FELLBACK_FROM_OPTIX',
-    dot_h.st_return_code.WARNING_ARGUMENT_IGNORED_BY_RUNNER:           'WARNING_ARGUMENT_IGNORED_BY_RUNNER',
-}
+ST_RETURN_CODE_NAME = { code: code.name for code in dot_h.st_return_code }
 
 # messages for return codes
 ST_RETURN_CODE_ERROR_MSG = {
@@ -55,9 +36,12 @@ ST_RETURN_CODE_WARNING_MSG = {
     dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:       'Requested EmbreeRunner, but is not installed. Fellback to NativeRunner.',
     dot_h.st_return_code.WARNING_FELLBACK_FROM_OPTIX:        'Requested OptixRunner, but is not installed. Fellback to NativeRunner.',
     dot_h.st_return_code.WARNING_ARGUMENT_IGNORED_BY_RUNNER: 'Requested a number of threads for OptixRunner. The arguement does not apply to this runner type and was ignored.',
+    dot_h.st_return_code.WARNING_NOT_FOUND:                  'Requested an item that was not found.',
 }
 
-# reexport st_api_call_args in constants so it can be used in type hinting 
+# reexport structs in constants so it can be used in type hinting
+class args_optical_properties_set(dot_h.args_optical_properties_set): pass
+class args_optical_properties_face(dot_h.args_optical_properties_face): pass
 class st_api_call_args(dot_h.st_api_call_args): pass
 
 @dataclass

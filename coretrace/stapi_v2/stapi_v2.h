@@ -209,7 +209,7 @@ STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
 								   int 			   include_optics);
 
 // functions to add/remove/set optical properties
-STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, int *num_optics);
+STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, uint_fast64_t *num_optics);
 typedef struct args_optical_properties_face {
 	double transmissivity;
 	double reflectivity;
@@ -227,12 +227,12 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt,
 												   args_optical_properties_set *opt_set,
 												   args_optical_properties_face *front, 
 												   args_optical_properties_face *back, 
-												   int *num_optics);
+												   uint_fast64_t *num_optics);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
 
 // functions to add/remove elements
-STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, int *num_elements);
+STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, uint_fast64_t *num_elements);
 typedef struct args_element {
 	double x;
 	double y;
@@ -251,7 +251,7 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
 									int_fast64_t opt_id,
 									double a_params[8],
 									double s_params[8],
-									int *num_elements);
+									uint_fast64_t *num_elements);
 STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int_fast64_t opt_id, int *num_elements);
 STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt);
@@ -414,6 +414,24 @@ typedef struct empty_args {} empty_args;
 
 // Simlulation Data Functions
 
+// functions to add/remove/set optical properties
+typedef struct args_st_num_optics {
+	uint_fast64_t *num_optics;
+} args_st_num_optics;
+
+typedef struct args_st_add_optical_properties_set {
+	args_optical_properties_set *opt_set;
+	args_optical_properties_face *front;
+	args_optical_properties_face *back;
+	uint_fast64_t *num_optics;
+} args_st_add_optical_properties_set;
+
+typedef struct args_st_delete_optic {
+	st_uint_t idx;
+} args_st_delete_optic;
+
+typedef empty_args args_st_clear_optics;
+
 // sun functions
 typedef struct args_st_sun {
 	int    point_source;
@@ -449,7 +467,7 @@ typedef struct args_st_read_input_json {
 
 // functions for SolTrace data information
 typedef struct args_st_num_elements {
-	int *num_elements;
+	uint_fast64_t *num_elements;
 } args_st_num_elements;
 
 // Simlulation Runner Functions

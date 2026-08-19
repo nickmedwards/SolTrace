@@ -145,14 +145,38 @@ class STAPIv2:
         ##########################################
         # functions for SolTrace data management #
         ##########################################
+        
+        ##############################################################
+        # functions for simulation data management thru json strings #
+        ##############################################################
+
+        self.__pdll.st_read_input_json.argtypes = self.__get_argtypes(dot_h.args_st_read_input_json)
+        self.__pdll.st_read_input_json.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_READ_INPUT_JSON] = self.__pdll.st_read_input_json
+
+        ##################################################
+        # functions to add/remove/set optical properties #
+        ##################################################
+
+        self.__pdll.st_num_optics.argtypes = self.__get_argtypes(dot_h.args_st_num_optics)
+        self.__pdll.st_num_optics.restype  = dot_h.st_return_t
+
+        self.__pdll.st_add_optical_properties_set.argtypes = self.__get_argtypes(dot_h.args_st_add_optical_properties_set)
+        self.__pdll.st_add_optical_properties_set.restype  = dot_h.st_return_t
+
+        self.__pdll.st_delete_optic.argtypes = self.__get_argtypes(dot_h.args_st_delete_optic)
+        self.__pdll.st_delete_optic.restype  = dot_h.st_return_t
+
+        self.__pdll.st_clear_optics.argtypes = self.__get_argtypes(dot_h.args_st_clear_optics)
+        self.__pdll.st_clear_optics.restype  = dot_h.st_return_t
 
         #################
         # sun functions #
         #################
 
-        self.__pdll.st_sun.argtypes = self.__get_argtypes(dot_h.args_st_sun)
-        self.__pdll.st_sun.restype  = dot_h.st_return_t
-        self.__func_map[dot_h.st_api_call.CALL_ST_SUN] = self.__pdll.st_sun
+        # self.__pdll.st_sun.argtypes = self.__get_argtypes(dot_h.args_st_sun)
+        # self.__pdll.st_sun.restype  = dot_h.st_return_t
+        # self.__func_map[dot_h.st_api_call.CALL_ST_SUN] = self.__pdll.st_sun
 
         self.__pdll.st_sun_xyz.argtypes = self.__get_argtypes(dot_h.args_st_sun_xyz)
         self.__pdll.st_sun_xyz.restype  = dot_h.st_return_t
@@ -165,14 +189,6 @@ class STAPIv2:
         self.__pdll.st_sun_userdata.argtypes = self.__get_argtypes(dot_h.args_st_sun_userdata)
         self.__pdll.st_sun_userdata.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
-
-        ##############################################################
-        # functions for simulation data management thru json strings #
-        ##############################################################
-
-        self.__pdll.st_read_input_json.argtypes = self.__get_argtypes(dot_h.args_st_read_input_json)
-        self.__pdll.st_read_input_json.restype  = dot_h.st_return_t
-        self.__func_map[dot_h.st_api_call.CALL_ST_READ_INPUT_JSON] = self.__pdll.st_read_input_json
 
         ###########################################
         # functions for SolTrace data information #
@@ -244,6 +260,37 @@ class STAPIv2:
     # functions for SolTrace data management #
     ##########################################
     
+    ##################################################
+    # functions to add/remove/set optical properties #
+    ##################################################
+
+    def num_optics(self) -> int:
+        num_optics = ctypes.c_uint64()
+        code = self.__pdll.st_num_optics(self.__pcxt, ctypes.byref(num_optics))
+        self.__check_return_code(code)
+        return num_optics
+    
+    def add_optical_properties_set(self,
+                                   opt_set: _STC.args_optical_properties_set,
+                                   front: _STC.args_optical_properties_face,
+                                   back: _STC.args_optical_properties_face) -> int:
+        num_optics = ctypes.c_uint64()
+        code = self.__pdll.st_add_optical_properties_set(self.__pcxt,
+                                                         ctypes.byref(opt_set),
+                                                         ctypes.byref(front),
+                                                         ctypes.byref(back),
+                                                         ctypes.byref(num_optics))
+        self.__check_return_code(code)
+        return num_optics
+
+    def delete_optic(self, idx: int):
+        code = self.__pdll.st_delete_optic(self.__pcxt, idx)
+        self.__check_return_code(code)
+
+    def clear_optics(self):
+        code = self.__pdll.st_clear_optics(self.__pcxt)
+        self.__check_return_code(code)
+
     #################
     # sun functions #
     #################
@@ -315,7 +362,7 @@ class STAPIv2:
     ###########################################
 
     def num_elements(self) -> int:
-        pcount = ctypes.c_int()
+        pcount = ctypes.c_uint64()
         code = self.__pdll.st_num_elements(self.__pcxt, ctypes.byref(pcount))
         self.__check_return_code(code)
         return pcount.value
@@ -432,13 +479,41 @@ class STAPIv2:
 if __name__ == "__main__":
     username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
     stapi = STAPIv2()
-    stapi.read_input_json('./sample.json')
-    count = stapi.num_elements()
+
+    print(dot_h.args_optical_properties_set)
+    test_opt_set = dot_h.args_optical_properties_set("test".encode('utf-8'), 1.1, 1.1, 0)
+    test_front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'g'.encode('utf-8'))
+    test_back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, 'g'.encode('utf-8'))
+
+    print(test_opt_set)
+    print(test_front)
+    print(test_back)
+
+    count = stapi.add_optical_properties_set(test_opt_set, test_front, test_back)
     print(count)
-    stapi.sim_setup(_STC.NATIVE)
-    stapi.sim_run_v2()
-    stapi.sim_report()
-    stapi.write_results_csv('./sample.csv')
+
+    print(stapi.num_optics())
+
+    count = stapi.add_optical_properties_set(test_opt_set, test_front, test_back)
+    print(count)
+
+    print(stapi.num_optics())
+    print("added elements")
+
+    stapi.delete_optic(2)
+    print(stapi.num_optics())
+    stapi.delete_optic(1)
+    print(stapi.num_optics())
+    stapi.clear_optics()
+    print(stapi.num_optics())
+
+    # stapi.read_input_json('./sample.json')
+    # count = stapi.num_elements()
+    # print(count)
+    # stapi.sim_setup(_STC.NATIVE)
+    # stapi.sim_run_v2()
+    # stapi.sim_report()
+    # stapi.write_results_csv('./sample.csv')
 
 
     # currently not building Embrre - emits warning
