@@ -593,7 +593,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
     double good_intensities[3] = {0, 1, 2};
     double bad_intensities[2]  = {0, -1};
 
-    st_add_sun_args args = {good_angles, bad_intensities, 3, 608, 303, 1000, 5, ' '};
+    sun_args args = {good_angles, bad_intensities, 3, 608, 303, 1000, 5, ' '};
 
     // test bad intensitites
     // expect += st_return_code::EXCEPTION
@@ -716,7 +716,7 @@ st_return_t call_stapi_v2_sun_shape(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
-    st_add_sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+    sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
 
     // expect += st_return_code::SUCCESS
     code += st_add_sun(pcxt, &args);
@@ -784,7 +784,7 @@ st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
-    st_add_sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+    sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
 
     // expect += st_return_code::SUCCESS
     code += st_add_sun(pcxt, &args);
@@ -808,7 +808,7 @@ st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
-    st_add_sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+    sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
 
     // expect += st_return_code::SUCCESS
     code += st_add_sun(pcxt, &args);

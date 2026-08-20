@@ -456,6 +456,7 @@ class STAPIv2:
 
 
         _t.ic('c args set up')
+        # TODO: don't need to cast as void because all are st_api_call_args
         args_arr = (ctypes.c_void_p * num_calls)(*[
             ctypes.cast(ctypes.byref(c), ctypes.c_void_p) for c in api_calls
         ])

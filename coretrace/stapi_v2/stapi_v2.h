@@ -288,7 +288,7 @@ STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt,
 									  int_fast64_t 	  opt_id);
 
 // sun functions
-typedef struct st_add_sun_args {
+typedef struct sun_args {
 	double* angle;
 	double* intensity;
 	st_uint_t npoints;
@@ -297,8 +297,8 @@ typedef struct st_add_sun_args {
 	double z;
 	double sigma_halfwidth_csr;
 	char shape;
-} st_add_sun_args;
-STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, st_add_sun_args *args);
+} sun_args;
+STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, sun_args *args);
 STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,
 								  char   		  shape, 
 								  double 		  sigma_halfwidth_csr);
@@ -402,18 +402,39 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 // enum defining all calls available to batch together
 typedef enum st_api_call : st_uint_t {
 	// Simlulation Data Functions
+	// functions for simulation data management thru json strings
+    CALL_ST_READ_INPUT_JSON = 0,
+	// functions for simulation data management directly
+	CALL_ST_SIM_PARAMS,
+	CALL_ST_SIM_ERRORS,
+	// functions to add/remove optical properties
+	CALL_ST_NUM_OPTICS,
+	CALL_ST_ADD_OPTICAL_PROPERIES_SET,
+	CALL_ST_DELETE_OPTIC,
+	CALL_ST_CLEAR_OPTICS,
+	// functions to add/remove elements
+    CALL_ST_NUM_ELEMENTS,
+	CALL_ST_ADD_ELEMENT,
+	CALL_ST_DELETE_ELEMENT,
+	CALL_ST_CLEAR_ELEMENTS,
+	// functions to modify elements
+	CALL_ST_ELEMENT_ENABLED,
+	CALL_ST_ELEMENT_VIRTUAL,
+	CALL_ST_ELEMENT_ZYX,
+	CALL_ST_ELEMENT_AIM,
+	CALL_ST_ELEMENT_ZROT,
+	CALL_ST_ELEMENT_APERTURE,
+	CALL_ST_ELEMENT_SURFACE,
+	CALL_ST_ELEMENT_OPTIC,
 	// sun functions
-	CALL_ST_SUN = 0,
+	CALL_ST_ADD_SUN,
 	CALL_ST_SUN_XYZ,
 	CALL_ST_SUN_POSITION,
 	CALL_ST_SUN_USERDATA,
-	// functions for simulation data management thru json strings
-    CALL_ST_READ_INPUT_JSON,
-	// functions for SolTrace data information
-    CALL_ST_NUM_ELEMENTS,
 	// Simlulation Runner Functions
 	CALL_ST_SIM_SETUP,
 	CALL_ST_SIM_RUN_V2,
+	CALL_ST_SIM_REPORT,
 	// Simlulation Results Functions
 
 	API_CALL_COUNT			// sentinal
@@ -424,6 +445,23 @@ typedef struct empty_args {} empty_args;
 // argument layouts — one per function signature
 
 // Simlulation Data Functions
+
+// functions for simulation data management thru json strings
+typedef struct args_st_read_input_json {
+	const char *json;
+} args_st_read_input_json;
+
+// functions for simulation data management directly
+typedef struct args_st_sim_params {
+	int raycount;
+	int maxcount;
+	int include_dynamic_group;
+} args_st_sim_params;
+
+typedef struct args_st_sim_errors {
+	int include_sun_shape;
+	int include_optics;
+} args_st_sim_errors;
 
 // functions to add/remove/set optical properties
 typedef struct args_st_num_optics {
@@ -443,12 +481,82 @@ typedef struct args_st_delete_optic {
 
 typedef empty_args args_st_clear_optics;
 
+// functions to add/remove elements
+typedef struct args_st_num_elements {
+	uint_fast64_t *num_elements;
+} args_st_num_elements;
+
+typedef struct args_st_add_element {
+	args_element  *args;
+	int_fast64_t  opt_id;
+	double 		  *a_params;
+	double 		  *s_params;
+	uint_fast64_t *num_elements;
+} args_st_add_element;
+
+typedef struct args_st_delete_element {
+	st_uint_t idx;
+} args_st_delete_element;
+
+typedef empty_args args_st_clear_elements;
+
+// functions to modify elements
+typedef struct args_st_element_enabled {
+	st_uint_t idx;
+	bool 	  enabled_flag;
+} args_st_element_enabled;
+
+typedef struct args_st_element_virtual {
+	st_uint_t idx;
+	bool 	  virtual_flag;
+} args_st_element_virtual;
+
+typedef struct args_st_element_xyz {
+	st_uint_t idx;
+	double    x;
+	double    y;
+	double    z;
+} args_st_element_xyz;
+
+typedef struct args_st_element_aim {
+	st_uint_t idx;
+	double    ax;
+	double    ay;
+	double    az;
+} args_st_element_aim;
+
+typedef struct args_st_element_zrot {
+	st_uint_t idx;
+	double 	  zrot;
+} args_st_element_zrot;
+
+typedef struct args_st_element_aperture {
+	st_uint_t idx;
+	char 	  ap;
+	double    *params;
+} args_st_element_aperture;
+
+typedef struct args_st_element_surface {
+	st_uint_t idx;
+	char 	  surf;
+	double    *params;
+} args_st_element_surface;
+
+typedef struct args_st_element_optic {
+	st_uint_t 	 idx;
+	int_fast64_t opt_id;
+} args_st_element_optic;
+
+
 // sun functions
-typedef struct args_st_sun {
-	int    point_source;
+typedef struct args_st_add_sun {
+	sun_args *args;
+} args_st_add_sun;
+
+typedef struct args_st_sun_shape {
 	char   shape;
 	double sigma_halfwidth_csr;
-} args_st_sun;
+} args_st_sun_shape;
 
 typedef struct args_st_sun_xyz {
 	double x;
@@ -471,16 +579,6 @@ typedef struct args_st_sun_userdata {
 	double*	  intensity;
 } args_st_sun_userdata;
 
-// functions for simulation data management thru json strings
-typedef struct args_st_read_input_json {
-	const char *json;
-} args_st_read_input_json;
-
-// functions for SolTrace data information
-typedef struct args_st_num_elements {
-	uint_fast64_t *num_elements;
-} args_st_num_elements;
-
 // Simlulation Runner Functions
 typedef struct args_st_sim_setup {
 	st_runner_type_t runner_type;
@@ -501,15 +599,36 @@ typedef struct st_api_call_args {
     st_api_call type;
     union {
 		// Simlulation Data Functions
+		// functions for simulation data management thru json strings
+        args_st_read_input_json read_input_json_args;
+		// functions for simulation data management directly
+		args_st_sim_params sim_params_args;
+		args_st_sim_errors sim_errors_args;
+		// functions to add/remove/set optical properties
+		args_st_num_optics				   num_optics_args;
+		args_st_add_optical_properties_set add_optical_properties_set_args;
+		args_st_delete_optic			   delete_optic_args;
+		args_st_clear_optics			   clear_optics_args;
+		// functions to add/remove elements
+		args_st_num_elements   num_elements_args;
+		args_st_add_element    add_element_args;
+		args_st_delete_element delete_element_args;
+		args_st_clear_elements clear_elements_args;
+		// functions to modify elements
+		args_st_element_enabled  element_enabled_args;
+		args_st_element_virtual  element_virtual_args;
+		args_st_element_xyz      element_xyz_args;
+		args_st_element_aim      element_aim_args;
+		args_st_element_zrot     element_zrot_args;
+		args_st_element_aperture element_aperture_args;
+		args_st_element_surface  element_surface_args;
+		args_st_element_optic    element_optic_args;
 		// sun functions
-		args_st_sun 		 sun_args;
+		args_st_add_sun 	 add_sun_args;
+		args_st_sun_shape 	 sun_shape_args;
 		args_st_sun_xyz 	 sun_xyz_args;
 		args_st_sun_position sun_position_args;
 		args_st_sun_userdata sun_userdata_args;
-		// functions for simulation data management thru json strings
-        args_st_read_input_json read_input_json_args;
-		// functions for SolTrace data information
-        args_st_num_elements 	num_elements_args;
 		// Simlulation Runner Functions
 		args_st_sim_setup		sim_setup_args;
 		args_st_sim_run_v2		sim_run_v2_args;
@@ -536,9 +655,9 @@ typedef st_return_t (*st_api_func_ptr)(void);
 /* Error codes break the loop, and warning codes are ignored.         */
 /* ------------------------------------------------------------------ */
 STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
-							  void** 	 	  arguments, 
+							  void			  **arguments, // TODO: don't need to cast as void because all are st_api_call_args
 							  st_uint_t  	  count,
-                              st_uint_t* 	  fail_iteration,
+                              st_uint_t		  *fail_iteration,
                               bool 			  verbose);
 
 #ifdef __cplusplus

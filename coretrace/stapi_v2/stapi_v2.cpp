@@ -534,7 +534,7 @@ std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
     return std::dynamic_pointer_cast<Sun>(sun_ptr);
 }
 
-STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, st_add_sun_args *args)
+STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, sun_args *args)
 {
     CONTEXT(pcxt);
     DATA(cxt);
