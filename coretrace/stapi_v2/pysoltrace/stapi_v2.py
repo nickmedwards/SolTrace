@@ -603,15 +603,14 @@ class STAPIv2:
     def generate_api_call(self, call_type: int, *args):
         if not call_type < dot_h.st_api_call.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
 
-        _t = timer()
+        # _t = timer()
 
-        _t.ic('generate set up')
-        # TODO: test -> rt = dot_h.st_api_call_args(args) 
+        # _t.ic('generate set up')
         rt = dot_h.st_api_call_args()
         rt.type = call_type
         args_name, args_cls = rt.payload._fields_[call_type]
         args_payload = getattr(rt.payload, args_name)
-        _t.oc('generate set up')
+        # _t.oc('generate set up')
         # print('\ngenerate')
         # print(args_name)
         # print(args_cls)
@@ -619,15 +618,16 @@ class STAPIv2:
         # print(args_payload._fields_)
         # print(args)
         # args_payload = args_cls(*args)
+        # print(args_payload)
 
         # args_payload.pcxt = self.__pcxt
-        _t.ic('setattr')
+        # _t.ic('setattr')
 
         for i, arg in enumerate(args):
             setattr(args_payload, 
                     args_payload._fields_[i][0],
                     arg)
-        _t.oc('setattr')
+        # _t.oc('setattr')
 
         # print(f'\n{_t}')
             
@@ -641,6 +641,25 @@ class STAPIv2:
 
     def dump_batch_args(self):
         for args in self.__stash_batch_args: print(args)
+
+    ##################################
+    # wrappers for generate_api_call #
+    ##################################
+
+    # functions for simulation data management directly
+    
+    # functions to add/remove/set optical properties
+    
+    # functions to add/remove elements
+    
+    # functions to modify elements
+    
+    # sun functions
+    
+    # functions for SolTrace runner management
+
+    # functions for SolTrace resutls management
+
 
     # TODO: include version that calls functions from python for debugging STAPIv2.generate_api_call
     def batch(self, api_calls: list[_STC.st_api_call_args], verbose: bool = False):
