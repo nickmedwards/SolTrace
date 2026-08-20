@@ -593,11 +593,11 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
     double good_intensities[3] = {0, 1, 2};
     double bad_intensities[2]  = {0, -1};
 
-    sun_args args = {good_angles, bad_intensities, 3, 608, 303, 1000, 5, ' '};
+    args_sun args = {3, 608, 303, 1000, 5, ' '};
 
     // test bad intensitites
     // expect += st_return_code::EXCEPTION
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, bad_intensities);
 
     auto sun_0 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     auto xyz = sun_0->get_position();
@@ -610,8 +610,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 
     // test good intensities
     // expect += st_return_code::SUCCESS
-    args.intensity = good_intensities;
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     
     sun_0->get_user_data(angles, intensities);
     if (angles[0] != good_angles[0]
@@ -625,7 +624,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
     args.npoints = 0;
     
     // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     auto sun_1 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     SunShape shape = sun_1->get_shape();
     double sigma = sun_1->get_sigma();
@@ -638,7 +637,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 
     // expect += st_return_code::SUCCESS
     args.shape = 'g';
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     auto sun_2 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     shape = sun_2->get_shape();
     sigma = sun_2->get_sigma();
@@ -651,7 +650,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 
     // expect += st_return_code::SUCCESS
     args.shape = 'p';
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     auto sun_3 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     shape = sun_3->get_shape();
     double hw = sun_3->get_half_width();
@@ -664,7 +663,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 
     // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
     args.shape = 'l';
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     auto sun_4 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     shape = sun_4->get_shape();
     sigma = sun_4->get_sigma();
@@ -678,7 +677,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
     // expect += 0
     args.shape = 'b';
     args.sigma_halfwidth_csr = .5;
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     auto sun_5 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     shape = sun_5->get_shape();
     double csr = sun_5->get_circumsolar_ratio();
@@ -691,7 +690,7 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 
     // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
     args.shape = 'u';
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
     auto sun_6 = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     shape = sun_6->get_shape();
     sigma = sun_6->get_sigma();
@@ -716,10 +715,10 @@ st_return_t call_stapi_v2_sun_shape(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
-    sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+    args_sun args = {3, 608, 303, 1000, 5, 'g'};
 
     // expect += st_return_code::SUCCESS
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
 
     // expect += st_return_code::WARNING_SUN_SHAPE_IGNORED
     code += st_sun_shape(pcxt, ' ', 0);
@@ -784,10 +783,10 @@ st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
-    sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+    args_sun args = {3, 608, 303, 1000, 5, 'g'};
 
     // expect += st_return_code::SUCCESS
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
 
     // expect == 0
     code += st_sun_xyz(pcxt, 0, 0, 0);
@@ -808,10 +807,10 @@ st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
-    sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+    args_sun args = {3, 608, 303, 1000, 5, 'g'};
 
     // expect += st_return_code::SUCCESS
-    code += st_add_sun(pcxt, &args);
+    code += st_add_sun(pcxt, &args, good_angles, good_intensities);
 
     double new_angles[3]      = {0, .1, .2};
     double new_intensities[3] = {0, .1, .2};

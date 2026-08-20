@@ -534,7 +534,10 @@ std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
     return std::dynamic_pointer_cast<Sun>(sun_ptr);
 }
 
-STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, sun_args *args)
+STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt,
+								args_sun 		*args,
+								double 		 	*angle,
+								double 		 	*intensity)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -546,10 +549,10 @@ STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, sun_args *args)
 
     if (args->npoints)
     {
-        std::vector<double> v_angle(args->angle, 
-                                    args->angle + args->npoints);
-        std::vector<double> v_intensity(args->intensity, 
-                                        args->intensity + args->npoints);
+        std::vector<double> v_angle(angle, 
+                                    angle + args->npoints);
+        std::vector<double> v_intensity(intensity, 
+                                        intensity + args->npoints);
         ST_WRAP_CB_TRY_CATCH(sun->set_shape(SunShape::USER_DEFINED,
                                             0, 0, 0,
                                             v_angle, 
@@ -600,10 +603,11 @@ STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, sun_args *args)
         }
 
         auto sun = get_or_create_sun(data);
-        sun->set_shape(sun_shape, 
-                       s_hw_csr,
-                       s_hw_csr,
-                       s_hw_csr);
+        ST_WRAP_CB_TRY_CATCH(sun->set_shape(sun_shape, 
+                                            s_hw_csr,
+                                            s_hw_csr,
+                                            s_hw_csr),
+                             cxt->p_cb);
     }
 
     return code;
@@ -659,10 +663,11 @@ STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,
     }
 
     auto sun = get_or_create_sun(data);
-    sun->set_shape(sun_shape, 
-                    sigma_halfwidth_csr,
-                    sigma_halfwidth_csr,
-                    sigma_halfwidth_csr);
+    ST_WRAP_CB_TRY_CATCH(sun->set_shape(sun_shape,
+                                        sigma_halfwidth_csr,
+                                        sigma_halfwidth_csr,
+                                        sigma_halfwidth_csr),
+                         cxt->p_cb);
     return code;
 }
 
@@ -716,8 +721,8 @@ STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
 
 STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 									 st_uint_t 		 npoints,
-									 double 		 angle[],
-									 double 		 intensity[])
+									 double 		 *angle,
+									 double 		 *intensity)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -1054,9 +1059,9 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
                 // case st_api_call::CALL_ST_SUN:
                 // {
                 //     code = st_sun(pcxt,
-                //                   call_args->payload.sun_args.point_source,
-                //                   call_args->payload.sun_args.shape,
-                //                   call_args->payload.sun_args.sigma_halfwidth_csr);
+                //                   call_args->payload.args_sun.point_source,
+                //                   call_args->payload.args_sun.shape,
+                //                   call_args->payload.args_sun.sigma_halfwidth_csr);
                 //     break;
                 // }
                 case st_api_call::CALL_ST_SUN_XYZ:

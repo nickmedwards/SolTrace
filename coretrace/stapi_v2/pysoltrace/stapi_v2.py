@@ -39,9 +39,6 @@ except ImportError:
     from .point import Point
     from .timer import timer
 
-
-print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
-
 enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 """make a list of things an enum (ish)"""
 
@@ -57,6 +54,7 @@ enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 class STAPIv2Exception(Exception):
     def __init__(self, code, name, msg) -> None:
         super().__init__(f'{Fore.RED}[stapi_v2] - Call returned with error code ({code}: {name}).{Style.RESET_ALL}\n  {msg}')
+        self.error_code = code
 
 STAPI_V2_WARNING_PREFIX = '[stapi_v2] - Call returned with warning code'
 STAPIv2Warning = lambda code, name, msg: warnings.warn(
@@ -68,7 +66,7 @@ STAPIv2Warning = lambda code, name, msg: warnings.warn(
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
 #############################################################################
 class STAPIv2:
-    def __init__(self, stapi_v2_dll_path: str = ''):
+    def __init__(self, stapi_v2_dll_path: str = '', testing: bool = False):
         if len(stapi_v2_dll_path): self.__setup_dll(stapi_v2_dll_path)
         else:
             _here = pathlib.Path(__file__).parent.resolve()
@@ -85,14 +83,17 @@ class STAPIv2:
             self.__setup_dll(_lib_path)
 
         ppcxt = ctypes.c_void_p()
-        code = self.__pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb)
+        code = self.__pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb if not testing else self.__testing_cb)
         self.__check_return_code(code)
         self.__pcxt = ppcxt.value
+        # TODO: self._finalizer = weakref.finalize(self, __free) might be better option
         atexit.register(self.__free)
 
         # keep the struct instances alive — ctypes.cast() does NOT keep a
         # reference, so if these get garbage collected the void* becomes dangling
         self.__stash_batch_args = []
+
+        self.__testing = testing
 
     def __repr__(self):
         rt = f'STAPIv2 Object at ({id(self.__pdll):#x})'
@@ -117,8 +118,6 @@ class STAPIv2:
         if not os.path.exists(_lib_path):
             raise FileNotFoundError(f'Could not find DLL at {_lib_path}')
 
-        # print(str(_lib_path).rsplit(os.sep, maxsplit=1)[0])
-        # test = ctypes.WinDLL(_lib_path, winmode=0)
         if sys.platform == "win32":
             os.add_dll_directory(str(_lib_path).rsplit(os.sep, maxsplit=1)[0])
             self.__pdll = ctypes.WinDLL(_lib_path, winmode=0)
@@ -154,6 +153,16 @@ class STAPIv2:
         self.__pdll.st_read_input_json.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_READ_INPUT_JSON] = self.__pdll.st_read_input_json
 
+        #####################################################
+        # functions for simulation data management directly #
+        #####################################################
+
+        self.__pdll.st_sim_params.argtypes = self.__get_argtypes(dot_h.args_st_sim_params)
+        self.__pdll.st_sim_params.restype  = dot_h.st_return_t
+
+        self.__pdll.st_sim_errors.argtypes = self.__get_argtypes(dot_h.args_st_sim_errors)
+        self.__pdll.st_sim_errors.restype  = dot_h.st_return_t
+        
         ##################################################
         # functions to add/remove/set optical properties #
         ##################################################
@@ -170,14 +179,61 @@ class STAPIv2:
         self.__pdll.st_clear_optics.argtypes = self.__get_argtypes(dot_h.args_st_clear_optics)
         self.__pdll.st_clear_optics.restype  = dot_h.st_return_t
 
+        ####################################
+        # functions to add/remove elements #
+        ####################################
+
+        self.__pdll.st_num_elements.argtypes = self.__get_argtypes(dot_h.args_st_num_elements)
+        self.__pdll.st_num_elements.restype  = dot_h.st_return_t
+        self.__func_map[dot_h.st_api_call.CALL_ST_NUM_ELEMENTS] = self.__pdll.st_num_elements
+
+        self.__pdll.st_add_element.argtypes = self.__get_argtypes(dot_h.args_st_add_element)
+        self.__pdll.st_add_element.restype  = dot_h.st_return_t
+
+        self.__pdll.st_delete_element.argtypes = self.__get_argtypes(dot_h.args_st_delete_element)
+        self.__pdll.st_delete_element.restype  = dot_h.st_return_t
+
+        self.__pdll.st_clear_elements.argtypes = self.__get_argtypes(dot_h.args_st_clear_elements)
+        self.__pdll.st_clear_elements.restype  = dot_h.st_return_t
+
+        ################################
+        # functions to modify elements #
+        ################################
+
+        self.__pdll.st_element_enabled.argtypes = self.__get_argtypes(dot_h.args_st_element_enabled)
+        self.__pdll.st_element_enabled.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_virtual.argtypes = self.__get_argtypes(dot_h.args_st_element_virtual)
+        self.__pdll.st_element_virtual.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_xyz.argtypes = self.__get_argtypes(dot_h.args_st_element_xyz)
+        self.__pdll.st_element_xyz.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_aim.argtypes = self.__get_argtypes(dot_h.args_st_element_aim)
+        self.__pdll.st_element_aim.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_zrot.argtypes = self.__get_argtypes(dot_h.args_st_element_zrot)
+        self.__pdll.st_element_zrot.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_aperture.argtypes = self.__get_argtypes(dot_h.args_st_element_aperture)
+        self.__pdll.st_element_aperture.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_surface.argtypes = self.__get_argtypes(dot_h.args_st_element_surface)
+        self.__pdll.st_element_surface.restype  = dot_h.st_return_t
+
+        self.__pdll.st_element_optic.argtypes = self.__get_argtypes(dot_h.args_st_element_optic)
+        self.__pdll.st_element_optic.restype  = dot_h.st_return_t
+        
         #################
         # sun functions #
         #################
 
-        # self.__pdll.st_sun.argtypes = self.__get_argtypes(dot_h.args_st_sun)
-        # self.__pdll.st_sun.restype  = dot_h.st_return_t
-        # self.__func_map[dot_h.st_api_call.CALL_ST_SUN] = self.__pdll.st_sun
+        self.__pdll.st_add_sun.argtypes = self.__get_argtypes(dot_h.args_st_add_sun)
+        self.__pdll.st_add_sun.restype  = dot_h.st_return_t
 
+        self.__pdll.st_sun_shape.argtypes = self.__get_argtypes(dot_h.args_st_sun_shape)
+        self.__pdll.st_sun_shape.restype  = dot_h.st_return_t
+        
         self.__pdll.st_sun_xyz.argtypes = self.__get_argtypes(dot_h.args_st_sun_xyz)
         self.__pdll.st_sun_xyz.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_SUN_XYZ] = self.__pdll.st_sun_xyz
@@ -189,14 +245,6 @@ class STAPIv2:
         self.__pdll.st_sun_userdata.argtypes = self.__get_argtypes(dot_h.args_st_sun_userdata)
         self.__pdll.st_sun_userdata.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
-
-        ###########################################
-        # functions for SolTrace data information #
-        ###########################################
-
-        self.__pdll.st_num_elements.argtypes = self.__get_argtypes(dot_h.args_st_num_elements)
-        self.__pdll.st_num_elements.restype  = dot_h.st_return_t
-        self.__func_map[dot_h.st_api_call.CALL_ST_NUM_ELEMENTS] = self.__pdll.st_num_elements
 
         ############################################
         # functions for SolTrace runner management #
@@ -235,7 +283,8 @@ class STAPIv2:
 
     def __free(self):
         code = self.__pdll.st_free_context(self.__pcxt)
-        sys.stdout.write(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})\n')
+        if not self.__testing:
+            sys.stdout.write(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})\n')
 
     def __check_return_code(self, st_return_code):
         if st_return_code in _STC.ST_RETURN_CODE_ERROR_MSG:
@@ -251,6 +300,11 @@ class STAPIv2:
     def __message_cb(loc, msg):
         sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
         return 0
+
+    @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
+    def __testing_cb(loc, msg):
+        # sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
+        return 0
     
     def sneak(self): return self.__pdll, self.__pcxt
 
@@ -260,6 +314,42 @@ class STAPIv2:
     # functions for SolTrace data management #
     ##########################################
     
+    ##############################################################
+    # functions for simulation data management thru json strings #
+    ##############################################################
+    
+    def read_input_json(self, input_json: str | dict) -> None:
+        # TODO: togglable validity check?
+        if isinstance(input_json, str):
+            f = open(input_json, mode='rb')
+            code = self.__pdll.st_read_input_json(self.__pcxt, f.read())
+            f.close()
+        else:
+            code = self.__pdll.st_read_input_json(self.__pcxt, orjson.dumps(input_json))
+        self.__check_return_code(code)
+
+    #####################################################
+    # functions for simulation data management directly #
+    #####################################################
+
+    def sim_params(self,
+                   raycount: int,
+                   maxcount: int,
+                   include_dynamic_group: int) -> None:
+        code = self.__pdll.st_sim_params(self.__pcxt, 
+                                         raycount,
+                                         maxcount,
+                                         include_dynamic_group)
+        self.__check_return_code(code)
+
+    def sim_errors(self,
+                   include_sun_shape: int,
+                   include_optics: int) -> None:
+        code = self.__pdll.st_delete_optic(self.__pcxt,
+                                           include_sun_shape,
+                                           include_optics)
+        self.__check_return_code(code)
+
     ##################################################
     # functions to add/remove/set optical properties #
     ##################################################
@@ -268,7 +358,7 @@ class STAPIv2:
         num_optics = ctypes.c_uint64()
         code = self.__pdll.st_num_optics(self.__pcxt, ctypes.byref(num_optics))
         self.__check_return_code(code)
-        return num_optics
+        return num_optics.value
     
     def add_optical_properties_set(self,
                                    opt_set: _STC.args_optical_properties_set,
@@ -281,28 +371,156 @@ class STAPIv2:
                                                          ctypes.byref(back),
                                                          ctypes.byref(num_optics))
         self.__check_return_code(code)
-        return num_optics
+        return num_optics.value
 
-    def delete_optic(self, idx: int):
+    def delete_optic(self, idx: int) -> None:
         code = self.__pdll.st_delete_optic(self.__pcxt, idx)
         self.__check_return_code(code)
 
-    def clear_optics(self):
+    def clear_optics(self) -> None:
         code = self.__pdll.st_clear_optics(self.__pcxt)
         self.__check_return_code(code)
 
+    ####################################
+    # functions to add/remove elements #
+    ####################################
+
+    def num_elements(self) -> int:
+        pcount = ctypes.c_uint64()
+        code = self.__pdll.st_num_elements(self.__pcxt, ctypes.byref(pcount))
+        self.__check_return_code(code)
+        return pcount.value
+
+    def add_element(self,
+                    args: _STC.args_element,
+                    opt_id: int,
+                    a_params: list[float],
+                    s_params: list[float]) -> int:
+        _a_params = (ctypes.c_double * 8)(*a_params)
+        _s_params = (ctypes.c_double * 8)(*s_params)
+        pcount = ctypes.c_uint64()
+        code = self.__pdll.st_add_element(self.__pcxt,
+                                          ctypes.byref(args),
+                                          opt_id,
+                                          _a_params,
+                                          _s_params,
+                                          ctypes.byref(pcount))
+        self.__check_return_code(code)
+        return pcount.value
+
+    def delete_element(self, idx: int) -> None:
+        code = self.__pdll.st_delete_element(self.__pcxt, idx)
+        self.__check_return_code(code)
+
+    def clear_elements(self) -> None:
+        code = self.__pdll.st_clear_elements(self.__pcxt)
+        self.__check_return_code(code)
+
+    ################################
+    # functions to modify elements #
+    ################################
+    
+    def element_enabled(self,
+                        idx: int,
+                        enabled_flag: bool) -> None:
+        code = self.__pdll.st_element_enabled(self.__pcxt,
+                                              idx,
+                                              enabled_flag)
+        self.__check_return_code(code)
+
+    def element_virtual(self,
+                        idx: int,
+                        virtual_flag: bool) -> None:
+        code = self.__pdll.st_element_virtual(self.__pcxt,
+                                              idx,
+                                              virtual_flag)
+        self.__check_return_code(code)
+
+    def element_xyz(self,
+                    idx: int,
+                    x: float,
+                    y: float,
+                    z: float) -> None:
+        code = self.__pdll.st_element_xyz(self.__pcxt,
+                                          idx,
+                                          x,
+                                          y,
+                                          z)
+        self.__check_return_code(code)
+
+    def element_aim(self,
+                    idx: int,
+                    ax: float,
+                    ay: float,
+                    az: float) -> None:
+        code = self.__pdll.st_element_aim(self.__pcxt,
+                                          idx,
+                                          ax,
+                                          ay,
+                                          az)
+        self.__check_return_code(code)
+
+    def element_zrot(self,
+                     idx: int,
+                     zrot: float) -> None:
+        code = self.__pdll.st_element_zrot(self.__pcxt,
+                                           idx,
+                                           zrot)
+        self.__check_return_code(code)
+
+    def element_aperture(self,
+                         idx: int,
+                         ap: str,
+                         params: list[float]) -> None:
+        _params = (ctypes.c_double * 8)(*params)
+        code = self.__pdll.st_element_aperture(self.__pcxt,
+                                               idx,
+                                               ap.encode(),
+                                               _params)
+        self.__check_return_code(code)
+
+    def element_surface(self,
+                        idx: int,
+                        surf: str,
+                        params: list[float]) -> None:
+        _params = (ctypes.c_double * 8)(*params)
+        code = self.__pdll.st_element_surface(self.__pcxt,
+                                              idx,
+                                              surf.encode(),
+                                              _params)
+        self.__check_return_code(code)
+
+    def element_optic(self,
+                      idx: int,
+                      opt_id: int) -> None:
+        code = self.__pdll.st_element_optic(self.__pcxt,
+                                            idx,
+                                            opt_id)
+        self.__check_return_code(code)
+    
     #################
     # sun functions #
     #################
     
-    def sun(self,
-            point_source:        int,
-            shape:               str,
-            sigma_halfwidth_csr: float) -> None:
-        code = self.__pdll.st_sun(self.__pcxt,
-                                  point_source,
-                                  shape,
-                                  sigma_halfwidth_csr)
+    def add_sun(self,
+                args: _STC.args_sun,
+                angle: list[float],
+                intensity: list[float]) -> None:
+        args.npoints = len(angle)
+        _angle     = (ctypes.c_double * len(angle))(*angle)
+        _intensity = (ctypes.c_double * len(angle))(*intensity)
+        code = self.__pdll.st_add_sun(self.__pcxt,
+                                      args,
+                                      _angle,
+                                      _intensity)
+        self.__check_return_code(code)
+
+    def sun_shape(self,
+                shape: str,
+                sigma_halfwidth_csr: float) -> None:
+        code = self.__pdll.st_sun_shape(self.__pcxt,
+                                      shape.encode(),
+                                      sigma_halfwidth_csr)
         self.__check_return_code(code)
 
     def sun_xyz(self,
@@ -342,30 +560,6 @@ class STAPIv2:
                                            _angle,
                                            _intensity)
         self.__check_return_code(code)
-
-    ##############################################################
-    # functions for simulation data management thru json strings #
-    ##############################################################
-    
-    def read_input_json(self, input_json: str | dict) -> None:
-        # TODO: togglable validity check?
-        if isinstance(input_json, str):
-            f = open(input_json, mode='rb')
-            code = self.__pdll.st_read_input_json(self.__pcxt, f.read())
-            f.close()
-        else:
-            code = self.__pdll.st_read_input_json(self.__pcxt, orjson.dumps(input_json))
-        self.__check_return_code(code)
-
-    ###########################################
-    # functions for SolTrace data information #
-    ###########################################
-
-    def num_elements(self) -> int:
-        pcount = ctypes.c_uint64()
-        code = self.__pdll.st_num_elements(self.__pcxt, ctypes.byref(pcount))
-        self.__check_return_code(code)
-        return pcount.value
 
     ############################################
     # functions for SolTrace runner management #
@@ -410,6 +604,7 @@ class STAPIv2:
         _t = timer()
 
         _t.ic('generate set up')
+        # TODO: test -> rt = dot_h.st_api_call_args(args) 
         rt = dot_h.st_api_call_args()
         rt.type = call_type
         args_name, args_cls = rt.payload._fields_[call_type]
@@ -478,6 +673,8 @@ class STAPIv2:
 
 
 if __name__ == "__main__":
+    print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
+
     username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
     stapi = STAPIv2()
 

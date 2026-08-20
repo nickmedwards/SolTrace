@@ -26,6 +26,9 @@ ST_RETURN_CODE_ERROR_MSG = {
     dot_h.st_return_code.DATA_NOT_FOUND:                               'SimulationData pointer could not be found in context.',
     dot_h.st_return_code.RUNNER_NOT_FOUND:                             'SimulationRunner pointer could not be found in context.',
     dot_h.st_return_code.RESULT_NOT_FOUND:                             'SimulationResult pointer could not be found in context.',
+    dot_h.st_return_code.INVALID_ARGUMENTS:                            'Invalid arguments for stapi_v2 function.',
+    dot_h.st_return_code.DATA_INSERTION_FAILURE:                       'Unable to insert data into SimulationData.',
+    dot_h.st_return_code.DATA_VALUE_NOT_FOUND:                         'Data required for function was not found in SimulationData',
     dot_h.st_return_code.RUNNER_INILIALIZE_FAILURE:                    'SimulationRunner could not be initialized.',
     dot_h.st_return_code.RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE: 'Number of threads requested and length of seeds list are not equal. Include the number of seeds as threads requested.',
     dot_h.st_return_code.RUNNER_SETUP_FAILURE:                         'SimulationRunner could not be set up based on SimulationData provided.',
@@ -36,12 +39,15 @@ ST_RETURN_CODE_WARNING_MSG = {
     dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:       'Requested EmbreeRunner, but is not installed. Fellback to NativeRunner.',
     dot_h.st_return_code.WARNING_FELLBACK_FROM_OPTIX:        'Requested OptixRunner, but is not installed. Fellback to NativeRunner.',
     dot_h.st_return_code.WARNING_ARGUMENT_IGNORED_BY_RUNNER: 'Requested a number of threads for OptixRunner. The arguement does not apply to this runner type and was ignored.',
+    dot_h.st_return_code.WARNING_SUN_SHAPE_IGNORED:          'Requested invalid sun shape. Default sun created with a Gaussian distribution with sigma = 4.65.',
     dot_h.st_return_code.WARNING_NOT_FOUND:                  'Requested an item that was not found.',
 }
 
 # reexport structs in constants so it can be used in type hinting
 class args_optical_properties_set(dot_h.args_optical_properties_set): pass
 class args_optical_properties_face(dot_h.args_optical_properties_face): pass
+class args_element(dot_h.args_element): pass
+class args_sun(dot_h.args_sun): pass
 class st_api_call_args(dot_h.st_api_call_args): pass
 
 @dataclass

@@ -288,17 +288,18 @@ STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt,
 									  int_fast64_t 	  opt_id);
 
 // sun functions
-typedef struct sun_args {
-	double* angle;
-	double* intensity;
+typedef struct args_sun {
 	st_uint_t npoints;
 	double x;
 	double y;
 	double z;
 	double sigma_halfwidth_csr;
 	char shape;
-} sun_args;
-STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt, sun_args *args);
+} args_sun;
+STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt,
+								args_sun 		*args,
+								double 		 	*angle,
+								double 		 	*intensity);
 STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,
 								  char   		  shape, 
 								  double 		  sigma_halfwidth_csr);
@@ -315,8 +316,8 @@ STAPI_V2 st_return_t st_sun_position(st_context_v2_t pcxt,
 									 double			 *z);
 STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 									 st_uint_t 		 npoints,
-									 double 		 angle[],
-									 double 		 intensity[]);
+									 double 		 *angle,
+									 double 		 *intensity);
 
 //////////////////////////////////
 // Simlulation Runner Functions //
@@ -550,7 +551,9 @@ typedef struct args_st_element_optic {
 
 // sun functions
 typedef struct args_st_add_sun {
-	sun_args *args;
+	args_sun *args;
+	double* angle;
+	double* intensity;
 } args_st_add_sun;
 
 typedef struct args_st_sun_shape {
