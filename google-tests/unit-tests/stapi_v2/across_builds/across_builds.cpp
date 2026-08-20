@@ -242,6 +242,9 @@ st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt)
     code += check(aim[2], 2);
     code += check(zrot, 2);
 
+    optical_set_ptr opt_set = sel->get_optical_property_set();
+    code += check(opt_set->get_name(), std::string("dummy"));
+
     aperture_ptr ap = sel->get_aperture();
     code += check(ap->my_type, ApertureType::CIRCLE);
     auto circle = std::dynamic_pointer_cast<Circle>(ap);
@@ -289,200 +292,295 @@ st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt)
     return code;
 }
 
-// st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt)
-// {
-//     // set up dummy optical properties
-//     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
-//     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
-//     SimulationData *data = cxt->p_data;
-//     OpticalPropertySetReference res = data->add_optical_property_set(opt);
+st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
 
-//     // check no elements set
-//     uint_fast64_t num = -1;
-//     st_num_elements(pcxt, &num);
-//     st_return_t code = check(num, 0);
-
-//     // exprct += st_return_code::INVALID_ARGUMENTS
-//     code += st_add_elements(pcxt, 0, res.id, &num);
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
     
-//     // add 2 elements
-//     st_add_elements(pcxt, 2, res.id, &num);
-//     code += check(num, 2);
-
-//     // remove element idx 1
-//     // expect += st_return_code::SUCCESS
-//     code += st_delete_element(pcxt, 1);
-//     st_num_elements(pcxt, &num);
-//     code += check(num, 1);
+    // expect += st_return_code::SUCCESS
+    code += st_clear_elements(pcxt);
+    st_num_elements(pcxt, &num);
+    code += check(num, 0);
     
-//     // try to remove element idx 1
-//     // expect += st_return_code::WARNING_NOT_FOUND
-//     code += st_delete_element(pcxt, 1);
-//     st_num_elements(pcxt, &num);
-//     code += check(num, 1);
+    // expect += st_return_code::SUCCESS
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
 
-//     // check element correctly set to enabled
-//     element_ptr el = data->get_element(2);
-//     auto sel = std::dynamic_pointer_cast<SingleElement>(el);
-//     code += check(sel->is_enabled(), true);
-
-//     // set element as disabled
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_enabled(pcxt, 2, 0);
-//     code += check(sel->is_enabled(), false);
+    // expect += st_return_code::WARNING_NOT_FOUND
+    code += st_delete_element(pcxt, 1);
+    st_num_elements(pcxt, &num);
+    code += check(num, 1);
     
-//     // check default origin, aim and zrot
-//     auto origin = sel->get_origin_ref();
-//     auto aim = sel->get_aim_vector_ref();
-//     auto zrot = sel->get_zrot();
-//     code += check(origin[0], 0);
-//     code += check(origin[1], 0);
-//     code += check(origin[2], 0);
-//     code += check(aim[0], 0);
-//     code += check(aim[1], 0);
-//     code += check(aim[2], 1);
-//     code += check(zrot, 0);
-
-//     // set origin, aim and zrot to something else
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_xyz(pcxt, 2, 1, 1, 1);
-//     code += st_element_aim(pcxt, 2, 1, 1, 0);
-//     code += st_element_zrot(pcxt, 2, 90);
-//     origin = sel->get_origin_ref();
-//     aim = sel->get_aim_vector_ref();
-//     zrot = sel->get_zrot();
-//     code += check(origin[0], 1);
-//     code += check(origin[1], 1);
-//     code += check(origin[2], 1);
-//     code += check(aim[0], 1);
-//     code += check(aim[1], 1);
-//     code += check(aim[2], 0);
-//     code += check(zrot, 90);
-
-//     // test aperture setting
-//     // check default
-//     aperture_ptr ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::RECTANGLE);
-//     auto rectangle = std::dynamic_pointer_cast<Rectangle>(ap);
-//     code += check(rectangle->x_length(), 1);
-//     code += check(rectangle->y_length(), 1);
-
-//     // case ('c')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 'c');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::CIRCLE);
-//     auto circle = std::dynamic_pointer_cast<Circle>(ap);
-//     code += check(circle->diameter, 1);
-
-//     // case ('h')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 'h');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::HEXAGON);
-//     auto hexagon = std::dynamic_pointer_cast<Hexagon>(ap);
-//     code += check(hexagon->circumscribe_diameter, 1);
-
-//     // case ('t')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 't');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::EQUILATERAL_TRIANGLE);
-//     auto tri = std::dynamic_pointer_cast<EquilateralTriangle>(ap);
-//     code += check(tri->circumscribe_diameter, 1);
+    // expect += st_return_code::SUCCESS
+    code += st_delete_element(pcxt, 2);
+    st_num_elements(pcxt, &num);
+    code += check(num, 0);
     
-//     // case ('r')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 'r');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::RECTANGLE);
-//     rectangle = std::dynamic_pointer_cast<Rectangle>(ap);
-//     code += check(rectangle->x_length(), 1);
-//     code += check(rectangle->y_length(), 1);
+    // expect == st_return_code::WARNING_NOT_FOUND
+    return code;
+}
+
+st_return_t call_stapi_v2_toggle_element(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
     
-//     // case ('a')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 'a');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::ANNULUS);
-//     auto annulus = std::dynamic_pointer_cast<Annulus>(ap);
-//     code += check(annulus->inner_radius, 0);
-//     code += check(annulus->outer_radius, 1);
-//     code += check(annulus->arc_angle, 360);
-
-//     // case ('l')
-//     // expect += st_return_code::INVALID_ARGUMENTS
-//     // should leave current aperture unchanged
-//     code += st_element_aperture(pcxt, 2, 'l');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::ANNULUS);
-//     annulus = std::dynamic_pointer_cast<Annulus>(ap);
-//     code += check(annulus->inner_radius, 0);
-//     code += check(annulus->outer_radius, 1);
-//     code += check(annulus->arc_angle, 360);
-
-//     // case ('i')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 'i');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::IRREGULAR_TRIANGLE);
-//     auto itri = std::dynamic_pointer_cast<IrregularTriangle>(ap);
-//     code += check(itri->x1, 0);
-//     code += check(itri->y1, 0);
-//     code += check(itri->x2, 1);
-//     code += check(itri->y2, 0);
-//     code += check(itri->x3, 0);
-//     code += check(itri->y3, 1);
-
-//     // case ('q')
-//     // expect += st_return_code::SUCCESS
-//     code += st_element_aperture(pcxt, 2, 'q');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::IRREGULAR_QUADRILATERAL);
-//     auto iquad = std::dynamic_pointer_cast<IrregularQuadrilateral>(ap);
-//     code += check(iquad->x1, 0);
-//     code += check(iquad->y1, 0);
-//     code += check(iquad->x2, 1);
-//     code += check(iquad->y2, 0);
-//     code += check(iquad->x3, 1);
-//     code += check(iquad->y3, 1);
-//     code += check(iquad->x4, 0);
-//     code += check(iquad->y4, 1);
+    // expect += st_return_code::SUCCESS
+    code += st_element_enabled(pcxt, 1, true);
     
-//     // default
-//     // expect += st_return_code::INVALID_ARGUMENTS
-//     // should leave current aperture unchanged
-//     code += st_element_aperture(pcxt, 2, ' ');
-//     ap = sel->get_aperture();
-//     code += check(ap->my_type, ApertureType::IRREGULAR_QUADRILATERAL);
-//     iquad = std::dynamic_pointer_cast<IrregularQuadrilateral>(ap);
-//     code += check(iquad->x1, 0);
-//     code += check(iquad->y1, 0);
-//     code += check(iquad->x2, 1);
-//     code += check(iquad->y2, 0);
-//     code += check(iquad->x3, 1);
-//     code += check(iquad->y3, 1);
-//     code += check(iquad->x4, 0);
-//     code += check(iquad->y4, 1);
-
-//     // test element not found for 
-//     // st_element_enabled
-//     // st_element_xyz
-//     // st_element_aim
-//     // st_element_zrot
-//     // st_element_aperture
-//     // st_element_aperture_params
-//     // st_element_surface
-//     // st_element_surface_params
-//     // st_element_interaction
-//     // st_element_optic
+    // expect += st_return_code::SUCCESS
+    code += st_element_virtual(pcxt, 1, false);
     
-//     // expect == st_return_code::INVALID_ARGUMENTS
-//     // + st_return_code::WARNING_NOT_FOUND
-//     // + st_return_code::INVALID_ARGUMENTS
-//     // + st_return_code::INVALID_ARGUMENTS
-//     return code;
-// }
+    // expect += st_return_code::WARNING_NOT_FOUND
+    code += st_element_enabled(pcxt, 0, false);
+    
+    // expect += st_return_code::WARNING_NOT_FOUND
+    code += st_element_virtual(pcxt, 0, true);
+
+    // test values set
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    code += check(sel->is_enabled(), true);
+    code += check(sel->is_virtual(), false);
+
+    // expect == 2 * st_return_code::WARNING_NOT_FOUND
+    return code; 
+}
+
+st_return_t call_stapi_v2_element_xyz(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+    
+    // expect += st_return_code::SUCCESS
+    code += st_element_xyz(pcxt, 1, 1, 1, 1);
+    
+    // expect += st_return_code::WARNING_NOT_FOUND
+    code += st_element_xyz(pcxt, 0, 2, 2, 2);
+
+    // test values set
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    auto origin = sel->get_origin_ref();
+    code += check(origin[0], 1);
+    code += check(origin[1], 1);
+    code += check(origin[2], 1);
+
+    // expect == st_return_code::WARNING_NOT_FOUND
+    return code; 
+}
+
+st_return_t call_stapi_v2_element_aim(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+    
+    // expect += st_return_code::SUCCESS
+    code += st_element_aim(pcxt, 1, 1, 1, 1);
+    
+    // expect += st_return_code::WARNING_NOT_FOUND
+    code += st_element_aim(pcxt, 0, 2, 2, 2);
+
+    // test values set
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    auto aim = sel->get_aim_vector_ref();
+    code += check(aim[0], 1);
+    code += check(aim[1], 1);
+    code += check(aim[2], 1);
+
+    // expect == st_return_code::WARNING_NOT_FOUND
+    return code; 
+}
+
+st_return_t call_stapi_v2_element_zrot(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+    
+    // expect += st_return_code::SUCCESS
+    code += st_element_zrot(pcxt, 1, 1);
+    
+    // expect += st_return_code::WARNING_NOT_FOUND
+    code += st_element_zrot(pcxt, 0, 2);
+
+    // test values set
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    auto zrot = sel->get_zrot();
+    code += check(zrot, 1);
+
+    // expect == st_return_code::WARNING_NOT_FOUND
+    return code; 
+}
+
+st_return_t call_stapi_v2_element_aperture(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+
+    double params[2] = { 4, 4 };
+
+    // expect += st_return_code::SUCCESS
+    code += st_element_aperture(pcxt, 1, 'r', params);
+
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    aperture_ptr ap = sel->get_aperture();
+    code += check(ap->my_type, ApertureType::RECTANGLE);
+    auto rectangle = std::dynamic_pointer_cast<Rectangle>(ap);
+    code += check(rectangle->x_length(), 4);
+    code += check(rectangle->y_length(), 4);
+
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += st_element_aperture(pcxt, 1, 'z', params);
+
+    double bad_params[2] = { -4, 4 };
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += st_element_aperture(pcxt, 1, 'r', bad_params);
+    
+    // expect == 2 * st_return_code::INVALID_ARGUMENTS
+    return code;
+}
+
+st_return_t call_stapi_v2_element_surface(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += check(num, 1);
+    
+    double params[1] = { 4 };
+    // expect += st_return_code::SUCCESS
+    code += st_element_surface(pcxt, 1, 's', params);
+    
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    surface_ptr surf = sel->get_surface();
+    code += check(surf->my_type, SurfaceType::SPHERE);
+    auto sphere = std::dynamic_pointer_cast<Sphere>(surf);
+    code += check(sphere->vertex_curv, 4);
+
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += st_element_surface(pcxt, 1, 'z', params);
+
+    double bad_params[1] = { -4 };
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += st_element_surface(pcxt, 1, 's', bad_params);
+
+    // expect == 2 * st_return_code::INVALID_ARGUMENTS
+    return code;
+}
+
+st_return_t call_stapi_v2_element_optic(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    // set up dummy optical properties
+    OpticalPropertySet opt1(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res1 = data->add_optical_property_set(opt1);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res1.id, a_params, s_params, &num);
+    code += check(num, 1);
+
+    // expect += st_return_code::DATA_VALUE_NOT_FOUND
+    code += st_element_optic(pcxt, 1, res1.id + 1);
+
+    // set up other optical properties
+    OpticalPropertySet opt2(InteractionType::REFLECTION, std::string("other"));
+    OpticalPropertySetReference res2 = data->add_optical_property_set(opt2);
+    // expect += st_return_code::SUCCESS
+    code += st_element_optic(pcxt, 1, res2.id);
+    
+    auto sel = std::dynamic_pointer_cast<SingleElement>(data->get_element(1));
+    optical_set_ptr opt_set = sel->get_optical_property_set();
+    code += check(opt_set->get_name(), std::string("other"));
+    
+    // expect == st_return_code::DATA_VALUE_NOT_FOUND
+    return code;
+}
 
 // sun functions
 st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
@@ -603,7 +701,6 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
     if (sun_5 != sun_6) ++code;
     // expect one ray source
     code += (st_return_t)cxt->p_data->get_number_of_ray_sources() - 1;
-
 
     // expect == 3 * st_return_code::WARNING_SUN_SHAPE_IGNORED
     //           + st_return_code::EXCEPTION

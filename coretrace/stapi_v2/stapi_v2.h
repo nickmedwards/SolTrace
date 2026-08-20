@@ -124,6 +124,7 @@ extern "C" {
 using SolTrace::Runner::SimulationRunner;
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::Data::Aperture;
 
 typedef uint32_t st_uint_t;
 
@@ -223,11 +224,11 @@ typedef struct args_optical_properties_set {
 	double 	   refraction_index_back;
 	st_uint_t  type; // 0 = reflection, otherwise refraction
 } args_optical_properties_set;
-STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t pcxt, 
-												   args_optical_properties_set *opt_set,
+STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t 				pcxt, 
+												   args_optical_properties_set 	*opt_set,
 												   args_optical_properties_face *front, 
 												   args_optical_properties_face *back, 
-												   uint_fast64_t *num_optics);
+												   uint_fast64_t 				*num_optics);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
 
@@ -246,35 +247,45 @@ typedef struct args_element {
 	char   ap;
 	char   surf;
 } args_element;
-STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt, 
-									args_element *args, 
-									int_fast64_t opt_id,
-									double a_params[8],
-									double s_params[8],
-									uint_fast64_t *num_elements);
-STAPI_V2 st_return_t st_add_elements(st_context_v2_t pcxt, st_uint_t num, int_fast64_t opt_id, int *num_elements);
+STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
+									args_element    *args,
+									int_fast64_t    opt_id,
+									double 		    a_params[8],
+									double 		    s_params[8],
+									uint_fast64_t   *num_elements);
 STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt);
 // functions to modify elements
-STAPI_V2 st_return_t st_element_enabled(st_context_v2_t pcxt, st_uint_t idx, int enabled);
+STAPI_V2 st_return_t st_element_enabled(st_context_v2_t pcxt,
+										st_uint_t 		idx,
+										bool 			enabled_flag);
+STAPI_V2 st_return_t st_element_virtual(st_context_v2_t pcxt,
+										st_uint_t 		idx,
+										bool 			virtual_flag);
 STAPI_V2 st_return_t st_element_xyz(st_context_v2_t pcxt, 
-									st_uint_t idx,
-									double x,
-									double y,
-									double z);
+									st_uint_t 		idx,
+									double 	  		x,
+									double 	  		y,
+									double 	  		z);
 STAPI_V2 st_return_t st_element_aim(st_context_v2_t pcxt, 
-									st_uint_t idx,
-									double ax,
-									double ay,
-									double az);
-STAPI_V2 st_return_t st_element_zrot(st_context_v2_t pcxt, st_uint_t idx, double zrot);
-STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt, st_uint_t idx, char ap);
-STAPI_V2 st_return_t st_element_aperture_params(st_context_v2_t pcxt, st_uint_t idx, double params[8]);
-STAPI_V2 st_return_t st_element_surface(st_context_v2_t pcxt, st_uint_t idx, char surf);
-STAPI_V2 st_return_t st_element_surface_params(st_context_v2_t pcxt, st_uint_t idx, double params[8]);
-STAPI_V2 st_return_t st_element_surface_file(st_context_v2_t pcxt, st_uint_t idx, const char *file);
-STAPI_V2 st_return_t st_element_interaction(st_context_v2_t pcxt, st_uint_t idx, int type); /* 1=refract, 2=reflect */
-STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt, st_uint_t idx, const char *name);
+									st_uint_t 		idx,
+									double 	  		ax,
+									double 	  		ay,
+									double 	  		az);
+STAPI_V2 st_return_t st_element_zrot(st_context_v2_t pcxt,
+									 st_uint_t 		 idx,
+									 double 		 zrot);
+STAPI_V2 st_return_t st_element_aperture(st_context_v2_t pcxt,
+                                         st_uint_t 	     idx,
+                                         char      	     ap,
+                                         double    	     params[8]);
+STAPI_V2 st_return_t st_element_surface(st_context_v2_t pcxt,
+                                        st_uint_t 	    idx,
+                                        char      	    surf,
+                                        double    	    params[8]);
+STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt,
+									  st_uint_t 	  idx,
+									  int_fast64_t 	  opt_id);
 
 // sun functions
 typedef struct st_add_sun_args {

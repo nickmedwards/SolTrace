@@ -43,6 +43,15 @@ st_return_t call_stapi_v2_remove_optics(st_context_v2_t pcxt);
 
 // functions for elements
 st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_toggle_element(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_xyz(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_aim(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_zrot(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_aperture(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_surface(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_optic(st_context_v2_t pcxt);
+
 // TODO: turn into individual tests
 st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt);
 

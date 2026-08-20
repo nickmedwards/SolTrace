@@ -141,6 +141,12 @@ public:
     /// @return true if Element was replaced, false otherwise
     bool replace_element(element_id id, element_ptr el);
 
+    void clear_elements()
+    {
+        this->my_elements.clear();
+        this->number_of_elements = 0;
+    }
+
     /// @brief Gives the number of elements owned by the SimulationData.
     ///        CompositeElements do not count toward this number.
     /// @return Number of elements owned by the SimulationData object
