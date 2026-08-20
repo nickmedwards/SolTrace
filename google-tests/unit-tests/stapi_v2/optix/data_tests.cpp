@@ -154,22 +154,23 @@ TEST(optix_data_tests, data_sun_shape)
     CLEANUP_TEST_CXT();
 }
 
-// TEST(optix_data_tests, data_sun_xyz)
-// {
-//     SETUP_TEST_CXT();
 
-//     code = call_stapi_v2_sun_xyz(pcxt);
-//     EXPECT_EQ(code, st_return_code::SUCCESS);
+TEST(optix_data_tests, data_sun_xyz)
+{
+    SETUP_TEST_CXT();
 
-//     CLEANUP_TEST_CXT();
-// }
+    code = call_stapi_v2_sun_xyz(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
 
-// TEST(optix_data_tests, data_sun_userdata)
-// {
-//     SETUP_TEST_CXT();
+    CLEANUP_TEST_CXT();
+}
 
-//     code = call_stapi_v2_sun_userdata(pcxt);
-//     EXPECT_EQ(code, st_return_code::EXCEPTION);
+TEST(optix_data_tests, data_sun_userdata)
+{
+    SETUP_TEST_CXT();
 
-//     CLEANUP_TEST_CXT();
-// }
+    code = call_stapi_v2_sun_userdata(pcxt);
+    EXPECT_EQ(code, st_return_code::EXCEPTION);
+
+    CLEANUP_TEST_CXT();
+}
