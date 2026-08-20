@@ -617,9 +617,9 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
     if (angles[0] != good_angles[0]
         || angles[1] != good_angles[1]
         || angles[2] != good_angles[2]
-        || intensities[0] != intensities[0]
-        || intensities[1] != intensities[1]
-        || intensities[2] != intensities[2]) ++code;
+        || intensities[0] != good_intensities[0]
+        || intensities[1] != good_intensities[1]
+        || intensities[2] != good_intensities[2]) ++code;
 
     // test built in shapes
     args.npoints = 0;
@@ -781,12 +781,20 @@ st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt)
     // expect == 0
     st_return_t code = (st_return_t)cxt->p_data->get_number_of_ray_sources();
 
+    double good_angles[3]      = {0, 1, 2};
+    double good_intensities[3] = {0, 1, 2};
+
+    st_add_sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+
+    // expect += st_return_code::SUCCESS
+    code += st_add_sun(pcxt, &args);
+
     // expect == 0
-    code += st_sun_xyz(pcxt, 608, 303, 1000);
+    code += st_sun_xyz(pcxt, 0, 0, 0);
     auto sun = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     auto xyz = sun->get_position();
     // expect position to be what was set
-    if (xyz[0] != 608 || xyz[1] != 303 || xyz[2] != 1000) ++code;
+    if (xyz[0] != 0 || xyz[1] != 0 || xyz[2] != 0) ++code;
 
     return code;
 }
@@ -800,18 +808,25 @@ st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt)
     double good_angles[3]      = {0, 1, 2};
     double good_intensities[3] = {0, 1, 2};
 
+    st_add_sun_args args = {good_angles, good_intensities, 3, 608, 303, 1000, 5, 'g'};
+
+    // expect += st_return_code::SUCCESS
+    code += st_add_sun(pcxt, &args);
+
+    double new_angles[3]      = {0, .1, .2};
+    double new_intensities[3] = {0, .1, .2};
     // expect += 0
-    code += st_sun_userdata(pcxt, 3, good_angles, good_intensities);
+    code += st_sun_userdata(pcxt, 3, new_angles, new_intensities);
     auto sun = std::dynamic_pointer_cast<Sun>(cxt->p_data->get_ray_source(0));
     
     std::vector<double> angles, intensities;
     sun->get_user_data(angles, intensities);
-    if (angles[0] != good_angles[0]
-        || angles[1] != good_angles[1]
-        || angles[2] != good_angles[2]
-        || intensities[0] != intensities[0]
-        || intensities[1] != intensities[1]
-        || intensities[2] != intensities[2]) ++code;
+    if (angles[0] != new_angles[0]
+        || angles[1] != new_angles[1]
+        || angles[2] != new_angles[2]
+        || intensities[0] != new_intensities[0]
+        || intensities[1] != new_intensities[1]
+        || intensities[2] != new_intensities[2]) ++code;
 
     double bad_intensities[2] = {0, -1};
     // expect += st_return_code::EXCEPTION
