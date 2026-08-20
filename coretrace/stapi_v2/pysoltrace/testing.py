@@ -22,7 +22,7 @@ class JSONTests(unittest.TestCase):
 
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.read_input_json('./errors.json')
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.EXCEPTION)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
     def test_read_from_dict(self):
         f = open('./sample.json', mode='rb')
@@ -37,7 +37,7 @@ class JSONTests(unittest.TestCase):
             _json = orjson.loads(f.read())
             f.close()
             self.stapi.read_input_json(_json)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.EXCEPTION)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
 class OpticalPropertiesSetTests(unittest.TestCase):
     def setUp(self):
@@ -53,12 +53,12 @@ class OpticalPropertiesSetTests(unittest.TestCase):
         with self.assertRaises(STAPIv2Exception) as ex:
             bad_front = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'z'.encode())
             self.stapi.add_optical_properties_set(self.opt_set, bad_front, self.back)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
         with self.assertRaises(STAPIv2Exception) as ex:
             bad_back = dot_h.args_optical_properties_face(.25, .25, 2, 2, 'z'.encode())
             self.stapi.add_optical_properties_set(self.opt_set, self.front, bad_back)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
     def test_delete_optic(self):
         self.stapi.add_optical_properties_set(self.opt_set, self.front, self.back)
@@ -104,7 +104,7 @@ class ElementTests(unittest.TestCase):
         # optical property not set
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.add_element(self.el_args, self.opt_id + 1, self.a_params, self.s_params)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.DATA_VALUE_NOT_FOUND)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.DATA_VALUE_NOT_FOUND)
         self.assertEqual(self.stapi.num_elements(), 1)
 
         # bad aperture char
@@ -112,7 +112,7 @@ class ElementTests(unittest.TestCase):
             self.el_args.ap = 'z'.encode()
             self.stapi.add_element(self.el_args, self.opt_id, self.a_params, self.s_params)
             self.el_args.ap = 'c'.encode()
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
         self.assertEqual(self.stapi.num_elements(), 1)
 
         # bad surface char
@@ -120,19 +120,19 @@ class ElementTests(unittest.TestCase):
             self.el_args.surf = 'z'.encode()
             self.stapi.add_element(self.el_args, self.opt_id, self.a_params, self.s_params)
             self.el_args.surf = 'p'.encode()
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
         self.assertEqual(self.stapi.num_elements(), 1)
 
         # bad aperture params
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.add_element(self.el_args, self.opt_id, [-2], self.s_params)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
         self.assertEqual(self.stapi.num_elements(), 1)
 
         # bad surface params
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.add_element(self.el_args, self.opt_id, self.a_params, [2, float('nan')])
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
         self.assertEqual(self.stapi.num_elements(), 1)
 
     def test_delete_element(self):
@@ -216,12 +216,12 @@ class ElementTests(unittest.TestCase):
         # bad aperture char
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.element_aperture(1, 'z', new_params)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
         # bad aperture params
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.element_aperture(1, new_ap, [0, 2])
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
         self.stapi.element_aperture(1, new_ap, new_params)
 
@@ -237,12 +237,12 @@ class ElementTests(unittest.TestCase):
         # bad surface char
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.element_surface(1, 'z', new_params)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
         # bad surface params
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.element_surface(1, new_surf, [0])
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.INVALID_ARGUMENTS)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
         self.stapi.element_surface(1, new_surf, new_params)
 
@@ -253,7 +253,7 @@ class ElementTests(unittest.TestCase):
         # optical property not set
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.element_optic(1, self.opt_id + 1)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.DATA_VALUE_NOT_FOUND)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.DATA_VALUE_NOT_FOUND)
 
         self.stapi.element_optic(1, self.opt_id)
 
@@ -269,7 +269,7 @@ class SunTests(unittest.TestCase):
         # test bad intensities
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.add_sun(self.args_sun, self.good_angles, self.bad_intensities)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.EXCEPTION)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
         # test bad shape
         self.args_sun.npoints = 0
@@ -282,7 +282,7 @@ class SunTests(unittest.TestCase):
         self.args_sun.sigma_halfwidth_csr = 1
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.add_sun(self.args_sun, [], [])
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.EXCEPTION)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
         self.args_sun.npoints = 3
         self.stapi.add_sun(self.args_sun, self.good_angles, self.good_intensities)
@@ -295,7 +295,7 @@ class SunTests(unittest.TestCase):
         # test bad value
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.sun_shape('g', -4.65)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.EXCEPTION)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
         self.stapi.sun_shape('g', 5)
 
@@ -306,7 +306,7 @@ class SunTests(unittest.TestCase):
         # test bad intensities
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.sun_userdata(3, self.good_angles, self.bad_intensities)
-        self.assertEqual(ex.exception.error_code, dot_h.st_return_code.EXCEPTION)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
         self.stapi.sun_userdata(3, self.good_angles, self.good_intensities)
 

@@ -54,7 +54,9 @@ enumify = lambda arr: { k: i for i, k in enumerate(arr) }
 class STAPIv2Exception(Exception):
     def __init__(self, code, name, msg) -> None:
         super().__init__(f'{Fore.RED}[stapi_v2] - Call returned with error code ({code}: {name}).{Style.RESET_ALL}\n  {msg}')
-        self.error_code = code
+        self.code = code
+        self.name = name
+        self.message = msg
 
 STAPI_V2_WARNING_PREFIX = '[stapi_v2] - Call returned with warning code'
 STAPIv2Warning = lambda code, name, msg: warnings.warn(
@@ -286,15 +288,15 @@ class STAPIv2:
         if not self.__testing:
             sys.stdout.write(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})\n')
 
-    def __check_return_code(self, st_return_code):
-        if st_return_code in _STC.ST_RETURN_CODE_ERROR_MSG:
-            raise STAPIv2Exception(st_return_code, 
-                                   _STC.ST_RETURN_CODE_NAME[st_return_code],
-                                   _STC.ST_RETURN_CODE_ERROR_MSG[st_return_code])
-        elif st_return_code in _STC.ST_RETURN_CODE_WARNING_MSG:
-            STAPIv2Warning(st_return_code,
-                           _STC.ST_RETURN_CODE_NAME[st_return_code],
-                           _STC.ST_RETURN_CODE_WARNING_MSG[st_return_code])
+    def __check_return_code(self, code):
+        if code > dot_h.st_return_code.SUCCESS and code < dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:
+            raise STAPIv2Exception(code, 
+                                   _STC.ST_RETURN_CODE_NAME[code],
+                                   _STC.ST_RETURN_CODE_ERROR_MSG[code] if code in _STC.ST_RETURN_CODE_ERROR_MSG else '')
+        elif code >= dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:
+            STAPIv2Warning(code,
+                           _STC.ST_RETURN_CODE_NAME[code],
+                           _STC.ST_RETURN_CODE_WARNING_MSG[code] if code in _STC.ST_RETURN_CODE_WARNING_MSG else '')
 
     @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
     def __message_cb(loc, msg):
@@ -510,7 +512,7 @@ class STAPIv2:
         _angle     = (ctypes.c_double * len(angle))(*angle)
         _intensity = (ctypes.c_double * len(angle))(*intensity)
         code = self.__pdll.st_add_sun(self.__pcxt,
-                                      args,
+                                      ctypes.byref(args),
                                       _angle,
                                       _intensity)
         self.__check_return_code(code)
