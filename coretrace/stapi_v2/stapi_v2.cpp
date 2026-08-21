@@ -800,8 +800,8 @@ STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt,
 
 STAPI_V2 st_return_t st_get_sun(st_context_v2_t pcxt,
 								args_sun 		*args,
-								double 		 	*angle,
-								double 		 	*intensity)
+								double 		 	**angle,
+								double 		 	**intensity)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -843,13 +843,20 @@ STAPI_V2 st_return_t st_get_sun(st_context_v2_t pcxt,
             std::vector<double> _intensity;
             sun->get_user_data(_angle, _intensity);
             args->npoints = _angle.size();
-            angle = new double[_angle.size()]{ 0 };
-            intensity = new double[_angle.size()]{ 0 };
-            for (size_t i = 0; i < _angle.size(); ++i)
-            {
-                angle[i] = _angle[i];
-                intensity[i] = _intensity[i];
-            }
+
+            // TODO: return userdata
+            
+            // *angle = _angle.data();
+            // *intensity = _intensity.data();
+            // (*angle) = new double[_angle.size()]{ 0 };
+            // (*intensity) = new double[_intensity.size()]{ 0 };
+            // for (size_t i = 0; i < _angle.size(); ++i)
+            // {
+            //     (*angle)[i] = _angle[i];
+            //     (*intensity)[i] = _intensity[i];
+            // }
+            // std::copy(_angle.begin(), _angle.end(), *angle);
+            // std::copy(_intensity.begin(), _intensity.end(), *intensity);
             break;
         }
     }

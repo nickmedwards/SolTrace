@@ -313,8 +313,8 @@ STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt,
 								double 		 	*intensity);
 STAPI_V2 st_return_t st_get_sun(st_context_v2_t pcxt,
 								args_sun 		*args,
-								double 		 	*angle,
-								double 		 	*intensity);
+								double 		 	**angle,
+								double 		 	**intensity);
 STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,
 								  char   		  shape, 
 								  double 		  sigma_halfwidth_csr);
@@ -491,6 +491,13 @@ typedef struct args_st_add_optical_properties_set {
 	uint_fast64_t *optic_id;
 } args_st_add_optical_properties_set;
 
+typedef struct args_st_get_optical_properties_set {
+	uint_fast64_t 				 optic_id;
+	args_optical_properties_set  *opt_set;
+	args_optical_properties_face *front;
+	args_optical_properties_face *back;
+}  args_st_get_optical_properties_set;
+
 typedef struct args_st_delete_optic {
 	st_uint_t idx;
 } args_st_delete_optic;
@@ -509,6 +516,14 @@ typedef struct args_st_add_element {
 	double 		  *s_params;
 	uint_fast64_t *element_id;
 } args_st_add_element;
+
+typedef struct args_st_get_element {
+	uint_fast64_t element_id;
+	args_element  *args;
+	int_fast64_t  *opt_id;
+	double 		  *a_params[8];
+	double 		  *s_params[8];
+} args_st_get_element;
 
 typedef struct args_st_delete_element {
 	st_uint_t idx;
@@ -570,6 +585,12 @@ typedef struct args_st_add_sun {
 	double* angle;
 	double* intensity;
 } args_st_add_sun;
+
+typedef struct args_st_get_sun {
+	args_sun *args;
+	double 	 **angle;
+	double 	 **intensity;
+} args_st_get_sun;
 
 typedef struct args_st_sun_shape {
 	char   shape;

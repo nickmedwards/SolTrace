@@ -237,7 +237,8 @@ _BASE_CTYPES: Dict[str, Optional[type]] = {
 _WS_RE = re.compile(r"\s+")
 _QUALIFIER_RE = re.compile(r"\b(const|volatile|struct|union)\b")
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_]\w*$")
-
+_ARRAY_RE = re.compile(r"^[A-Za-z_]\w*\[[0-9]*\]$")
+_ARRAY_LENGTH_RE = re.compile(r"^(?P<type>[A-Za-z_]+)\s*\[\w*(?P<length>[0-9]+)\w*\]$")
 
 def _strip_param_name(arg: str) -> str:
     """Turn 'const char* message' / 'int count' into just the type part,
@@ -264,9 +265,12 @@ def _split_type_and_name(rest: str) -> Optional[Tuple[str, str]]:
     if len(tokens) < 2:
         return None
     name = tokens[-1]
+    type_str = " ".join(tokens[:-1])
+    if _ARRAY_RE.match(name):
+        temp = _ARRAY_LENGTH_RE.match(name)
+        return f'{type_str}[{temp.group("length")}]', name
     if not _IDENTIFIER_RE.match(name):
         return None
-    type_str = " ".join(tokens[:-1])
     return type_str, name
 
 
@@ -327,6 +331,31 @@ def _resolve_ctype(type_str: str,
         ctype = enum_ctypes[base]
     elif base in struct_ctypes:
         ctype = struct_ctypes[base]
+    elif (match := _ARRAY_LENGTH_RE.match(base)):
+        arr_type, arr_length = match.group("type"), int(match.group("length"))
+        ctype = ctypes.c_void_p
+        if arr_type in enum_ctypes:
+            ctype = enum_ctypes[arr_type] * arr_length
+        elif arr_type in struct_ctypes:
+            ctype = struct_ctypes[arr_type] * arr_length
+        elif arr_type in typedef_raw:
+            temp = _resolve_ctype(typedef_raw[arr_type], 
+                               typedef_raw, 
+                               enum_ctypes, 
+                               resolved_cache,
+                               _stack | {arr_type}, 
+                               struct_ctypes)
+            ctype = temp * arr_length
+        elif arr_type in _BASE_CTYPES and _BASE_CTYPES[arr_type] is not None:
+            ctype = _BASE_CTYPES[arr_type] * arr_length
+
+        if ctype == ctypes.c_void_p:
+            warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                          f"unknown array type '{type_str}', "
+                          f"treating as opaque void*-sized value.",
+                          stacklevel=2)
+
+        resolved_cache[base] = ctype  # memoize before returning
     elif base in typedef_raw:
         ctype = _resolve_ctype(typedef_raw[base], 
                                typedef_raw, 

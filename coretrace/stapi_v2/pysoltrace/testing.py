@@ -3,17 +3,27 @@ import unittest
 import orjson
 
 try:
-    from chedder import dot_h
+    from chedder import dot_h, found_in
     # import soltrace_constants as _STC
     from stapi_v2 import STAPIv2, STAPIv2Exception
 except ImportError:
-    from .chedder import dot_h
+    from .chedder import dot_h, found_in
     # from . import soltrace_constants as _STC
     from .stapi_v2 import STAPIv2, STAPIv2Exception
 
-class JSONTests(unittest.TestCase):
+class STAPIv2TestCase(unittest.TestCase):
     def setUp(self):
         self.stapi = STAPIv2(testing=True)
+        return super().setUp()
+
+    def assertStructEqual(self, value, check):
+        for field in value._fields_:
+            self.assertEqual(getattr(value, field[0]),
+                             getattr(check, field[0]))
+
+class JSONTests(STAPIv2TestCase):
+    # def setUp(self):
+    #     self.stapi = STAPIv2(testing=True)
 
     def test_read_from_filename(self):
         self.stapi.read_input_json('./sample.json')
@@ -39,16 +49,16 @@ class JSONTests(unittest.TestCase):
             self.stapi.read_input_json(_json)
         self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
-class OpticalPropertiesSetTests(unittest.TestCase):
+class OpticalPropertiesSetTests(STAPIv2TestCase):
     def setUp(self):
-        self.stapi = STAPIv2(testing=True)
-        self.opt_set = dot_h.args_optical_properties_set("test".encode(), 1.1, 1.1, 0)
+        super().setUp()
+        self.opt_set = dot_h.args_optical_properties_set("test".encode(), 1.1, 1.1, 2)
         self.front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'g'.encode())
         self.back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, 'g'.encode())
 
     def test_add_optical_properties_set(self):
-        count = self.stapi.add_optical_properties_set(self.opt_set, self.front, self.back)
-        self.assertEqual(count, 1)
+        optical_id = self.stapi.add_optical_properties_set(self.opt_set, self.front, self.back)
+        self.assertEqual(optical_id, 0)
 
         with self.assertRaises(STAPIv2Exception) as ex:
             bad_front = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'z'.encode())
@@ -59,6 +69,20 @@ class OpticalPropertiesSetTests(unittest.TestCase):
             bad_back = dot_h.args_optical_properties_face(.25, .25, 2, 2, 'z'.encode())
             self.stapi.add_optical_properties_set(self.opt_set, self.front, bad_back)
         self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
+
+    def test_get_optical_properties_set(self):
+        optical_id = self.stapi.add_optical_properties_set(self.opt_set, self.front, self.back)
+        self.assertEqual(optical_id, 0)
+
+        _opt_set, _front, _back = self.stapi.get_optical_properties_set(optical_id)
+
+        self.assertStructEqual(_opt_set, self.opt_set)
+        self.assertStructEqual(_front, self.front)
+        self.assertStructEqual(_back, self.back)
+
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.get_optical_properties_set(optical_id + 1)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.DATA_VALUE_NOT_FOUND)
 
     def test_delete_optic(self):
         self.stapi.add_optical_properties_set(self.opt_set, self.front, self.back)
@@ -83,9 +107,9 @@ class OpticalPropertiesSetTests(unittest.TestCase):
         self.stapi.clear_optics()
         self.assertEqual(self.stapi.num_optics(), 0)
 
-class ElementTests(unittest.TestCase):
+class ElementTests(STAPIv2TestCase):
     def setUp(self):
-        self.stapi = STAPIv2(testing=True)
+        super().setUp()
         # set up dummy optical set
         opt_set = dot_h.args_optical_properties_set("dummy".encode(), 1.1, 1.1, 0)
         front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'g'.encode())
@@ -134,6 +158,22 @@ class ElementTests(unittest.TestCase):
             self.stapi.add_element(self.el_args, self.opt_id, self.a_params, [2, float('nan')])
         self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
         self.assertEqual(self.stapi.num_elements(), 1)
+
+    def test_get_element(self):
+        id = self.stapi.add_element(self.el_args, self.opt_id, self.a_params, self.s_params)
+        self.assertEqual(id, 1)
+
+        args, optic_id, a_params, s_params = self.stapi.get_element(id)
+
+        self.assertStructEqual(args, self.el_args)
+        self.assertEqual(optic_id, self.opt_id)
+        self.assertEqual(a_params[0], self.a_params[0])
+        self.assertEqual(s_params[0], 1 / (2 * self.s_params[0]))
+        self.assertEqual(s_params[1], 1 / (2 * self.s_params[1]))
+
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.get_optical_properties_set(id + 1)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.DATA_VALUE_NOT_FOUND)
 
     def test_delete_element(self):
         self.stapi.add_element(self.el_args, self.opt_id, self.a_params, self.s_params)
@@ -257,9 +297,9 @@ class ElementTests(unittest.TestCase):
 
         self.stapi.element_optic(1, self.opt_id)
 
-class SunTests(unittest.TestCase):
+class SunTests(STAPIv2TestCase):
     def setUp(self):
-        self.stapi = STAPIv2(testing=True)
+        super().setUp()
         self.good_angles      = [0, 1, 2]
         self.good_intensities = [0, 1, 2]
         self.bad_intensities  = [0, -1]
@@ -287,6 +327,14 @@ class SunTests(unittest.TestCase):
         self.args_sun.npoints = 3
         self.stapi.add_sun(self.args_sun, self.good_angles, self.good_intensities)
 
+    def test_get_sun(self):
+        sun_args = dot_h.args_sun(0, 608, 303, 1000, .5, 'b'.encode())
+        self.stapi.add_sun(sun_args)
+
+        rt_sun_args, rt_angle, rt_intensity = self.stapi.get_sun()
+        self.assertStructEqual(rt_sun_args, sun_args)
+        # TODO: test userdata
+
     def test_sun_shape(self):
         # test bad shape
         with self.assertWarns(UserWarning):
@@ -311,4 +359,5 @@ class SunTests(unittest.TestCase):
         self.stapi.sun_userdata(3, self.good_angles, self.good_intensities)
 
 if __name__ == '__main__':
+    # print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
     unittest.main()

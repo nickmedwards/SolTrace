@@ -174,6 +174,9 @@ class STAPIv2:
 
         self.__pdll.st_add_optical_properties_set.argtypes = self.__get_argtypes(dot_h.args_st_add_optical_properties_set)
         self.__pdll.st_add_optical_properties_set.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_get_optical_properties_set.argtypes = self.__get_argtypes(dot_h.args_st_get_optical_properties_set)
+        self.__pdll.st_get_optical_properties_set.restype  = dot_h.st_return_t
 
         self.__pdll.st_delete_optic.argtypes = self.__get_argtypes(dot_h.args_st_delete_optic)
         self.__pdll.st_delete_optic.restype  = dot_h.st_return_t
@@ -191,6 +194,9 @@ class STAPIv2:
 
         self.__pdll.st_add_element.argtypes = self.__get_argtypes(dot_h.args_st_add_element)
         self.__pdll.st_add_element.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_get_element.argtypes = self.__get_argtypes(dot_h.args_st_get_element)
+        self.__pdll.st_get_element.restype  = dot_h.st_return_t
 
         self.__pdll.st_delete_element.argtypes = self.__get_argtypes(dot_h.args_st_delete_element)
         self.__pdll.st_delete_element.restype  = dot_h.st_return_t
@@ -232,6 +238,9 @@ class STAPIv2:
 
         self.__pdll.st_add_sun.argtypes = self.__get_argtypes(dot_h.args_st_add_sun)
         self.__pdll.st_add_sun.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_get_sun.argtypes = self.__get_argtypes(dot_h.args_st_get_sun)
+        self.__pdll.st_get_sun.restype  = dot_h.st_return_t
 
         self.__pdll.st_sun_shape.argtypes = self.__get_argtypes(dot_h.args_st_sun_shape)
         self.__pdll.st_sun_shape.restype  = dot_h.st_return_t
@@ -375,6 +384,20 @@ class STAPIv2:
         self.__check_return_code(code)
         return num_optics.value
 
+    def get_optical_properties_set(self, optic_id: int) -> tuple[_STC.args_optical_properties_set, 
+                                                                 _STC.args_optical_properties_face, 
+                                                                 _STC.args_optical_properties_face]:
+        opt_set = dot_h.args_optical_properties_set()
+        front = dot_h.args_optical_properties_face()
+        back = dot_h.args_optical_properties_face()
+        code = self.__pdll.st_get_optical_properties_set(self.__pcxt,
+                                                         optic_id,
+                                                         ctypes.byref(opt_set),
+                                                         ctypes.byref(front),
+                                                         ctypes.byref(back))
+        self.__check_return_code(code)
+        return opt_set, front, back
+
     def delete_optic(self, idx: int) -> None:
         code = self.__pdll.st_delete_optic(self.__pcxt, idx)
         self.__check_return_code(code)
@@ -400,16 +423,33 @@ class STAPIv2:
                     s_params: list[float]) -> int:
         _a_params = (ctypes.c_double * 8)(*a_params)
         _s_params = (ctypes.c_double * 8)(*s_params)
-        pcount = ctypes.c_uint64()
+        pid = ctypes.c_uint64()
         code = self.__pdll.st_add_element(self.__pcxt,
                                           ctypes.byref(args),
                                           opt_id,
                                           _a_params,
                                           _s_params,
-                                          ctypes.byref(pcount))
+                                          ctypes.byref(pid))
         self.__check_return_code(code)
-        return pcount.value
+        return pid.value
 
+    def get_element(self, id: int) -> tuple[_STC.args_element, 
+                                            int, 
+                                            list[float],
+                                            list[float]]:
+            args = dot_h.args_element()
+            optic_id = ctypes.c_int64()
+            a_params = (ctypes.c_double * 8)(*[0 for _ in range(8)])
+            s_params = (ctypes.c_double * 8)(*[0 for _ in range(8)])
+            code = self.__pdll.st_get_element(self.__pcxt,
+                                              id,
+                                              ctypes.byref(args),
+                                              ctypes.byref(optic_id),
+                                              ctypes.pointer(a_params),
+                                              ctypes.pointer(s_params))
+            self.__check_return_code(code)
+            return args, optic_id.value, a_params[:8], s_params[:8]
+    
     def delete_element(self, idx: int) -> None:
         code = self.__pdll.st_delete_element(self.__pcxt, idx)
         self.__check_return_code(code)
@@ -506,8 +546,8 @@ class STAPIv2:
     
     def add_sun(self,
                 args: _STC.args_sun,
-                angle: list[float],
-                intensity: list[float]) -> None:
+                angle: list[float] = [],
+                intensity: list[float] = []) -> None:
         args.npoints = len(angle)
         _angle     = (ctypes.c_double * len(angle))(*angle)
         _intensity = (ctypes.c_double * len(angle))(*intensity)
@@ -516,6 +556,17 @@ class STAPIv2:
                                       _angle,
                                       _intensity)
         self.__check_return_code(code)
+
+    def get_sun(self):
+        args = dot_h.args_sun()
+        angle = ctypes.c_double()
+        intensity = ctypes.c_double()
+        code = self.__pdll.st_get_sun(self.__pcxt,
+                                       ctypes.byref(args),
+                                       ctypes.pointer(angle),
+                                       ctypes.pointer(intensity))
+        self.__check_return_code(code)
+        return args, angle, intensity
 
     def sun_shape(self,
                 shape: str,
