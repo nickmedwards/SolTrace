@@ -122,12 +122,15 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
 
     // check no optics set
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
     st_num_optics(pcxt, &num);
     st_return_t code = check(num, 0);
 
     // test add refractive set
     // expect += st_return_code::SUCCESS
-    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+    code += check(id, 0);
+    st_num_optics(pcxt, &num);
     code += check(num, 1);
 
     // check values were set
@@ -138,10 +141,12 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
     code += check_optical_side(last_opt_set, OpticalSide::Back, DistributionType::GAUSSIAN, .25, .25, .25, .25);
 
     // test add reflective set
-    set.type = 0;
+    set.type = 2;
     set.name = "test2";
     // expect += st_return_code::SUCCESS
-    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+    code += check(id, 1);
+    st_num_optics(pcxt, &num);
     code += check(num, 2);
 
     // check values were set
@@ -154,17 +159,66 @@ st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt)
     // set bad distribution characters for front
     f.error_distribution_type = 'z';
     // expect += st_return_code::INVALID_ARGUMENTS
-    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+    code += check(id, 1);
+    st_num_optics(pcxt, &num);
     code += check(num, 2);
 
     // set bad distribution characters for back
     f.error_distribution_type = 'g';
     b.error_distribution_type = 'z';
     // expect += st_return_code::INVALID_ARGUMENTS
-    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+    code += check(id, 1);
+    st_num_optics(pcxt, &num);
     code += check(num, 2);
 
     // expect == 2 * st_return_code::INVALID_ARGUMENTS
+    return code;
+}
+
+st_return_t call_stapi_v2_get_optic(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    args_optical_properties_set set = {"test1", 1.1, 1.1, 2};
+    args_optical_properties_face f = {.5, .5, .5, .5, 'g'};
+    args_optical_properties_face b = {.25, .25, .25, .25, 'g'};
+    uint_fast64_t id = -1;
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+
+    args_optical_properties_set rt_set;
+    args_optical_properties_face rt_f;
+    args_optical_properties_face rt_b;
+
+    // expect += st_return_code::SUCCESS
+    code += st_get_optical_properties_set(pcxt, id, &rt_set, &rt_f, &rt_b);
+
+    // check set struct
+    code += check(std::string(rt_set.name), std::string(set.name));
+    code += check(rt_set.refraction_index_front, set.refraction_index_front);
+    code += check(rt_set.refraction_index_back, set.refraction_index_back);
+    code += check(rt_set.type, set.type);
+    
+    // check front struct
+    code += check(rt_f.error_distribution_type, f.error_distribution_type);
+    code += check(rt_f.reflectivity, f.reflectivity);
+    code += check(rt_f.transmissivity, f.transmissivity);
+    code += check(rt_f.slope_error, f.slope_error);
+    code += check(rt_f.specularity_error, f.specularity_error);
+    
+    // check back struct
+    code += check(rt_b.error_distribution_type, b.error_distribution_type);
+    code += check(rt_b.reflectivity, b.reflectivity);
+    code += check(rt_b.transmissivity, b.transmissivity);
+    code += check(rt_b.slope_error, b.slope_error);
+    code += check(rt_b.specularity_error, b.specularity_error);
+
+    // expect += st_return_code::DATA_VALUE_NOT_FOUND
+    code += st_get_optical_properties_set(pcxt, id + 1, &rt_set, &rt_f, &rt_b);
+    
     return code;
 }
 
@@ -178,11 +232,14 @@ st_return_t call_stapi_v2_remove_optics(st_context_v2_t pcxt)
 
     // check no optics set
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
     st_num_optics(pcxt, &num);
     st_return_t code = check(num, 0);
 
     // expect += st_return_code::SUCCESS
-    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+    code += check(id, 0);
+    st_num_optics(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -191,7 +248,9 @@ st_return_t call_stapi_v2_remove_optics(st_context_v2_t pcxt)
     code += check(num, 0);
 
     // expect += st_return_code::SUCCESS
-    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &num);
+    code += st_add_optical_properties_set(pcxt, &set, &f, &b, &id);
+    code += check(id, 1);
+    st_num_optics(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -213,6 +272,7 @@ st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt)
 
     // check no elements set
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
     st_num_elements(pcxt, &num);
     st_return_t code = check(num, 0);
 
@@ -223,7 +283,9 @@ st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt)
 
     // test good element
     // expect += st_return_code::SUCCESS
-    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
 
     // test values set
@@ -258,43 +320,123 @@ st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt)
 
     // try bad optical id
     // expect code += st_return_code::DATA_VALUE_NOT_FOUND
-    code += st_add_element(pcxt, &el_args, res.id + 1, a_params, s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id + 1, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
 
     // try bad aperture type
     // expect code += st_return_code::INVALID_ARGUMENTS
     el_args.ap = 'z';
-    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     el_args.ap = 'c';
     
     // try bad surface type
     // expect code += st_return_code::INVALID_ARGUMENTS
     el_args.surf = 'z';
-    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     el_args.surf = 'p';
     
     // try bad aperture params
     // expect code += st_return_code::INVALID_ARGUMENTS
     double bad_a_params[1] = { -2 };
-    code += st_add_element(pcxt, &el_args, res.id, bad_a_params, s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id, bad_a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
 
     // try bad surface params
     // expect code += st_return_code::INVALID_ARGUMENTS
     double bad_s_params[2] = { std::numeric_limits<double>::quiet_NaN(), 2 };
-    code += st_add_element(pcxt, &el_args, res.id, a_params, bad_s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id, a_params, bad_s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
+
+    // test another good element
+    // expect += st_return_code::SUCCESS
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 2);
+    st_num_elements(pcxt, &num);
+    code += check(num, 2);
 
     // expect == st_return_code::DATA_VALUE_NOT_FOUND
     //         + 4 * st_return_code::INVALID_ARGUMENTS 
     return code;
 }
 
+st_return_t call_stapi_v2_get_element(st_context_v2_t pcxt)
+{
+    // set up dummy optical properties
+    OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res = data->add_optical_property_set(opt);
+    uint_fast64_t id = -1;
+
+    // set element to non default values
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p'};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // test good element
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    
+    args_element rt_el_args;
+    int_fast64_t opt_id;
+    double rt_a_params[8] = { 0 };
+    double rt_s_params[8] = { 0 };
+    
+    // expect += st_return_code::SUCCESS
+    code += st_get_element(pcxt, id, &rt_el_args, &opt_id, rt_a_params, rt_s_params);
+
+    // test values set
+    element_ptr el = data->get_element(1);
+    auto sel = std::dynamic_pointer_cast<SingleElement>(el);
+    code += check(rt_el_args.enabled_flag, sel->is_enabled());
+    code += check(rt_el_args.virtual_flag, sel->is_virtual());
+    auto origin = sel->get_origin_ref();
+    auto aim = sel->get_aim_vector_ref();
+    auto zrot = sel->get_zrot();
+    code += check(rt_el_args.x, origin[0]);
+    code += check(rt_el_args.y, origin[1]);
+    code += check(rt_el_args.z, origin[2]);
+    code += check(rt_el_args.ax, aim[0]);
+    code += check(rt_el_args.ay, aim[1]);
+    code += check(rt_el_args.az, aim[2]);
+    code += check(rt_el_args.zrot, zrot);
+
+    code += check(opt_id, res.id);
+
+    aperture_ptr ap = sel->get_aperture();
+    code += check(rt_el_args.ap, aperture_to_char(ap->get_type()));
+    auto circle = std::dynamic_pointer_cast<Circle>(ap);
+    code += check(rt_a_params[0], circle->diameter);
+
+    surface_ptr surf = sel->get_surface();
+    code += check(rt_el_args.surf, surface_to_char(surf->get_type()));
+    auto parabola = std::dynamic_pointer_cast<Parabola>(surf);
+    code += check(rt_s_params[0], parabola->focal_length_x);
+    code += check(rt_s_params[1], parabola->focal_length_y);
+
+    // expect += st_return_code::DATA_VALUE_NOT_FOUND
+    code += st_get_element(pcxt, id + 1, &rt_el_args, &opt_id, rt_a_params, rt_s_params);
+    
+    return code;
+}
+
 st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -306,7 +448,9 @@ st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -315,7 +459,9 @@ st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt)
     code += check(num, 0);
     
     // expect += st_return_code::SUCCESS
-    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    code += st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 2);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
 
     // expect += st_return_code::WARNING_NOT_FOUND
@@ -335,6 +481,8 @@ st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_toggle_element(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -346,7 +494,9 @@ st_return_t call_stapi_v2_toggle_element(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -373,6 +523,8 @@ st_return_t call_stapi_v2_toggle_element(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_element_xyz(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -384,7 +536,9 @@ st_return_t call_stapi_v2_element_xyz(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -407,6 +561,8 @@ st_return_t call_stapi_v2_element_xyz(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_element_aim(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -418,7 +574,9 @@ st_return_t call_stapi_v2_element_aim(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -441,6 +599,8 @@ st_return_t call_stapi_v2_element_aim(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_element_zrot(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -452,7 +612,9 @@ st_return_t call_stapi_v2_element_zrot(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     
     // expect += st_return_code::SUCCESS
@@ -473,6 +635,8 @@ st_return_t call_stapi_v2_element_zrot(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_element_aperture(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -484,7 +648,9 @@ st_return_t call_stapi_v2_element_aperture(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
 
     double params[2] = { 4, 4 };
@@ -513,6 +679,8 @@ st_return_t call_stapi_v2_element_aperture(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_element_surface(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -524,7 +692,9 @@ st_return_t call_stapi_v2_element_surface(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
     
     double params[1] = { 4 };
@@ -551,6 +721,8 @@ st_return_t call_stapi_v2_element_surface(st_context_v2_t pcxt)
 st_return_t call_stapi_v2_element_optic(st_context_v2_t pcxt)
 {
     uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
     // set up dummy optical properties
     OpticalPropertySet opt1(InteractionType::REFLECTION, std::string("dummy"));
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -562,7 +734,9 @@ st_return_t call_stapi_v2_element_optic(st_context_v2_t pcxt)
     double s_params[2] = { 2, 2 };
 
     // expect += st_return_code::SUCCESS
-    st_return_t code = st_add_element(pcxt, &el_args, res1.id, a_params, s_params, &num);
+    st_return_t code = st_add_element(pcxt, &el_args, res1.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
     code += check(num, 1);
 
     // expect += st_return_code::DATA_VALUE_NOT_FOUND
@@ -703,6 +877,52 @@ st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 
     // expect == 3 * st_return_code::WARNING_SUN_SHAPE_IGNORED
     //           + st_return_code::EXCEPTION
+    return code;
+}
+
+st_return_t call_stapi_v2_get_sun(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+
+    args_sun rt_args;
+    double *rt_angle;
+    double *rt_intensity;
+
+    // expect += st_return_code::DATA_VALUE_NOT_FOUND
+    st_return_t code = st_get_sun(pcxt, &rt_args, rt_angle, rt_intensity);
+
+    args_sun args = {0, 608, 303, 1000, 5, 'g'};
+    // expect += st_return_code::SUCCESS
+    code += st_add_sun(pcxt, &args, {}, {});
+    
+    // expect += st_return_code::SUCCESS
+    code += st_get_sun(pcxt, &rt_args, rt_angle, rt_intensity);
+
+    auto sun = cxt->p_data->get_ray_source(0);
+
+    code += check(rt_args.npoints, 0);
+    code += check(rt_args.shape, sunshape_to_char(sun->get_shape()));
+    code += check(rt_args.sigma_halfwidth_csr, sun->get_sigma());
+    auto pos = sun->get_position();
+    code += check(rt_args.x, pos[0]);
+    code += check(rt_args.y, pos[1]);
+    code += check(rt_args.z, pos[2]);
+
+    double angles[3]      = {0, 1, 2};
+    double intensities[3] = {0, 1, 2};
+    args = {3, 608, 303, 1000, 5, 'd'};
+    // expect += st_return_code::SUCCESS
+    code += st_add_sun(pcxt, &args, angles, intensities);
+
+    // expect += st_return_code::SUCCESS
+    code += st_get_sun(pcxt, &rt_args, rt_angle, rt_intensity);
+    code += check(rt_angle[0], angles[0]);
+    code += check(rt_angle[1], angles[1]);
+    code += check(rt_angle[2], angles[2]);
+    code += check(rt_intensity[0], intensities[0]);
+    code += check(rt_intensity[1], intensities[1]);
+    code += check(rt_intensity[2], intensities[2]);
+
     return code;
 }
 

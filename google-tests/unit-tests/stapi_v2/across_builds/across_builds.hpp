@@ -39,10 +39,12 @@ st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt);
 
 // function for optical properties
 st_return_t call_stapi_v2_add_optics(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_get_optic(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_remove_optics(st_context_v2_t pcxt);
 
 // functions for elements
 st_return_t call_stapi_v2_add_elements(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_get_element(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_remove_elements(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_toggle_element(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_element_xyz(st_context_v2_t pcxt);
@@ -57,6 +59,7 @@ st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt);
 
 // sun functions
 st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_get_sun(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_shape(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_xyz(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt);

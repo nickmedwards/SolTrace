@@ -123,7 +123,7 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t 				pcxt,
 												   args_optical_properties_set 	*opt_set,
 												   args_optical_properties_face *front, 
 												   args_optical_properties_face *back, 
-												   uint_fast64_t 				*num_optics)
+												   uint_fast64_t 				*optic_id)
 {
     auto bad_type_char = [](char type) 
     {
@@ -134,9 +134,7 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t 				pcxt,
         || bad_type_char(back->error_distribution_type)) 
         return st_return_code::INVALID_ARGUMENTS;
 
-    InteractionType inter_type = opt_set->type == 0 
-                                 ? InteractionType::REFLECTION
-                                 : InteractionType::REFRACTION;
+    InteractionType inter_type = int_to_interaction(opt_set->type);
     OpticalPropertySet opt(inter_type,
                            opt_set->refraction_index_front,
                            opt_set->refraction_index_back,
@@ -162,7 +160,65 @@ STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t 				pcxt,
 
     if (res.id < 0) return st_return_code::DATA_INSERTION_FAILURE;
 
-    *num_optics = data->get_number_of_optocal_property_sets();
+    *optic_id = res.id;
+    return st_return_code::SUCCESS;
+}
+
+const OpticalPropertySetReference get_optics_ref_by_id(SimulationData *data, int_fast64_t opt_id)
+{
+    optical_set_ptr existing_set;
+    for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
+    {
+        if (it->first == opt_id)
+            existing_set = it->second;
+    }
+
+    if (!existing_set) {
+        OpticalPropertySetReference ref;
+        ref.id = SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED;
+        // ref.optical_property_set = nullptr;
+        return ref;
+    }
+
+    return data->find_or_add_optical_property_set(*existing_set);
+}
+
+STAPI_V2 st_return_t st_get_optical_properties_set(st_context_v2_t 				pcxt, 
+												   uint_fast64_t 				optic_id,
+												   args_optical_properties_set 	*opt_set,
+												   args_optical_properties_face *front, 
+												   args_optical_properties_face *back)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    // check that inputs are good
+    const OpticalPropertySetReference found_set = get_optics_ref_by_id(data, optic_id);
+    if (found_set.id == SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED)
+        return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    auto set = found_set.optical_property_set.lock();
+    if (!set) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    opt_set->name = set->get_name().c_str();
+    set->get_refraction_indices(opt_set->refraction_index_front, 
+                                opt_set->refraction_index_back);
+    opt_set->type = interaction_to_int(set->get_interaction_type());
+
+    front->error_distribution_type = distribution_to_char(
+        set->get_error_distribution(OpticalSide::Front));
+    front->reflectivity = set->get_reflectivity(OpticalSide::Front);
+    front->transmissivity = set->get_transmissivity(OpticalSide::Front);
+    front->slope_error = set->get_slope_error(OpticalSide::Front);
+    front->specularity_error = set->get_specularity_error(OpticalSide::Front);
+    
+    back->error_distribution_type = distribution_to_char(
+        set->get_error_distribution(OpticalSide::Back));
+    back->reflectivity = set->get_reflectivity(OpticalSide::Back);
+    back->transmissivity = set->get_transmissivity(OpticalSide::Back);
+    back->slope_error = set->get_slope_error(OpticalSide::Back);
+    back->specularity_error = set->get_specularity_error(OpticalSide::Back);
+
     return st_return_code::SUCCESS;
 }
 
@@ -194,25 +250,6 @@ STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, uint_fast64_t *num_el
 
     *num_elements = data->get_number_of_elements();
     return st_return_code::SUCCESS;
-}
-
-const OpticalPropertySetReference get_optics_ref_by_id(SimulationData *data, int_fast64_t opt_id)
-{
-    optical_set_ptr existing_set;
-    for (auto it = data->get_optics_iterator(); !data->is_optics_at_end(it); ++it)
-    {
-        if (it->first == opt_id)
-            existing_set = it->second;
-    }
-
-    if (!existing_set) {
-        OpticalPropertySetReference ref;
-        ref.id = SolTrace::Data::OPTICS_ID_TYPES::OPTICS_ID_UNASSIGNED;
-        // ref.optical_property_set = nullptr;
-        return ref;
-    }
-
-    return data->find_or_add_optical_property_set(*existing_set);
 }
 
 int32_t num_aperture_params(ApertureType type)
@@ -295,7 +332,7 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
 									int_fast64_t    opt_id,
 									double 		    a_params[8],
 									double 		    s_params[8],
-									uint_fast64_t   *num_elements)
+									uint_fast64_t   *element_id)
 {
     CONTEXT(pcxt);
     DATA(cxt);
@@ -342,7 +379,156 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
     // TODO in simulation_data.cpp saying add_element will be throwable in the future
     ST_WRAP_CB_TRY_CATCH(data->add_element(el), cxt->p_cb);
 
-    *num_elements = data->get_number_of_elements();
+    *element_id = el->get_id();
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_get_element(st_context_v2_t pcxt,
+									uint_fast64_t   idx,
+									args_element    *args,
+									int_fast64_t    *opt_id,
+									double 		    a_params[8],
+									double 		    s_params[8])
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    element_ptr el = data->get_element(idx);
+    if (!el) return st_return_code::DATA_VALUE_NOT_FOUND;
+
+    args->enabled_flag = el->is_enabled();
+    args->virtual_flag = el->is_virtual();
+    glm::dvec3 pos = el->get_origin_global();
+    args->x = pos[0];
+    args->y = pos[1];
+    args->z = pos[2];
+    glm::dvec3 aim = el->get_aim_vector_global();
+    args->ax = aim[0];
+    args->ay = aim[1];
+    args->az = aim[2];
+    args->zrot = el->get_zrot();
+    aperture_ptr ap_ptr = el->get_aperture();
+    ApertureType ap_type = ap_ptr->get_type();
+    args->ap = aperture_to_char(ap_type);
+    surface_ptr surf_ptr = el->get_surface();
+    SurfaceType surf_type = surf_ptr->get_type();
+    args->surf = surface_to_char(surf_type);
+
+    *opt_id = el->get_optical_property_set_id();
+
+    // reset params
+    for (size_t i = 0; i < 8; ++i)
+    {
+        a_params[i] = 0;
+        s_params[i] = 0;
+    }
+    
+    switch (ap_type)
+    {
+        case ApertureType::ANNULUS:
+        {
+            auto temp = std::dynamic_pointer_cast<Annulus>(ap_ptr);
+            a_params[0] = temp->inner_radius;
+            a_params[1] = temp->outer_radius;
+            a_params[2] = temp->arc_angle;
+            break;
+        }
+        case ApertureType::CIRCLE:
+        {
+            auto temp = std::dynamic_pointer_cast<Circle>(ap_ptr);
+            a_params[0] = temp->diameter;
+            break;
+        }
+        case ApertureType::HEXAGON:
+        {
+            auto temp = std::dynamic_pointer_cast<Hexagon>(ap_ptr);
+            a_params[0] = temp->circumscribe_diameter;
+            break;
+        }
+        case ApertureType::RECTANGLE:
+        {
+            auto temp = std::dynamic_pointer_cast<Rectangle>(ap_ptr);
+            a_params[0] = temp->x_length();
+            a_params[1] = temp->y_length();
+            break;
+        }
+        case ApertureType::EQUILATERAL_TRIANGLE:
+        {
+            auto temp = std::dynamic_pointer_cast<EquilateralTriangle>(ap_ptr);
+            a_params[0] = temp->circumscribe_diameter;
+            break;
+        }
+        
+        // case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
+
+        case ApertureType::IRREGULAR_TRIANGLE:
+        {
+            auto temp = std::dynamic_pointer_cast<IrregularTriangle>(ap_ptr);
+            a_params[0] = temp->x1;
+            a_params[1] = temp->y1;
+            a_params[2] = temp->x2;
+            a_params[3] = temp->y2;
+            a_params[4] = temp->x3;
+            a_params[5] = temp->y3;
+            break;
+        }
+        case ApertureType::IRREGULAR_QUADRILATERAL:
+        {
+            auto temp = std::dynamic_pointer_cast<IrregularQuadrilateral>(ap_ptr);
+            a_params[0] = temp->x1;
+            a_params[1] = temp->y1;
+            a_params[2] = temp->x2;
+            a_params[3] = temp->y2;
+            a_params[4] = temp->x3;
+            a_params[5] = temp->y3;
+            a_params[6] = temp->x4;
+            a_params[7] = temp->y4;
+            break;
+        }
+        default:
+            break;
+    }
+
+    switch (surf_type)
+    {
+        case SurfaceType::CONE:
+        {
+            auto temp = std::dynamic_pointer_cast<Cone>(surf_ptr);
+            s_params[0] = temp->half_angle;
+            break;
+        }
+        case SurfaceType::CYLINDER:
+        {
+            auto temp = std::dynamic_pointer_cast<Cylinder>(surf_ptr);
+            s_params[0] = temp->radius;
+            break;
+        }
+        case SurfaceType::FLAT:
+        {
+            break;
+        }
+        case SurfaceType::PARABOLA:
+        {
+            auto temp = std::dynamic_pointer_cast<Parabola>(surf_ptr);
+            s_params[0] = temp->focal_length_x;
+            s_params[1] = temp->focal_length_y;
+            break;
+        }
+        case SurfaceType::SPHERE:
+        {
+            auto temp = std::dynamic_pointer_cast<Sphere>(surf_ptr);
+            s_params[0] = temp->vertex_curv;
+            break;
+        }
+
+        // case SurfaceType::HYPER:
+        // case SurfaceType::GENERAL_SPENCER_MURTY:
+        // case SurfaceType::TORUS:
+
+        default:
+            break;
+    }
+
     return st_return_code::SUCCESS;
 }
 
@@ -523,7 +709,6 @@ STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
-
 // sun functions
 std::shared_ptr<Sun> get_or_create_sun(SimulationData *data)
 {
@@ -611,6 +796,65 @@ STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt,
     }
 
     return code;
+}
+
+STAPI_V2 st_return_t st_get_sun(st_context_v2_t pcxt,
+								args_sun 		*args,
+								double 		 	*angle,
+								double 		 	*intensity)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    if (!data->get_number_of_ray_sources())
+        return st_return_code::DATA_VALUE_NOT_FOUND;
+ 
+    auto sun = data->get_ray_source(0);
+    glm::dvec3 pos = sun->get_position();
+    
+    args->npoints = 0;
+    args->x = pos[0];
+    args->y = pos[1];
+    args->z = pos[2];
+
+    SunShape shape = sun->get_shape();
+    args->shape = sunshape_to_char(shape);
+
+    switch (shape)
+    {
+        case SunShape::GAUSSIAN:
+        {
+            args->sigma_halfwidth_csr = sun->get_sigma();
+            break;
+        }
+        case SunShape::PILLBOX:
+        {
+            args->sigma_halfwidth_csr = sun->get_half_width();
+            break;
+        }
+        case SunShape::BUIE_CSR:
+        {
+            args->sigma_halfwidth_csr = sun->get_circumsolar_ratio();
+            break;
+        }
+        case SunShape::USER_DEFINED:
+        {
+            std::vector<double> _angle;
+            std::vector<double> _intensity;
+            sun->get_user_data(_angle, _intensity);
+            args->npoints = _angle.size();
+            angle = new double[_angle.size()]{ 0 };
+            intensity = new double[_angle.size()]{ 0 };
+            for (size_t i = 0; i < _angle.size(); ++i)
+            {
+                angle[i] = _angle[i];
+                intensity[i] = _intensity[i];
+            }
+            break;
+        }
+    }
+
+    return st_return_code::SUCCESS;
 }
 
 STAPI_V2 st_return_t st_sun_shape(st_context_v2_t pcxt,

@@ -27,7 +27,17 @@ TEST(optix_data_tests, data_add_optics)
     SETUP_TEST_CXT();
 
     code = call_stapi_v2_add_optics(pcxt);
-    EXPECT_EQ(code, 2 *  st_return_code::INVALID_ARGUMENTS);
+    EXPECT_EQ(code, 2 * st_return_code::INVALID_ARGUMENTS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(optix_data_tests, data_get_optic)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_get_optic(pcxt);
+    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND);
 
     CLEANUP_TEST_CXT();
 }
@@ -49,6 +59,16 @@ TEST(optix_data_tests, data_add_elements)
     code = call_stapi_v2_add_elements(pcxt);
     EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND
                     + 4 * st_return_code::INVALID_ARGUMENTS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(optix_data_tests, data_get_element)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_get_element(pcxt);
+    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND);
 
     CLEANUP_TEST_CXT();
 }
@@ -143,6 +163,17 @@ TEST(optix_data_tests, data_add_sun)
 
     CLEANUP_TEST_CXT();
 }
+
+TEST(optix_data_tests, data_get_sun)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_get_sun(pcxt);
+    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND);
+
+    CLEANUP_TEST_CXT();
+}
+
 
 TEST(optix_data_tests, data_sun_shape)
 {

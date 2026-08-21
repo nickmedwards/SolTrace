@@ -90,9 +90,14 @@ using SolTrace::Data::R2D;
 
 // char to enum functions
 using SolTrace::Data::char_to_distribution;
+using SolTrace::Data::distribution_to_char;
 using SolTrace::Data::char_to_sunshape;
+using SolTrace::Data::sunshape_to_char;
 using SolTrace::Data::char_to_aperture;
+using SolTrace::Data::aperture_to_char;
 using SolTrace::Data::char_to_surface;
+using SolTrace::Data::surface_to_char;
 using SolTrace::Data::int_to_interaction;
+using SolTrace::Data::interaction_to_int;
 
 #endif

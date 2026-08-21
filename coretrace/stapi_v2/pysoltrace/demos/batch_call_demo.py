@@ -16,13 +16,15 @@ if __name__ == '__main__':
                                   ctypes.pointer(dot_h.args_sun(0, 608, 303, 1000, 5, 'g'.encode())),
                                   ctypes.pointer(ctypes.c_double()),
                                   ctypes.pointer(ctypes.c_double()))
+
+    # test = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.OPTIX)
     print(test)
     print(test.payload._fields_[test.type])
     arg_name = test.payload._fields_[test.type][0]
 
     for field in getattr(test.payload, arg_name)._fields_:
         temp_payload_attr = getattr(test.payload, test.payload._fields_[test.type][0])
-        print(getattr(temp_payload_attr, field[0]).value)
+        print(getattr(temp_payload_attr, field[0]))
     # print(dummy_list)
     # print('timing comparison')
     # for _ in range(10):

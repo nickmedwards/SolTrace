@@ -222,13 +222,18 @@ typedef struct args_optical_properties_set {
 	const char *name;
 	double 	   refraction_index_front;
 	double 	   refraction_index_back;
-	st_uint_t  type; // 0 = reflection, otherwise refraction
+	st_uint_t  type; // 2 = refraction, otherwise reflection
 } args_optical_properties_set;
 STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t 				pcxt, 
 												   args_optical_properties_set 	*opt_set,
 												   args_optical_properties_face *front, 
 												   args_optical_properties_face *back, 
-												   uint_fast64_t 				*num_optics);
+												   uint_fast64_t 				*optic_id);
+STAPI_V2 st_return_t st_get_optical_properties_set(st_context_v2_t 				pcxt, 
+												   uint_fast64_t 				optic_id,
+												   args_optical_properties_set 	*opt_set,
+												   args_optical_properties_face *front, 
+												   args_optical_properties_face *back);
 STAPI_V2 st_return_t st_delete_optic(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
 
@@ -252,7 +257,13 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
 									int_fast64_t    opt_id,
 									double 		    a_params[8],
 									double 		    s_params[8],
-									uint_fast64_t   *num_elements);
+									uint_fast64_t   *element_id);
+STAPI_V2 st_return_t st_get_element(st_context_v2_t pcxt,
+									uint_fast64_t   element_id,
+									args_element    *args,
+									int_fast64_t    *opt_id,
+									double 		    a_params[8],
+									double 		    s_params[8]);
 STAPI_V2 st_return_t st_delete_element(st_context_v2_t pcxt, st_uint_t idx);
 STAPI_V2 st_return_t st_clear_elements(st_context_v2_t pcxt);
 // functions to modify elements
@@ -297,6 +308,10 @@ typedef struct args_sun {
 	char shape;
 } args_sun;
 STAPI_V2 st_return_t st_add_sun(st_context_v2_t pcxt,
+								args_sun 		*args,
+								double 		 	*angle,
+								double 		 	*intensity);
+STAPI_V2 st_return_t st_get_sun(st_context_v2_t pcxt,
 								args_sun 		*args,
 								double 		 	*angle,
 								double 		 	*intensity);
@@ -473,7 +488,7 @@ typedef struct args_st_add_optical_properties_set {
 	args_optical_properties_set *opt_set;
 	args_optical_properties_face *front;
 	args_optical_properties_face *back;
-	uint_fast64_t *num_optics;
+	uint_fast64_t *optic_id;
 } args_st_add_optical_properties_set;
 
 typedef struct args_st_delete_optic {
@@ -492,7 +507,7 @@ typedef struct args_st_add_element {
 	int_fast64_t  opt_id;
 	double 		  *a_params;
 	double 		  *s_params;
-	uint_fast64_t *num_elements;
+	uint_fast64_t *element_id;
 } args_st_add_element;
 
 typedef struct args_st_delete_element {
