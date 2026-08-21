@@ -436,7 +436,7 @@ typedef enum st_api_call : st_uint_t {
 	// functions to modify elements
 	CALL_ST_ELEMENT_ENABLED,
 	CALL_ST_ELEMENT_VIRTUAL,
-	CALL_ST_ELEMENT_ZYX,
+	CALL_ST_ELEMENT_XYZ,
 	CALL_ST_ELEMENT_AIM,
 	CALL_ST_ELEMENT_ZROT,
 	CALL_ST_ELEMENT_APERTURE,
@@ -444,6 +444,7 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_ELEMENT_OPTIC,
 	// sun functions
 	CALL_ST_ADD_SUN,
+	CALL_ST_SUN_SHAPE,
 	CALL_ST_SUN_XYZ,
 	CALL_ST_SUN_POSITION,
 	CALL_ST_SUN_USERDATA,
@@ -635,7 +636,6 @@ typedef empty_args args_st_sim_run_v2;
  * itself. This is what a void* in the "arguments" array actually
  * points to. */
 typedef struct st_api_call_args {
-    st_api_call type;
     union {
 		// Simlulation Data Functions
 		// functions for simulation data management thru json strings
@@ -673,6 +673,7 @@ typedef struct st_api_call_args {
 		args_st_sim_run_v2		sim_run_v2_args;
 		// Simlulation Results Functions
     } payload;
+    st_api_call type;
 } st_api_call_args;
 
 /* Generic function pointer type used to store heterogeneous function
@@ -693,11 +694,11 @@ typedef st_return_t (*st_api_func_ptr)(void);
 /* loop, based on the st_api_call tag carried in st_api_call_args.    */
 /* Error codes break the loop, and warning codes are ignored.         */
 /* ------------------------------------------------------------------ */
-STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
-							  void			  **arguments, // TODO: don't need to cast as void because all are st_api_call_args
-							  st_uint_t  	  count,
-                              st_uint_t		  *fail_iteration,
-                              bool 			  verbose);
+STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
+							  void 			   **arguments, // TODO: don't need to cast as void because all are st_api_call_args
+							  st_uint_t  	   count,
+                              st_uint_t		   *fail_iteration,
+                              bool 			   verbose);
 
 #ifdef __cplusplus
 } /* extern "C" */

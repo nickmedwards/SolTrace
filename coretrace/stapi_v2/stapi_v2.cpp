@@ -1277,11 +1277,12 @@ bool is_error(st_return_t code)
     return code > st_return_code::SUCCESS && code < st_return_code::WARNING_FELLBACK_FROM_EMBREE;
 }
 
-STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
-							  void**          arguments, 
-							  st_uint_t       num_calls,
-                              st_uint_t       *fail_iteration,
-                              bool            verbose)
+STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
+							//   st_api_call_args **arguments, 
+							  void             **arguments, 
+							  st_uint_t        num_calls,
+                              st_uint_t        *fail_iteration,
+                              bool             verbose)
 {
     CONTEXT(pcxt);
 
@@ -1293,7 +1294,7 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
         for (int i = 0; i < num_calls; ++i) {
             // cast the generic void* argument pointer back to its real type
             // so we can inspect the tag and reach the right payload
-            st_api_call_args* call_args = (st_api_call_args*)arguments[i];
+            st_api_call_args *call_args = (st_api_call_args*)arguments[i];
             
             if (verbose && cxt->p_cb) 
             {
@@ -1306,15 +1307,151 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
             // to the specific function pointer and signature.
             switch (call_args->type) {
         		// Simlulation Data Functions
+                // functions for simulation data management thru json strings
+                case st_api_call::CALL_ST_READ_INPUT_JSON:
+                {
+                    code = st_read_input_json(pcxt, call_args->payload.read_input_json_args.json);
+                    break;
+                }
+                // functions for simulation data management directly
+	            case st_api_call::CALL_ST_SIM_PARAMS:
+                {
+                    code = st_sim_params(pcxt,
+                                         call_args->payload.sim_params_args.raycount,
+                                         call_args->payload.sim_params_args.maxcount,
+                                         call_args->payload.sim_params_args.include_dynamic_group);
+                    break;
+                }
+	            case st_api_call::CALL_ST_SIM_ERRORS:
+                {
+                    code = st_sim_errors(pcxt,
+                                         call_args->payload.sim_errors_args.include_sun_shape,
+                                         call_args->payload.sim_errors_args.include_optics);
+                    break;
+                }
+                // functions to add/remove optical properties
+                case st_api_call::CALL_ST_NUM_OPTICS:
+                {
+                    code = st_num_optics(pcxt, call_args->payload.num_optics_args.num_optics);
+                    break;
+                }
+                case st_api_call::CALL_ST_ADD_OPTICAL_PROPERIES_SET:
+                {
+                    code = st_add_optical_properties_set(pcxt,
+                                                         call_args->payload.add_optical_properties_set_args.opt_set,
+                                                         call_args->payload.add_optical_properties_set_args.front,
+                                                         call_args->payload.add_optical_properties_set_args.back,
+                                                         call_args->payload.add_optical_properties_set_args.optic_id);
+                    break;
+                }
+                case st_api_call::CALL_ST_DELETE_OPTIC:
+                {
+                    code = st_delete_optic(pcxt, call_args->payload.delete_optic_args.idx);
+                    break;
+                }
+                case st_api_call::CALL_ST_CLEAR_OPTICS:
+                {
+                    code = st_clear_optics(pcxt);
+                    break;
+                }
+                // functions to add/remove elements
+                case st_api_call::CALL_ST_NUM_ELEMENTS:
+                {
+                    code = st_num_elements(pcxt, call_args->payload.num_elements_args.num_elements);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ADD_ELEMENT:
+                {
+                    code = st_add_element(pcxt,
+                                          call_args->payload.add_element_args.args,
+                                          call_args->payload.add_element_args.opt_id,
+                                          call_args->payload.add_element_args.a_params,
+                                          call_args->payload.add_element_args.s_params,
+                                          call_args->payload.add_element_args.element_id);
+                    break;
+                }
+	            case st_api_call::CALL_ST_DELETE_ELEMENT:
+                {
+                    code = st_delete_element(pcxt, call_args->payload.delete_element_args.idx);
+                    break;
+                }
+	            case st_api_call::CALL_ST_CLEAR_ELEMENTS:
+                {
+                    code = st_clear_elements(pcxt);
+                    break;
+                }
+	            // functions to modify elements
+	            case st_api_call::CALL_ST_ELEMENT_ENABLED:
+                {
+                    code = st_element_enabled(pcxt,
+                                              call_args->payload.element_enabled_args.idx,
+                                              call_args->payload.element_enabled_args.enabled_flag);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_VIRTUAL:
+                {
+                    code = st_element_virtual(pcxt,
+                                              call_args->payload.element_virtual_args.idx,
+                                              call_args->payload.element_virtual_args.virtual_flag);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_XYZ:
+                {
+                    code = st_element_xyz(pcxt,
+                                          call_args->payload.element_xyz_args.idx,
+                                          call_args->payload.element_xyz_args.x,
+                                          call_args->payload.element_xyz_args.y,
+                                          call_args->payload.element_xyz_args.z);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_AIM:
+                {
+                    code = st_element_aim(pcxt,
+                                          call_args->payload.element_aim_args.idx,
+                                          call_args->payload.element_aim_args.ax,
+                                          call_args->payload.element_aim_args.ay,
+                                          call_args->payload.element_aim_args.az);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_ZROT:
+                {
+                    code = st_element_zrot(pcxt,
+                                           call_args->payload.element_zrot_args.idx,
+                                           call_args->payload.element_zrot_args.zrot);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_APERTURE:
+                {
+                    code = st_element_aperture(pcxt,
+                                               call_args->payload.element_aperture_args.idx,
+                                               call_args->payload.element_aperture_args.ap,
+                                               call_args->payload.element_aperture_args.params);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_SURFACE:
+                {
+                    code = st_element_surface(pcxt,
+                                              call_args->payload.element_surface_args.idx,
+                                              call_args->payload.element_surface_args.surf,
+                                              call_args->payload.element_surface_args.params);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_OPTIC:
+                {
+                    code = st_element_optic(pcxt,
+                                            call_args->payload.element_optic_args.idx,
+                                            call_args->payload.element_optic_args.opt_id);
+                    break;
+                }
                 // sun functions
-                // case st_api_call::CALL_ST_SUN:
-                // {
-                //     code = st_sun(pcxt,
-                //                   call_args->payload.args_sun.point_source,
-                //                   call_args->payload.args_sun.shape,
-                //                   call_args->payload.args_sun.sigma_halfwidth_csr);
-                //     break;
-                // }
+                case st_api_call::CALL_ST_ADD_SUN:
+                {
+                    code = st_add_sun(pcxt,
+                                      call_args->payload.add_sun_args.args,
+                                      call_args->payload.add_sun_args.angle,
+                                      call_args->payload.add_sun_args.intensity);
+                    break;
+                }
                 case st_api_call::CALL_ST_SUN_XYZ:
                 {
                     code = st_sun_xyz(pcxt,
@@ -1340,18 +1477,6 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t pcxt,
                                            call_args->payload.sun_userdata_args.npoints,
                                            call_args->payload.sun_userdata_args.angle,
                                            call_args->payload.sun_userdata_args.intensity);
-                    break;
-                }
-        		// functions for simulation data management thru json strings
-                case st_api_call::CALL_ST_READ_INPUT_JSON:
-                {
-                    code = st_read_input_json(pcxt, call_args->payload.read_input_json_args.json);
-                    break;
-                }
-                // functions for SolTrace data information
-                case st_api_call::CALL_ST_NUM_ELEMENTS:
-                {
-                    code = st_num_elements(pcxt, call_args->payload.num_elements_args.num_elements);
                     break;
                 }
                 // Simlulation Runner Functions

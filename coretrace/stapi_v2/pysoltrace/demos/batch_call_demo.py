@@ -26,28 +26,28 @@ if __name__ == '__main__':
         temp_payload_attr = getattr(test.payload, test.payload._fields_[test.type][0])
         print(getattr(temp_payload_attr, field[0]))
     # print(dummy_list)
-    # print('timing comparison')
-    # for _ in range(10):
-    #     t.ic('NO batch')
-    #     stapi.read_input_json('../sample.json')
-    #     count = stapi.num_elements()
-    #     stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-    #     stapi.sim_run_v2()
-    #     t.oc('NO batch')
+    print('timing comparison')
+    for _ in range(10):
+        t.ic('NO batch')
+        stapi.read_input_json('../sample.json')
+        count = stapi.num_elements()
+        stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        stapi.sim_run_v2()
+        t.oc('NO batch')
 
-    # for _ in range(10):
-    #     f = open('../sample.json', mode='rb')
-    #     t.ic('batch')
-    #     pcount = ctypes.c_uint64()
-    #     stapi.batch([
-    #         stapi.generate_api_call(dot_h.st_api_call.CALL_ST_READ_INPUT_JSON, f.read()),
-    #         stapi.generate_api_call(dot_h.st_api_call.CALL_ST_NUM_ELEMENTS, ctypes.pointer(pcount)),
-    #         stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.OPTIX),
-    #         stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2),
-    #     ])
-    #     t.oc('batch')
+    for _ in range(10):
+        f = open('../sample.json', mode='rb')
+        t.ic('batch')
+        pcount = ctypes.c_uint64()
+        stapi.batch([
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_READ_INPUT_JSON, f.read()),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_NUM_ELEMENTS, ctypes.pointer(pcount)),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.OPTIX),
+            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2),
+        ], True)
+        t.oc('batch')
 
-    #     f.close()
-    #     count = pcount.value
-    # print(count)
-    # print(t)
+        f.close()
+        count = pcount.value
+    print(count)
+    print(t)

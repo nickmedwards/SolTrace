@@ -287,6 +287,7 @@ class STAPIv2:
         self.__api_func_ptr = ctypes.CFUNCTYPE(dot_h.st_return_t, ctypes.c_void_p)
         self.__pdll.st_batch.argtypes = [ctypes.c_void_p,
                                          ctypes.POINTER(ctypes.c_void_p),
+                                        #  ctypes.POINTER(ctypes.POINTER(dot_h.st_api_call_args)),
                                          ctypes.c_uint,
                                          ctypes.POINTER(ctypes.c_uint),
                                          ctypes.c_bool]
@@ -663,18 +664,20 @@ class STAPIv2:
         args_payload = getattr(rt.payload, args_name)
         # _t.oc('generate set up')
         # print('\ngenerate')
+        # print(call_type)
         # print(args_name)
         # print(args_cls)
         # print(args_payload)
         # print(args_payload._fields_)
-        # print(args)
+        # print(args)z
         # args_payload = args_cls(*args)
         # print(args_payload)
 
         # args_payload.pcxt = self.__pcxt
         # _t.ic('setattr')
-
+        # print(args_name, args)
         for i, arg in enumerate(args):
+            # print(i, arg, args_payload._fields_[i][0])
             setattr(args_payload, 
                     args_payload._fields_[i][0],
                     arg)
@@ -724,6 +727,11 @@ class STAPIv2:
 
         _t.ic('c args set up')
         # TODO: don't need to cast as void because all are st_api_call_args
+        # p_st_api_call_args = ctypes.POINTER(dot_h.st_api_call_args)
+        # args_arr = (p_st_api_call_args * num_calls)(*[
+        #     ctypes.cast(ctypes.byref(c), p_st_api_call_args) for c in api_calls
+        # ])
+        # NOTE: might not actually help that much
         args_arr = (ctypes.c_void_p * num_calls)(*[
             ctypes.cast(ctypes.byref(c), ctypes.c_void_p) for c in api_calls
         ])
@@ -732,7 +740,6 @@ class STAPIv2:
 
         _t.ic('batch call')
         code = self.__pdll.st_batch(self.__pcxt,
-                                    # func_arr,
                                     args_arr,
                                     num_calls,
                                     ctypes.byref(fail_iteration),
@@ -749,33 +756,7 @@ if __name__ == "__main__":
 
     username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
     stapi = STAPIv2()
-
-    print(dot_h.args_optical_properties_set)
-    test_opt_set = dot_h.args_optical_properties_set("test".encode('utf-8'), 1.1, 1.1, 0)
-    test_front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'g'.encode('utf-8'))
-    test_back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, 'g'.encode('utf-8'))
-
-    print(test_opt_set)
-    print(test_front)
-    print(test_back)
-
-    count = stapi.add_optical_properties_set(test_opt_set, test_front, test_back)
-    print(count)
-
-    print(stapi.num_optics())
-
-    count = stapi.add_optical_properties_set(test_opt_set, test_front, test_back)
-    print(count)
-
-    print(stapi.num_optics())
-    print("added elements")
-
-    stapi.delete_optic(2)
-    print(stapi.num_optics())
-    stapi.delete_optic(1)
-    print(stapi.num_optics())
-    stapi.clear_optics()
-    print(stapi.num_optics())
+    print(stapi)
 
     # stapi.read_input_json('./sample.json')
     # count = stapi.num_elements()

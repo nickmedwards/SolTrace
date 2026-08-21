@@ -191,7 +191,7 @@ class _Sun:
 
     def __init__(self,
                  point_source = False,
-                 shape: Literal['g', 'p', 'd'] = 'g',
+                 shape: Literal['g', 'p', 'b', 'd'] = 'g',
                  sigma: float = 4.65,
                  position: Point = None,
                  user_intensity_table: list = []):
