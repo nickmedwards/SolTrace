@@ -80,10 +80,32 @@ STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
 }
 
 // functions for simulation data management directly
+STAPI_V2 st_return_t st_set_simulation_parameters(st_context_v2_t pcxt, args_simulation_parameters *params)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+    
+    data->set_number_of_rays(params->number_of_rays);
+    data->set_max_rays_traced(params->max_number_of_rays);
+
+    data->set_tolerance(params->tolerance);
+    
+    data->set_latitude(params->latitude);
+    data->set_longitude(params->longitude);
+
+    data->set_include_sun_shape_errors(params->include_sun_shape_errors);
+    data->set_include_optical_errors(params->include_optical_errors);
+    data->set_as_power_tower(params->as_power_tower);
+
+    return st_return_code::SUCCESS;
+}
+
 STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
-								   int 			   raycount,
-								   int 			   maxcount,
-								   int 			   include_dynamic_group)
+								   uint_fast64_t   raycount,
+								   uint_fast64_t   maxcount,
+								   bool 		   include_dynamic_group)
 {
 	CONTEXT(pcxt);
     DATA(cxt);
@@ -97,8 +119,8 @@ STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
 }
 
 STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
-								   int 			   include_sun_shape,
-								   int 			   include_optics)
+								   bool			   include_sun_shape,
+								   bool			   include_optics)
 {
 	CONTEXT(pcxt);
     DATA(cxt);
@@ -106,6 +128,55 @@ STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
     SimulationParameters &sim_params = data->get_simulation_parameters();
     data->set_include_sun_shape_errors((bool)include_sun_shape);
     data->set_include_optical_errors((bool)include_optics);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_sim_location(st_context_v2_t pcxt,
+								     double		     latitude,
+								     double		     longitude)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+
+    data->set_latitude(latitude);
+    data->set_longitude(longitude);
+
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_sim_tolerance(st_context_v2_t pcxt, double tolerance)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+
+    data->set_tolerance(tolerance);
+
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_get_simulation_parameters(st_context_v2_t pcxt, args_simulation_parameters *params)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+    
+    params->number_of_rays = data->get_number_of_rays();
+    params->max_number_of_rays = data->get_max_number_rays_traced();
+
+    params->tolerance = data->get_tolerance();
+    
+    params->latitude = data->get_latitude();
+    params->longitude = data->get_longitude();
+
+    params->include_sun_shape_errors = data->get_include_sun_shape_errors();
+    params->include_optical_errors = data->get_include_optical_errors();
+    params->as_power_tower = data->get_as_power_tower();
+
     return st_return_code::SUCCESS;
 }
 
@@ -998,7 +1069,29 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 // Simlulation Runner Functions //
 //////////////////////////////////
 
-/* functions for SolTrace runner management */
+// functions for SolTrace runner management
+STAPI_V2 st_return_t st_get_installed_runners(st_context_v2_t pcxt, uint8_t *installed)
+{
+    *installed = 1 << st_runner_type_t::NATIVE;
+#ifdef STAPI_V2_EMBREE_SUPPORT
+    *installed += 1 << st_runner_type_t::EMBREE;
+#endif
+#ifdef STAPI_V2_OPTIX_SUPPORT
+    *installed += 1 << st_runner_type_t::OPTIX;
+#endif
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_is_runner_installed(st_context_v2_t  pcxt,
+                                            st_runner_type_t type,
+                                            bool             *installed)
+{
+    uint8_t runners;
+    st_get_installed_runners(pcxt, &runners);
+    *installed = runners & (1 << type);
+    return st_return_code::SUCCESS;
+}
+
 STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
 								  st_runner_type_t runner_type, 
 								  uint_fast64_t    num_threads,
@@ -1314,6 +1407,12 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                     break;
                 }
                 // functions for simulation data management directly
+                case st_api_call::CALL_ST_SET_SIMULATION_PARAMETERS:
+                {
+                    code = st_set_simulation_parameters(pcxt,
+                                                        call_args->payload.set_simulation_parameters_args.params);
+                    break;
+                }
 	            case st_api_call::CALL_ST_SIM_PARAMS:
                 {
                     code = st_sim_params(pcxt,
@@ -1327,6 +1426,19 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                     code = st_sim_errors(pcxt,
                                          call_args->payload.sim_errors_args.include_sun_shape,
                                          call_args->payload.sim_errors_args.include_optics);
+                    break;
+                }
+                case st_api_call::CALL_ST_SIM_LOCATION:
+                {
+                    code = st_sim_location(pcxt,
+                                         call_args->payload.sim_location_args.latitude,
+                                         call_args->payload.sim_location_args.longitude);
+                    break;
+                }
+                case st_api_call::CALL_ST_SIM_TOLERANCE:
+                {
+                    code = st_sim_tolerance(pcxt,
+                                            call_args->payload.sim_tolerance_args.tolerance);
                     break;
                 }
                 // functions to add/remove optical properties

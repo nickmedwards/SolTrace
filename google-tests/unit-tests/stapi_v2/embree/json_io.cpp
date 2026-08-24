@@ -2,7 +2,7 @@
 
 #include "across_builds.hpp"
 
-TEST(embree_json_io, read_input_json)
+TEST(json_io, read_input_json)
 {
     SETUP_TEST_CXT();
 

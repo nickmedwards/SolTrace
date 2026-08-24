@@ -156,7 +156,6 @@ typedef enum st_return_code : st_return_t {
 	WARNING_ARGUMENT_IGNORED_BY_RUNNER,
 	WARNING_SUN_SHAPE_IGNORED,
 	WARNING_NOT_FOUND,
-	WARNING_OPTICAL_TABLE_DEPRECATED,
 
 	RETURN_COUNT /* sentinel (not a valid return type) */
 } st_return_code;
@@ -201,13 +200,29 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
 
 // functions for simulation data management directly
+typedef struct args_simulation_parameters {
+	uint_fast64_t number_of_rays;
+	uint_fast64_t max_number_of_rays;
+	double 		  tolerance;
+	double 		  latitude;
+	double 		  longitude;
+	bool 		  include_sun_shape_errors;
+	bool 		  include_optical_errors;
+	bool 		  as_power_tower;
+} args_simulation_parameters;
+STAPI_V2 st_return_t st_set_simulation_parameters(st_context_v2_t pcxt, args_simulation_parameters *params);
 STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
-								   int 			   raycount,
-								   int 			   maxcount,
-								   int 			   include_dynamic_group);
+								   uint_fast64_t   raycount,
+								   uint_fast64_t   maxcount,
+								   bool			   include_dynamic_group);
 STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
-								   int 			   include_sun_shape,
-								   int 			   include_optics);
+								   bool			   include_sun_shape,
+								   bool			   include_optics);
+STAPI_V2 st_return_t st_sim_location(st_context_v2_t pcxt,
+								     double		     latitude,
+								     double		     longitude);
+STAPI_V2 st_return_t st_sim_tolerance(st_context_v2_t pcxt, double tolerance);
+STAPI_V2 st_return_t st_get_simulation_parameters(st_context_v2_t pcxt, args_simulation_parameters *params);
 
 // functions to add/remove/set optical properties
 STAPI_V2 st_return_t st_num_optics(st_context_v2_t pcxt, uint_fast64_t *num_optics);
@@ -339,14 +354,16 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 //////////////////////////////////
 
 // functions for SolTrace runner management
+STAPI_V2 st_return_t st_get_installed_runners(st_context_v2_t pcxt, uint8_t *installed);
+STAPI_V2 st_return_t st_is_runner_installed(st_context_v2_t  pcxt,
+                                            st_runner_type_t type,
+                                            bool             *installed);
 STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
 								  st_runner_type_t runner_type, 
 								  uint_fast64_t    num_threads = DEFAULT_NUM_THREADS,
 								  st_uint_t 	   *seeds = nullptr,
 								  size_t		   num_seeds = 0);
-
 STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt);
-
 STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level);
 
 ///////////////////////////////////
@@ -416,13 +433,17 @@ free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
 ///////////////////////
 
 // enum defining all calls available to batch together
+// NOTE: union payload of st_api_call_args must follow this order
 typedef enum st_api_call : st_uint_t {
 	// Simlulation Data Functions
 	// functions for simulation data management thru json strings
     CALL_ST_READ_INPUT_JSON = 0,
 	// functions for simulation data management directly
+	CALL_ST_SET_SIMULATION_PARAMETERS,
 	CALL_ST_SIM_PARAMS,
 	CALL_ST_SIM_ERRORS,
+	CALL_ST_SIM_LOCATION,
+	CALL_ST_SIM_TOLERANCE,
 	// functions to add/remove optical properties
 	CALL_ST_NUM_OPTICS,
 	CALL_ST_ADD_OPTICAL_PROPERIES_SET,
@@ -469,16 +490,33 @@ typedef struct args_st_read_input_json {
 } args_st_read_input_json;
 
 // functions for simulation data management directly
+typedef struct args_st_set_simulation_parameters {
+	args_simulation_parameters *params;
+} args_st_set_simulation_parameters; 
+
 typedef struct args_st_sim_params {
-	int raycount;
-	int maxcount;
-	int include_dynamic_group;
+	uint_fast64_t raycount;
+	uint_fast64_t maxcount;
+	bool 		  include_dynamic_group;
 } args_st_sim_params;
 
 typedef struct args_st_sim_errors {
-	int include_sun_shape;
-	int include_optics;
+	bool include_sun_shape;
+	bool include_optics;
 } args_st_sim_errors;
+
+typedef struct args_st_sim_location {
+	double latitude;
+	double longitude;
+} args_st_sim_location;
+
+typedef struct args_st_sim_tolerance {
+	double tolerance;
+} args_st_sim_tolerance;
+
+typedef struct args_st_get_simulation_parameters {
+	args_simulation_parameters *params;
+} args_st_get_simulation_parameters; 
 
 // functions to add/remove/set optical properties
 typedef struct args_st_num_optics {
@@ -579,7 +617,6 @@ typedef struct args_st_element_optic {
 	int_fast64_t opt_id;
 } args_st_element_optic;
 
-
 // sun functions
 typedef struct args_st_add_sun {
 	args_sun *args;
@@ -620,6 +657,15 @@ typedef struct args_st_sun_userdata {
 } args_st_sun_userdata;
 
 // Simlulation Runner Functions
+typedef struct args_st_get_installed_runners {
+	uint8_t *installed;
+} args_st_get_installed_runners;
+
+typedef struct args_st_is_runner_installed {
+	st_runner_type_t type;
+	bool             *installed;
+} args_st_is_runner_installed;
+
 typedef struct args_st_sim_setup {
 	st_runner_type_t runner_type;
 	uint_fast64_t    num_threads = DEFAULT_NUM_THREADS;
@@ -636,13 +682,17 @@ typedef empty_args args_st_sim_run_v2;
  * itself. This is what a void* in the "arguments" array actually
  * points to. */
 typedef struct st_api_call_args {
+	// NOTE: this must follow the order of st_api_call enum
     union {
 		// Simlulation Data Functions
 		// functions for simulation data management thru json strings
         args_st_read_input_json read_input_json_args;
 		// functions for simulation data management directly
-		args_st_sim_params sim_params_args;
-		args_st_sim_errors sim_errors_args;
+		args_st_set_simulation_parameters set_simulation_parameters_args;
+		args_st_sim_params 	  			  sim_params_args;
+		args_st_sim_errors 	  			  sim_errors_args;
+		args_st_sim_location  			  sim_location_args;
+		args_st_sim_tolerance 			  sim_tolerance_args;
 		// functions to add/remove/set optical properties
 		args_st_num_optics				   num_optics_args;
 		args_st_add_optical_properties_set add_optical_properties_set_args;

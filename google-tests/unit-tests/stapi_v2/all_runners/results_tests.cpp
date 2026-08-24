@@ -2,7 +2,7 @@
 
 #include "across_builds.hpp"
 
-TEST(all_runners_results_tests, results_write_native)
+TEST(results_tests, results_write_native)
 {
     SETUP_TEST_CXT();
 
@@ -14,7 +14,7 @@ TEST(all_runners_results_tests, results_write_native)
     CLEANUP_TEST_CXT();
 }
 
-TEST(all_runners_results_tests, results_write_embree)
+TEST(results_tests, results_write_embree)
 {
     SETUP_TEST_CXT();
 
@@ -26,7 +26,7 @@ TEST(all_runners_results_tests, results_write_embree)
     CLEANUP_TEST_CXT();
 }
 
-TEST(all_runners_results_tests, results_write_optix)
+TEST(results_tests, results_write_optix)
 {
     SETUP_TEST_CXT();
 

@@ -2,7 +2,7 @@
 
 #include "across_builds.hpp"
 
-TEST(optix_results_tests, results_write_native)
+TEST(results_tests, results_write_native)
 {
     SETUP_TEST_CXT();
 
@@ -14,7 +14,7 @@ TEST(optix_results_tests, results_write_native)
     CLEANUP_TEST_CXT();
 }
 
-TEST(optix_results_tests, results_write_optix)
+TEST(results_tests, results_write_optix)
 {
     SETUP_TEST_CXT();
 

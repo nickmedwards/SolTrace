@@ -69,6 +69,27 @@ st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt)
 }
 
 // functions for simulation data management directly
+st_return_t call_stapi_v2_set_simulation_parameters(st_context_v2_t pcxt)
+{
+    args_simulation_parameters _params = { 1, 100, .1, 35.962278, -106.5122622, true, true, false };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_set_simulation_parameters(pcxt, &_params);
+
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
+    code += check(params.number_of_rays,           _params.number_of_rays);
+    code += check(params.max_number_of_rays,       _params.max_number_of_rays);
+    code += check(params.tolerance,                _params.tolerance);
+    code += check(params.latitude,                 _params.latitude);
+    code += check(params.longitude,                _params.longitude);
+    code += check(params.include_sun_shape_errors, _params.include_sun_shape_errors);
+    code += check(params.include_optical_errors,   _params.include_optical_errors);
+    code += check(params.as_power_tower,           _params.as_power_tower);
+
+    return code;
+}
+
 st_return_t call_stapi_v2_sim_params(st_context_v2_t pcxt)
 {
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);
@@ -100,6 +121,58 @@ st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt)
 
     code += check(params.include_sun_shape_errors, true);
     code += check(params.include_optical_errors, true);
+    return code;
+}
+
+st_return_t call_stapi_v2_sim_location(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
+
+    // test that initialized with defaults
+    st_return_t code = check(params.latitude, 0);
+    code += check(params.longitude, 0);
+
+    st_sim_location(pcxt, 35.962278, -106.5122622);
+
+    code += check(params.latitude, 35.962278);
+    code += check(params.longitude, -106.5122622);
+    return code;
+}
+
+st_return_t call_stapi_v2_sim_tolerance(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
+
+    // test that initialized with defaults
+    st_return_t code = check(params.tolerance, 0);
+
+    st_sim_tolerance(pcxt, .1);
+
+    code += check(params.tolerance, .1);
+    return code;
+}
+
+st_return_t call_stapi_v2_get_simulation_parameters(st_context_v2_t pcxt)
+{
+    args_simulation_parameters _params = { 1, 100, .1, 35.962278, -106.5122622, true, true, false };
+
+    // expect += st_return_code::SUCCESS
+    st_return_t code = st_set_simulation_parameters(pcxt, &_params);
+    
+    args_simulation_parameters rt_params;
+    code += st_get_simulation_parameters(pcxt, &rt_params);
+    
+    code += check(rt_params.number_of_rays,           _params.number_of_rays);
+    code += check(rt_params.max_number_of_rays,       _params.max_number_of_rays);
+    code += check(rt_params.tolerance,                _params.tolerance);
+    code += check(rt_params.latitude,                 _params.latitude);
+    code += check(rt_params.longitude,                _params.longitude);
+    code += check(rt_params.include_sun_shape_errors, _params.include_sun_shape_errors);
+    code += check(rt_params.include_optical_errors,   _params.include_optical_errors);
+    code += check(rt_params.as_power_tower,           _params.as_power_tower);
+
     return code;
 }
 

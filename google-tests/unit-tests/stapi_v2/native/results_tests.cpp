@@ -2,7 +2,7 @@
 
 #include "across_builds.hpp"
 
-TEST(native_results_tests, results_write_native)
+TEST(results_tests, results_write_native)
 {
     SETUP_TEST_CXT();
 

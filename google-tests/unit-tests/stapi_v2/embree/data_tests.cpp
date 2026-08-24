@@ -2,7 +2,17 @@
 
 #include "across_builds.hpp"
 
-TEST(embree_data_tests, data_params)
+TEST(data_tests, data_set_simulation_params)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_set_simulation_parameters(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_params)
 {
     SETUP_TEST_CXT();
 
@@ -12,7 +22,7 @@ TEST(embree_data_tests, data_params)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_errors)
+TEST(data_tests, data_errors)
 {
     SETUP_TEST_CXT();
 
@@ -22,7 +32,67 @@ TEST(embree_data_tests, data_errors)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_add_elements)
+TEST(data_tests, data_location)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_sim_location(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_tolerance)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_sim_tolerance(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_get_simulation_params)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_get_simulation_parameters(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_add_optics)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_add_optics(pcxt);
+    EXPECT_EQ(code, 2 * st_return_code::INVALID_ARGUMENTS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_get_optic)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_get_optic(pcxt);
+    EXPECT_EQ(code, st_return_code::DATA_VALUE_NOT_FOUND);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_remove_optics)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_remove_optics(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_add_elements)
 {
     SETUP_TEST_CXT();
 
@@ -33,7 +103,7 @@ TEST(embree_data_tests, data_add_elements)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_remove_elements)
+TEST(data_tests, data_remove_elements)
 {
     SETUP_TEST_CXT();
 
@@ -43,7 +113,7 @@ TEST(embree_data_tests, data_remove_elements)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_toggle_element)
+TEST(data_tests, data_toggle_element)
 {
     SETUP_TEST_CXT();
 
@@ -53,7 +123,7 @@ TEST(embree_data_tests, data_toggle_element)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_element_xyz)
+TEST(data_tests, data_element_xyz)
 {
     SETUP_TEST_CXT();
 
@@ -63,7 +133,7 @@ TEST(embree_data_tests, data_element_xyz)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_element_aim)
+TEST(data_tests, data_element_aim)
 {
     SETUP_TEST_CXT();
 
@@ -73,7 +143,7 @@ TEST(embree_data_tests, data_element_aim)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_element_zrot)
+TEST(data_tests, data_element_zrot)
 {
     SETUP_TEST_CXT();
 
@@ -83,7 +153,7 @@ TEST(embree_data_tests, data_element_zrot)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_element_aperture)
+TEST(data_tests, data_element_aperture)
 {
     SETUP_TEST_CXT();
 
@@ -93,7 +163,7 @@ TEST(embree_data_tests, data_element_aperture)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_element_surface)
+TEST(data_tests, data_element_surface)
 {
     SETUP_TEST_CXT();
 
@@ -103,7 +173,7 @@ TEST(embree_data_tests, data_element_surface)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_element_optic)
+TEST(data_tests, data_element_optic)
 {
     SETUP_TEST_CXT();
 
@@ -113,7 +183,7 @@ TEST(embree_data_tests, data_element_optic)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_add_sun)
+TEST(data_tests, data_add_sun)
 {
     SETUP_TEST_CXT();
 
@@ -124,7 +194,7 @@ TEST(embree_data_tests, data_add_sun)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_sun_shape)
+TEST(data_tests, data_sun_shape)
 {
     SETUP_TEST_CXT();
 
@@ -134,7 +204,7 @@ TEST(embree_data_tests, data_sun_shape)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_sun_xyz)
+TEST(data_tests, data_sun_xyz)
 {
     SETUP_TEST_CXT();
 
@@ -144,7 +214,7 @@ TEST(embree_data_tests, data_sun_xyz)
     CLEANUP_TEST_CXT();
 }
 
-TEST(embree_data_tests, data_sun_userdata)
+TEST(data_tests, data_sun_userdata)
 {
     SETUP_TEST_CXT();
 

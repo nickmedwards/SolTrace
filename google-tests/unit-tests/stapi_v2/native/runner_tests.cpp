@@ -2,7 +2,39 @@
 
 #include "across_builds.hpp"
 
-TEST(native_runner_tests, runner_setup)
+TEST(runner_tests, runners_installed)
+{
+    SETUP_TEST_CXT();
+
+    uint8_t installed;
+    code = st_get_installed_runners(pcxt, &installed);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+    EXPECT_EQ(installed, 1 << st_runner_type_t::NATIVE);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(runner_tests, runners_is_installed)
+{
+    SETUP_TEST_CXT();
+
+    bool installed;
+    code = st_is_runner_installed(pcxt, st_runner_type_t::NATIVE, &installed);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+    EXPECT_EQ(installed, true);
+    
+    code = st_is_runner_installed(pcxt, st_runner_type_t::EMBREE, &installed);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+    EXPECT_EQ(installed, false);
+    
+    code = st_is_runner_installed(pcxt, st_runner_type_t::OPTIX, &installed);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+    EXPECT_EQ(installed, false);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(runner_tests, runner_setup)
 {
     SETUP_TEST_CXT();
 
@@ -15,7 +47,7 @@ TEST(native_runner_tests, runner_setup)
     CLEANUP_TEST_CXT();
 }
 
-TEST(native_runner_tests, runner_run_native)
+TEST(runner_tests, runner_run_native)
 {
     SETUP_TEST_CXT();
 
@@ -27,7 +59,7 @@ TEST(native_runner_tests, runner_run_native)
     CLEANUP_TEST_CXT();
 }
 
-TEST(native_runner_tests, runner_not_found)
+TEST(runner_tests, runner_not_found)
 {
     SETUP_TEST_CXT();
 
@@ -38,7 +70,7 @@ TEST(native_runner_tests, runner_not_found)
 }
 
 
-TEST(native_runner_tests, runner_report_native)
+TEST(runner_tests, runner_report_native)
 {
     SETUP_TEST_CXT();
 

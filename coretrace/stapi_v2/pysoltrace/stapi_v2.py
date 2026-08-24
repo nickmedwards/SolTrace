@@ -99,13 +99,15 @@ class STAPIv2:
 
     def __repr__(self):
         rt = f'STAPIv2 Object at ({id(self.__pdll):#x})'
-        rt += '\n' + '-' * len(rt)
+        rt += '\n' + '-' * len(rt) + '\n'
+
+        runners = self.get_installed_runners()
+        rt += f'Installed Runners: ' + ', '.join([k for k, v in runners.items() if v]) + '\n'
         max_key_len = max(len(str(k)) for k in self.__pdll.__dict__.keys())
         for k, v in self.__pdll.__dict__.items():
             rt += f'\n{str(k):<{max_key_len}}: {v}'
             if (isinstance(v, ctypes._CFuncPtr)):
-                # str(f"{id(v):#x}")
-                rt += f'\n{" " * max_key_len}: {v.argtypes}'
+                rt += f'\n{" " * max_key_len}: {[_STC._CTYPES_RE.search(str(arg)).group() for arg in v.argtypes]}'
         return rt
 
     ##########################################
@@ -159,11 +161,23 @@ class STAPIv2:
         # functions for simulation data management directly #
         #####################################################
 
+        self.__pdll.st_set_simulation_parameters.argtypes = self.__get_argtypes(dot_h.args_st_set_simulation_parameters)
+        self.__pdll.st_set_simulation_parameters.restype  = dot_h.st_return_t
+
         self.__pdll.st_sim_params.argtypes = self.__get_argtypes(dot_h.args_st_sim_params)
         self.__pdll.st_sim_params.restype  = dot_h.st_return_t
 
         self.__pdll.st_sim_errors.argtypes = self.__get_argtypes(dot_h.args_st_sim_errors)
         self.__pdll.st_sim_errors.restype  = dot_h.st_return_t
+
+        self.__pdll.st_sim_location.argtypes = self.__get_argtypes(dot_h.args_st_sim_location)
+        self.__pdll.st_sim_location.restype  = dot_h.st_return_t
+
+        self.__pdll.st_sim_tolerance.argtypes = self.__get_argtypes(dot_h.args_st_sim_tolerance)
+        self.__pdll.st_sim_tolerance.restype  = dot_h.st_return_t
+
+        self.__pdll.st_get_simulation_parameters.argtypes = self.__get_argtypes(dot_h.args_st_get_simulation_parameters)
+        self.__pdll.st_get_simulation_parameters.restype  = dot_h.st_return_t
         
         ##################################################
         # functions to add/remove/set optical properties #
@@ -261,6 +275,12 @@ class STAPIv2:
         # functions for SolTrace runner management #
         ############################################
 
+        self.__pdll.st_get_installed_runners.argtypes = self.__get_argtypes(dot_h.args_st_get_installed_runners)
+        self.__pdll.st_get_installed_runners.restype  = dot_h.st_return_t
+
+        self.__pdll.st_is_runner_installed.argtypes = self.__get_argtypes(dot_h.args_st_is_runner_installed)
+        self.__pdll.st_is_runner_installed.restype  = dot_h.st_return_t
+
         self.__pdll.st_sim_setup.argtypes = self.__get_argtypes(dot_h.args_st_sim_setup)
         self.__pdll.st_sim_setup.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_SIM_SETUP] = self.__pdll.st_sim_setup
@@ -294,6 +314,7 @@ class STAPIv2:
         self.__pdll.st_batch.restype  = dot_h.st_return_t
 
     def __free(self):
+        # print(self.__pdll)
         code = self.__pdll.st_free_context(self.__pcxt)
         if not self.__testing:
             sys.stdout.write(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})\n')
@@ -303,10 +324,12 @@ class STAPIv2:
             raise STAPIv2Exception(code, 
                                    _STC.ST_RETURN_CODE_NAME[code],
                                    _STC.ST_RETURN_CODE_ERROR_MSG[code] if code in _STC.ST_RETURN_CODE_ERROR_MSG else '')
-        elif code >= dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:
+        elif code >= dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE and code < dot_h.st_return_code.RETURN_COUNT:
             STAPIv2Warning(code,
                            _STC.ST_RETURN_CODE_NAME[code],
                            _STC.ST_RETURN_CODE_WARNING_MSG[code] if code in _STC.ST_RETURN_CODE_WARNING_MSG else '')
+        elif code >= dot_h.st_return_code.RETURN_COUNT:
+            raise STAPIv2Exception(code,  'UNKNOWN', 'Unknown return code received.')
 
     @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
     def __message_cb(loc, msg):
@@ -318,7 +341,7 @@ class STAPIv2:
         # sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
         return 0
     
-    def sneak(self): return self.__pdll, self.__pcxt
+    def sneak(self): return self.__pdll, self.__pcxt, self.__check_return_code
 
     """Python handles for st_ functions"""
 
@@ -344,10 +367,14 @@ class STAPIv2:
     # functions for simulation data management directly #
     #####################################################
 
+    def set_simulation_parameters(self, params: _STC.args_simulation_parameters) -> None:
+        code = self.__pdll.st_set_simulation_parameters(self.__pcxt, ctypes.byref(params))
+        self.__check_return_code(code)
+
     def sim_params(self,
                    raycount: int,
                    maxcount: int,
-                   include_dynamic_group: int) -> None:
+                   include_dynamic_group: bool) -> None:
         code = self.__pdll.st_sim_params(self.__pcxt, 
                                          raycount,
                                          maxcount,
@@ -355,12 +382,30 @@ class STAPIv2:
         self.__check_return_code(code)
 
     def sim_errors(self,
-                   include_sun_shape: int,
-                   include_optics: int) -> None:
-        code = self.__pdll.st_delete_optic(self.__pcxt,
-                                           include_sun_shape,
-                                           include_optics)
+                   include_sun_shape: bool,
+                   include_optics: bool) -> None:
+        code = self.__pdll.st_sim_errors(self.__pcxt,
+                                         include_sun_shape,
+                                         include_optics)
         self.__check_return_code(code)
+
+    def sim_location(self,
+                        latitude: float,
+                        longitude: float) -> None:
+        code = self.__pdll.st_sim_location(self.__pcxt,
+                                           latitude,
+                                           longitude)
+        self.__check_return_code(code)
+
+    def sim_tolerance(self, tolerance: float) -> None:
+        code = self.__pdll.st_sim_tolerance(self.__pcxt, tolerance)
+        self.__check_return_code(code)
+
+    def get_simulation_parameters(self) -> _STC.args_simulation_parameters:
+        params = dot_h.args_simulation_parameters()
+        code = self.__pdll.st_get_simulation_parameters(self.__pcxt, ctypes.byref(params))
+        self.__check_return_code(code)
+        return params
 
     ##################################################
     # functions to add/remove/set optical properties #
@@ -619,6 +664,25 @@ class STAPIv2:
     # functions for SolTrace runner management #
     ############################################
 
+    def get_installed_runners(self) -> dict[str, bool]:
+        installed = ctypes.c_ubyte()
+        code = self.__pdll.st_get_installed_runners(self.__pcxt,
+                                                    ctypes.byref(installed))
+        self.__check_return_code(code)
+        return {
+            dot_h.st_runner_type_t.NATIVE.name: installed.value & (1 << dot_h.st_runner_type_t.NATIVE.value),
+            dot_h.st_runner_type_t.EMBREE.name: installed.value & (1 << dot_h.st_runner_type_t.EMBREE.value),
+            dot_h.st_runner_type_t.OPTIX.name: installed.value & (1 << dot_h.st_runner_type_t.OPTIX.value),
+        }
+
+    def is_runner_installed(self, runner: int) -> bool:
+        installed = ctypes.c_bool()
+        code = self.__pdll.st_is_runner_installed(self.__pcxt,
+                                                  runner,
+                                                  ctypes.byref(installed))
+        self.__check_return_code(code)
+        return installed.value
+
     def sim_setup(self, 
                   runner_type: Literal[0, 1, 2], 
                   num_threads: int = 8, 
@@ -641,7 +705,7 @@ class STAPIv2:
         self.__check_return_code(code)
 
     #############################################
-    # functions for SolTrace resutls management #
+    # functions for SolTrace results management #
     #############################################
 
     def write_results_csv(self, filename: str, precision: int = 12) -> None:
@@ -712,7 +776,7 @@ class STAPIv2:
     
     # functions for SolTrace runner management
 
-    # functions for SolTrace resutls management
+    # functions for SolTrace results management
 
 
     # TODO: include version that calls functions from python for debugging STAPIv2.generate_api_call
@@ -757,6 +821,9 @@ if __name__ == "__main__":
     username = os.environ.get('USERNAME') # f'C:\\Users\\{username}\\build-soltrace\\soltrace\\coretrace\\stapi_v2\\RelWithDebInfo\\stapi_v2.dll'
     stapi = STAPIv2()
     print(stapi)
+
+    for i in range(dot_h.st_runner_type_t.RUNNER_COUNT):
+        print(i, stapi.is_runner_installed(i))
 
     # stapi.read_input_json('./sample.json')
     # count = stapi.num_elements()

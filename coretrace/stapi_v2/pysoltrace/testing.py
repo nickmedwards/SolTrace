@@ -4,11 +4,11 @@ import orjson
 
 try:
     from chedder import dot_h, found_in
-    # import soltrace_constants as _STC
+    import soltrace_constants as _STC
     from stapi_v2 import STAPIv2, STAPIv2Exception
 except ImportError:
     from .chedder import dot_h, found_in
-    # from . import soltrace_constants as _STC
+    from . import soltrace_constants as _STC
     from .stapi_v2 import STAPIv2, STAPIv2Exception
 
 class STAPIv2TestCase(unittest.TestCase):
@@ -20,6 +20,83 @@ class STAPIv2TestCase(unittest.TestCase):
         for field in value._fields_:
             self.assertEqual(getattr(value, field[0]),
                              getattr(check, field[0]))
+
+class ConstantsTests(STAPIv2TestCase):
+    def test_error_code_msg(self):
+        self.assertIn(dot_h.st_return_code.FAILURE, _STC.ST_RETURN_CODE_ERROR_MSG)
+        self.assertEqual(len(_STC.ST_RETURN_CODE_ERROR_MSG[dot_h.st_return_code.FAILURE]), 0)
+
+        for i in range(dot_h.st_return_code.CANCEL, 
+                       dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE):
+            self.assertIn(i, _STC.ST_RETURN_CODE_ERROR_MSG)
+            self.assertGreater(len(_STC.ST_RETURN_CODE_ERROR_MSG[i]), 0)
+
+        _, _, check_return_code = self.stapi.sneak()
+        for i in range(dot_h.st_return_code.CANCEL, 
+                       dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE):
+            with self.assertRaises(STAPIv2Exception) as ex:
+                check_return_code(i)
+            self.assertEqual(ex.exception.code, i)
+
+        for i in range(dot_h.st_return_code.RETURN_COUNT, 
+                       dot_h.st_return_code.RETURN_COUNT + 2):
+            with self.assertRaises(STAPIv2Exception) as ex:
+                check_return_code(i)
+            self.assertEqual(ex.exception.code, i)
+
+    def test_warning_code_msg(self):
+        for i in range(dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE, 
+                       dot_h.st_return_code.RETURN_COUNT):
+            self.assertIn(i, _STC.ST_RETURN_CODE_WARNING_MSG)
+            self.assertGreater(len(_STC.ST_RETURN_CODE_WARNING_MSG[i]), 0)
+
+        _, _, check_return_code = self.stapi.sneak()
+        for i in range(dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE, 
+                       dot_h.st_return_code.RETURN_COUNT):
+            with self.assertWarns(UserWarning):
+                check_return_code(i)
+
+class SimulationParametersTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+        self.params = dot_h.args_simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
+
+    def test_set_simulation_parameters(self):
+        self.stapi.set_simulation_parameters(self.params)
+
+    def test_get_simulation_parameters(self):
+        self.stapi.set_simulation_parameters(self.params)
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertStructEqual(rt_params, self.params)
+
+    def test_sim_params(self):
+        self.stapi.sim_params(1, 100, True)
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'number_of_rays'), 1)
+        self.assertEqual(getattr(rt_params, 'max_number_of_rays'), 100)
+        self.assertEqual(getattr(rt_params, 'as_power_tower'), True)
+
+    def test_sim_errors(self):
+        self.stapi.sim_errors(True, True)
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'include_sun_shape_errors'), True)
+        self.assertEqual(getattr(rt_params, 'include_optical_errors'), True)
+
+    def test_sim_location(self):
+        self.stapi.sim_location(35.962278, -106.5122622)
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'latitude'), 35.962278)
+        self.assertEqual(getattr(rt_params, 'longitude'), -106.5122622)
+
+    def test_sim_tolerance(self):
+        self.stapi.sim_tolerance(.1)
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'tolerance'), .1)
 
 class JSONTests(STAPIv2TestCase):
     def test_read_from_filename(self):
@@ -355,10 +432,125 @@ class SunTests(STAPIv2TestCase):
 
         self.stapi.sun_userdata(3, self.good_angles, self.good_intensities)
 
+class RunnerTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+        self.stapi.read_input_json('./sample.json')
+
+    def test_set_up_native(self):
+        # if this is called after sim_setup call, leads to OS error 
+        # bc I think dll handle gets cleaned up before call completes
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE, 8, [608, 303])
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE)
+
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+
+    def test_set_up_embree(self):
+        if self.stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE):
+            self.stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        else:
+            with self.assertWarns(UserWarning):
+                self.stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        
+    def test_set_up_optix(self):
+        if self.stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX):
+            self.stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+
+            with self.assertWarns(UserWarning):
+                self.stapi.sim_setup(dot_h.st_runner_type_t.OPTIX, 1)
+        else:
+            with self.assertWarns(UserWarning):
+                self.stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+
+    def test_run_native(self):
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_run_v2()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_FOUND)
+
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.sim_run_v2()
+
+    def test_run_embree(self):
+        if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE):
+            return unittest.skip('Embree runner not installed, skip testing running EmbreeRunner.')
+        
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_run_v2()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_FOUND)
+
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        self.stapi.sim_run_v2()
+        
+    def test_run_optix(self):
+        if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX):
+            return unittest.skip('Optix runner not installed, skip testing running OptixRunner.')
+        
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_run_v2()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_FOUND)
+
+        self.stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        self.stapi.sim_run_v2()
+
+    def test_report_native(self):
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_report()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_FOUND)
+
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_report()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_READY)
+
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+
+    def test_report_embree(self):
+        if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE):
+            return unittest.skip('Embree runner not installed, skip testing running EmbreeRunner.')
+        
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_report()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_FOUND)
+
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_report()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_READY)
+
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+        
+    def test_report_optix(self):
+        if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX):
+            return unittest.skip('Optix runner not installed, skip testing running OptixRunner.')
+        
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_report()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_FOUND)
+
+        self.stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.sim_report()
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.RUNNER_NOT_READY)
+
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+        
 class BatchTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()
         # set up dummy values
+        self.sim_params = dot_h.args_simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
+
         self.args_sun_buie = dot_h.args_sun(0, 2, 2, 2, .5, 'b'.encode())
         self.args_sun_user = dot_h.args_sun(3, 608, 303, 1000, 5, ' '.encode())
         self.good_angles      = [0, 1, 2]
@@ -386,6 +578,7 @@ class BatchTests(STAPIv2TestCase):
         f.close()
         self.assertEqual(pcount.value, 126)
 
+    # functions for simulation data management thru json strings
     def test_call_st_read_input_json(self):
         f = open('./sample.json', mode='rb')
         self.stapi.batch([
@@ -394,12 +587,52 @@ class BatchTests(STAPIv2TestCase):
         f.close()
         self.assertEqual(self.stapi.num_elements(), 126)
 
-    # TODO: after simulation parameters getter function
-    # def test_call_st_sim_params(self):
-    #     pass
-    # def test_call_st_sim_errors(self):
-    #     pass
+    # functions for simulation data management directly
+    def test_call_st_set_simulation_parameters(self):
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SET_SIMULATION_PARAMETERS, ctypes.pointer(self.sim_params))
+        ])
 
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertStructEqual(rt_params, self.sim_params)
+
+    def test_call_st_sim_params(self):
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_PARAMS, 1, 100, True)
+        ])
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'number_of_rays'), 1)
+        self.assertEqual(getattr(rt_params, 'max_number_of_rays'), 100)
+        self.assertEqual(getattr(rt_params, 'as_power_tower'), True)
+
+    def test_call_st_sim_errors(self):
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_ERRORS, True, True)
+        ])
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'include_sun_shape_errors'), True)
+        self.assertEqual(getattr(rt_params, 'include_optical_errors'), True)
+
+    def test_call_st_sim_location(self):
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_LOCATION, 35.962278, -106.5122622)
+        ])
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'latitude'), 35.962278)
+        self.assertEqual(getattr(rt_params, 'longitude'), -106.5122622)
+
+    def test_call_st_sim_tolerance(self):
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_TOLERANCE, .1)
+        ])
+
+        rt_params = self.stapi.get_simulation_parameters()
+        self.assertEqual(getattr(rt_params, 'tolerance'), .1)
+
+    # functions to add/remove/set optical properties
     def test_call_st_num_optics(self):
         pcount = ctypes.c_uint64()
         self.stapi.batch([
@@ -449,6 +682,7 @@ class BatchTests(STAPIv2TestCase):
 
         self.assertEqual(self.stapi.num_optics(), 0)
 
+    # functions to add/remove elements
     def test_call_st_num_elements(self):
         pcount = ctypes.c_uint64()
         self.stapi.batch([
@@ -506,6 +740,7 @@ class BatchTests(STAPIv2TestCase):
 
         self.assertEqual(self.stapi.num_elements(), 0)
 
+    # functions to modify elements
     def test_call_st_element_enabled(self):
         self.stapi.add_optical_properties_set(self.opt_set, self.front, self.back)
         id = self.stapi.add_element(self.el_args, self.opt_id, self.a_params, self.s_params)
@@ -617,6 +852,7 @@ class BatchTests(STAPIv2TestCase):
         args, optic_id, a_params, s_params = self.stapi.get_element(id)
         self.assertEqual(optic_id, other_id)
 
+    # sun functions
     def test_call_st_add_sun(self):
         _angle = (ctypes.c_double * len(self.good_angles))(*self.good_angles)
         _intensity = (ctypes.c_double * len(self.good_intensities))(*self.good_intensities)
@@ -660,12 +896,28 @@ class BatchTests(STAPIv2TestCase):
         
     # def test_call_st_sun_position(self):
     #     pass
-    # def test_call_st_sun_userdata(self):
-    #     pass
+    
+    def test_call_st_sun_userdata(self):
+        self.stapi.add_sun(self.args_sun_buie)
+
+        _angle = (ctypes.c_double * len(self.good_angles))(*self.good_angles)
+        _intensity = (ctypes.c_double * len(self.good_intensities))(*self.good_intensities)
+
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_USERDATA, 3, _angle, _intensity)
+        ])
+
+        rt_sun_args, *_ = self.stapi.get_sun()
+        self.assertEqual(getattr(rt_sun_args, 'npoints'), 3)
+        self.assertEqual(getattr(rt_sun_args, 'shape'), b'd')
+
+    # functions for SolTrace runner management
     # def test_call_st_sim_setup(self):
     #     pass
     # def test_call_st_sim_run_v2(self):
     #     pass
+
+    # functions for SolTrace results management
     # def test_call_st_sim_report(self):
     #     pass
 
