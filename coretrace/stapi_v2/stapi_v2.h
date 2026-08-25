@@ -474,6 +474,7 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_SIM_RUN_V2,
 	CALL_ST_SIM_REPORT,
 	// Simlulation Results Functions
+	CALL_ST_WRITE_RESULTS_CSV,
 
 	API_CALL_COUNT			// sentinal
 } st_api_call;
@@ -675,7 +676,15 @@ typedef struct args_st_sim_setup {
 
 typedef empty_args args_st_sim_run_v2;
 
+typedef struct args_st_sim_report {
+	int level;
+} args_st_sim_report;
+
 // Simlulation Results Functions
+typedef struct args_st_write_results_csv {
+	const char *filename; 
+	int 	   precision = 12;
+} args_st_write_results_csv;
 
 /* Every argument layout passed through the generic arrays is one of
  * these: a tag telling us which payload is active, plus the payload
@@ -719,9 +728,11 @@ typedef struct st_api_call_args {
 		args_st_sun_position sun_position_args;
 		args_st_sun_userdata sun_userdata_args;
 		// Simlulation Runner Functions
-		args_st_sim_setup		sim_setup_args;
-		args_st_sim_run_v2		sim_run_v2_args;
+		args_st_sim_setup  sim_setup_args;
+		args_st_sim_run_v2 sim_run_v2_args;
+		args_st_sim_report sim_report_args;
 		// Simlulation Results Functions
+		args_st_write_results_csv write_results_csv_args;
     } payload;
     st_api_call type;
 } st_api_call_args;

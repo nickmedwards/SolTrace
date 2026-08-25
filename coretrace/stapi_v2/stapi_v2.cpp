@@ -1220,7 +1220,7 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 {
     CONTEXT(pcxt);
     RESULT(cxt);
-
+    if (cxt->p_cb) cxt->p_cb("write csv", std::to_string(precision).c_str());
     ST_WRAP_CB_TRY_CATCH(result->write_csv_file(filename, precision), cxt->p_cb);
     return st_return_code::SUCCESS;
 }
@@ -1606,7 +1606,19 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                     code = st_sim_run_v2(pcxt);
                     break;
                 }
+                case st_api_call::CALL_ST_SIM_REPORT:
+                {
+                    code = st_sim_report(pcxt, call_args->payload.sim_report_args.level);
+                    break;
+                }
                 // Simlulation Results Functions
+                case st_api_call::CALL_ST_WRITE_RESULTS_CSV:
+                {
+                    code = st_write_results_csv(pcxt,
+                                                call_args->payload.write_results_csv_args.filename,
+                                                call_args->payload.write_results_csv_args.precision);
+                    break;
+                }
                 default:
                     code = st_return_code::UKNOWN_BATCH_API_CALL_FAILURE;
                     break;

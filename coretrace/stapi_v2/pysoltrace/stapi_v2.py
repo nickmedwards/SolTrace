@@ -726,10 +726,51 @@ class STAPIv2:
         rt.type = call_type
         args_name, args_cls = rt.payload._fields_[call_type]
         args_payload = getattr(rt.payload, args_name)
+        # print(args_name)
+        # print(args_cls)
+        # print(dot_h.st_api_call_args.payload)
+        # print(dot_h.st_api_call_args.payload.type._fields_)
+        # test_name, test_cls = dot_h.st_api_call_args.payload.type._fields_[call_type]
+        # print(test_name)
+        # print(test_cls)
+
+        # test = dot_h.st_api_call_args.payload.type(**{test_name: getattr(dot_h, test_cls.__name__)(*args)})
+        # for f in test._fields_:
+        #     print(getattr(test, f[0]))
+        # temp = dot_h.st_api_call_args(test, call_type)
+        # for f in temp._fields_:
+        #     print(getattr(temp, f[0]))
+
+        # get class that is actually intantiated in union memeber
+        rt.payload = dot_h.st_api_call_args.payload.type(**{
+            args_name: getattr(dot_h, args_cls.__name__)(*args)
+        })
+        # rt = dot_h.st_api_call_args(
+        #     dot_h.st_api_call_args.payload.type(**{
+        #         test_name: getattr(dot_h, test_cls.__name__)(*args)
+        #     }),
+        #     call_type
+        # )
+
         # _t.oc('generate set up')
         # print('\ngenerate')
         # print(call_type)
-        # print(args_name)
+        # if len(args) < len(args_cls._fields_):
+        #     base_cls = getattr(dot_h, args_cls.__name__)
+        #     # _t.ic('extend args')
+        #     offset = len(base_cls._fields_) - len(base_cls._field_defaults_)
+        #     _args = args + tuple(base_cls._field_defaults_.values())[(len(args) - offset):]
+        #     # _t.oc('extend args')
+        # else:
+        #     _args = args
+        # if not call_type == dot_h.st_api_call.CALL_ST_READ_INPUT_JSON:
+        #     print(args_name)
+        #     print(args_cls.__name__) #.rsplit('.', maxsplit=1)[1]
+        #     print(getattr(dot_h, args_cls.__name__)._field_defaults_)
+        #     offset = len(base_cls._fields_) - len(base_cls._field_defaults_)
+        #     print(offset)
+        #     temp = args + tuple(base_cls._field_defaults_.values())[(len(args) - offset):]
+        #     print(temp)
         # print(args_cls)
         # print(args_payload)
         # print(args_payload._fields_)
@@ -740,20 +781,39 @@ class STAPIv2:
         # args_payload.pcxt = self.__pcxt
         # _t.ic('setattr')
         # print(args_name, args)
-        for i, arg in enumerate(args):
-            # print(i, arg, args_payload._fields_[i][0])
-            setattr(args_payload, 
-                    args_payload._fields_[i][0],
-                    arg)
+        # for i, arg in enumerate(args):
+        #     # if call_type == dot_h.st_api_call.CALL_ST_WRITE_RESULTS_CSV:
+        #     #     print(i, arg, args_payload._fields_[i][0], args_payload._field_defaults_[i][0])
+        #     setattr(args_payload, 
+        #             args_payload._fields_[i][0],
+        #             arg)
+        # r = range(len(args), len(args_cls._fields_))
+        # print(r)
+        # if r:
+        #     base_cls = getattr(dot_h, args_cls.__name__)
+        #     print(len(args))
+        #     print(len(base_cls._fields_))
+        #     print(len(base_cls._field_defaults_))
+        #     print(len(args) - (len(base_cls._fields_) - len(base_cls._field_defaults_)))
+        #     temp = [*base_cls._field_defaults_.values()][(len(args) - (len(base_cls._fields_) - len(base_cls._field_defaults_))):]
+        #     print(temp)
+        #     for i in r:
+        #         setattr(args_payload, 
+        #                 base_cls._fields_[i][0],
+        #                 temp[i - len(args)])
         # _t.oc('setattr')
+        # args_payload = getattr(dot_h, args_cls.__name__)(*args)
 
         # print(f'\n{_t}')
-            
-        # print('\nres')
-        # for field in args_payload._fields_:
-        #     temp_payload_attr = getattr(rt.payload, args_name)
-        #     print(getattr(temp_payload_attr, field[0]))
-        # print()
+        # if call_type == dot_h.st_api_call.CALL_ST_WRITE_RESULTS_CSV:
+        #     print('\nres')
+        #     test = getattr(dot_h, test_cls.__name__)(*args)
+        #     print(test._field_defaults_)
+        #     for field in getattr(rt.payload, test_name)._fields_:
+        #         temp_payload_attr = getattr(rt.payload, test_name)
+        #         print(getattr(temp_payload_attr, field[0]))
+        #         print(getattr(test, field[0]))
+        #     print()
 
         return rt #ctypes.cast(ctypes.byref(rt), ctypes.c_void_p) #_STC.st_api_pair(self.__func_map[call_type], rt)
 
@@ -828,7 +888,7 @@ if __name__ == "__main__":
     # stapi.read_input_json('./sample.json')
     # count = stapi.num_elements()
     # print(count)
-    # stapi.sim_setup(_STC.NATIVE)
+    # stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
     # stapi.sim_run_v2()
     # stapi.sim_report()
     # stapi.write_results_csv('./sample.csv')

@@ -912,14 +912,41 @@ class BatchTests(STAPIv2TestCase):
         self.assertEqual(getattr(rt_sun_args, 'shape'), b'd')
 
     # functions for SolTrace runner management
-    # def test_call_st_sim_setup(self):
-    #     pass
-    # def test_call_st_sim_run_v2(self):
-    #     pass
+    def test_call_st_sim_setup(self):
+        self.stapi.read_input_json('./sample.json')
+
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.NATIVE)
+        ])
+
+
+    def test_call_st_sim_run_v2(self):
+        self.stapi.read_input_json('./sample.json')
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2)
+        ])
+
+    def test_call_st_sim_report(self):
+        self.stapi.read_input_json('./sample.json')
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.sim_run_v2()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)
+        ])
 
     # functions for SolTrace results management
-    # def test_call_st_sim_report(self):
-    #     pass
+    def test_call_st_sim_report(self):
+        self.stapi.read_input_json('./sample.json')
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_WRITE_RESULTS_CSV, b'./batch_sample.csv')
+        ])
 
 if __name__ == '__main__':
     # print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
