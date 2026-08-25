@@ -474,7 +474,7 @@ class RunnerTests(STAPIv2TestCase):
 
     def test_run_embree(self):
         if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE):
-            return unittest.skip('Embree runner not installed, skip testing running EmbreeRunner.')
+            self.skipTest('Embree runner not installed, skip testing running EmbreeRunner.')
         
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.sim_run_v2()
@@ -486,7 +486,7 @@ class RunnerTests(STAPIv2TestCase):
         
     def test_run_optix(self):
         if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX):
-            return unittest.skip('Optix runner not installed, skip testing running OptixRunner.')
+            self.skipTest('Optix runner not installed, skip testing running OptixRunner.')
         
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.sim_run_v2()
@@ -512,7 +512,7 @@ class RunnerTests(STAPIv2TestCase):
 
     def test_report_embree(self):
         if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE):
-            return unittest.skip('Embree runner not installed, skip testing running EmbreeRunner.')
+            self.skipTest('Embree runner not installed, skip testing running EmbreeRunner.')
         
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.sim_report()
@@ -530,7 +530,7 @@ class RunnerTests(STAPIv2TestCase):
         
     def test_report_optix(self):
         if not self.stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX):
-            return unittest.skip('Optix runner not installed, skip testing running OptixRunner.')
+            self.skipTest('Optix runner not installed, skip testing running OptixRunner.')
         
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.sim_report()
