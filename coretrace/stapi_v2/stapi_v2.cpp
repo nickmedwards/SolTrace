@@ -1220,7 +1220,7 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 {
     CONTEXT(pcxt);
     RESULT(cxt);
-    if (cxt->p_cb) cxt->p_cb("write csv", std::to_string(precision).c_str());
+
     ST_WRAP_CB_TRY_CATCH(result->write_csv_file(filename, precision), cxt->p_cb);
     return st_return_code::SUCCESS;
 }

@@ -156,10 +156,12 @@ class _Optics:
     def __init__(self, 
                  id:    int, 
                  name:  str   = 'New Optic',
+                 type: Literal[1, 2] = 2,
                  front: _Face = None,
                  back:  _Face = None):
         self.id    = id
         self.name  = name
+        self.type  = type
         self.front = _default_cls_arg(front, _Face)
         self.back  = _default_cls_arg(back, _Face)
 
@@ -171,13 +173,34 @@ class _Optics:
     def copy(self, onew: _Optics = None) -> _Optics:
         new_optics = _Optics(self.id,
                              self.name,
+                             self.type,
                              self.front.copy(),
                              self.back.copy())
         if onew != None: onew = new_optics
         else:            return new_optics
 
-    def Create(self, stapi: STAPIv2):
-        pass
+    def Create(self, stapi: STAPIv2, _do: bool = False):
+        opt_set = dot_h.args_optical_properties_set(self.name.encode(), 
+                                                    self.front.refraction_real,
+                                                    self.back.refraction_real,
+                                                    self.type)
+        front   = dot_h.args_optical_properties_face(self.front.transmissivity,
+                                                     self.front.reflectivity,
+                                                     self.front.slope_error,
+                                                     self.front.spec_error,
+                                                     self.front.dist_type[0].encode())
+        back    = dot_h.args_optical_properties_face(self.back.transmissivity,
+                                                     self.back.reflectivity,
+                                                     self.back.slope_error,
+                                                     self.back.spec_error,
+                                                     self.back.dist_type[0].encode())
+        call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_OPTICAL_PROPERIES_SET,
+                                       ctypes.pointer(opt_set),
+                                       ctypes.pointer(front),
+                                       ctypes.pointer(back),
+                                       ctypes.pointer(ctypes.c_uint64()))
+        if _do: return stapi.batch([call])
+        return call
 
 #############
 # Sun class #
@@ -229,26 +252,39 @@ class _Sun:
         if snew != None: snew = new_sun
         else:            return new_sun
 
-    def Create(self, stapi: STAPIv2, _do: bool = True):
-        calls = [
-            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN,
-                                    self.point_source,
-                                    self.shape[0],
-                                    self.sigma),
-            stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_XYZ,
-                                    self.position.x,
-                                    self.position.y,
-                                    self.position.z)
-        ]
-        if (npoints := len(self.user_intensity_table)) > 2 and self.shape.lower()[0] == 'd':
+    def Create(self, stapi: STAPIv2, _do: bool = False):
+        npoints = len(self.user_intensity_table)
+        args = dot_h.args_sun(npoints,
+                              self.position.x,
+                              self.position.y,
+                              self.position.z,
+                              self.sigma,
+                              self.shape[0].encode())
+        # calls = [
+        #     stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN,
+        #                             self.point_source,
+        #                             self.shape[0],
+        #                             self.sigma),
+        #     stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_XYZ,
+        #                             self.position.x,
+        #                             self.position.y,
+        #                             self.position.z)
+        # ]
+        _angle     = ctypes.pointer(ctypes.c_double())
+        _intensity = ctypes.pointer(ctypes.c_double())
+        if npoints > 2 and self.shape.lower()[0] == 'd':
             _angle     = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[0]))
             _intensity = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[1]))
-            calls.append(stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_USERDATA,
-                                                 npoints,
-                                                 _angle,
-                                                 _intensity))
-        if _do: return stapi.batch(calls)
-        return calls
+            # calls.append(stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_USERDATA,
+            #                                      npoints,
+            #                                      _angle,
+            #                                      _intensity))
+        call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_SUN,
+                                       ctypes.pointer(args),
+                                       _angle,
+                                       _intensity)
+        if _do: return stapi.batch([call])
+        return call
 
     def calc_sun_vector(self): pass # TODO: expose SolTrace::Data::SolarPositionCalculator
 
@@ -283,6 +319,7 @@ class _Element:
                  parent_stage:    _Stage, 
                  element_id:      int,
                  enabled:         bool = True,
+                 virtual:         bool = False,
                  position:        Point = None,
                  aim:             Point = None,
                  zrot:            float = 0.,
@@ -296,6 +333,7 @@ class _Element:
         self.stage_id        = parent_stage.id
         self.id              = element_id
         self.enabled         = enabled
+        self.virtual         = virtual
         self.position        = _default_cls_arg(position, Point)
         self.aim             = _default_cls_arg(aim, Point, 0, 0, 1)
         self.zrot            = zrot
@@ -342,6 +380,7 @@ class _Element:
         new_el = _Element(self.stage_id,
                           self.id,
                           self.enabled,
+                          self.virtual,
                           self.position.copy(),
                           self.aim.copy(),
                           self.zrot,
@@ -355,7 +394,25 @@ class _Element:
         if enew != None: enew = new_el
         else:            return new_el
 
-    def Create(self, stapi: STAPIv2): pass
+    def Create(self, stapi: STAPIv2, _do: bool = False):
+        # TODO: unstage element position/aim
+        el_args = dot_h.args_element(*self.position,
+                                     *self.aim,
+                                     self.zrot,
+                                     self.enabled,
+                                     self.virtual,
+                                     self.aperture.encode(),
+                                     self.surface.encode())
+        _a_params = (ctypes.c_double * 8)(*self.aperture_params)
+        _s_params = (ctypes.c_double * 8)(*self.surface_params)
+        call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_ELEMENT,
+                                       ctypes.pointer(el_args),
+                                       self.optic.id,
+                                       _a_params,
+                                       _s_params,
+                                       ctypes.pointer(ctypes.c_uint64()))
+        if _do: return stapi.batch([call])
+        return call
 
     #####################
     # Surface Functions #
@@ -560,7 +617,10 @@ class _Stage:
         if snew != None: snew = new_stage
         else:            return new_stage
 
-    def Create(self, stapi: STAPIv2, _do: bool = True): pass
+    def Create(self, stapi: STAPIv2, _do: bool = False):
+        calls = [el.Create(stapi) for el in self.elements]
+        if _do: return stapi.batch(calls)
+        return calls
 
     def add_element(self, enew: _Element = None) -> _Element:
         enew    = _default_cls_arg(enew, _Element, self, None)
@@ -614,11 +674,20 @@ class legacy:
         else:             return new_st
 
     def Create(self):
-        sun_calls = self.sun.Create(self.stapi, False)
-        print(sun_calls)
+        sun_call = self.sun.Create(self.stapi, False)
+        print(sun_call)
 
         return self.stapi.batch([
-            *sun_calls
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_PARAMS,
+                                         self.num_ray_hits,
+                                         self.max_rays_traced,
+                                         False),
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_ERRORS,
+                                         self.is_sunshape,
+                                         self.is_surface_errors),
+            self.sun.Create(self.stapi)
+            *[op.Create(self.stapi) for op in self.optics],
+            *[s.Create(self.stapi) for s in self.stages]
         ])
 
     def run(self,
@@ -753,10 +822,12 @@ class legacy:
 
     def add_optic(self, 
                   optic_name: str,
+                  type: Literal[1, 2] = 2,
                   front: _Optics = None,
                   back: _Optics = None) -> _Optics:
         new_optics = _Optics(len(self.optics),
                              optic_name,
+                             type,
                              front,
                              back)
         self.optics.append(new_optics)

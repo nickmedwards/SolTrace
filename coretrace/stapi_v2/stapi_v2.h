@@ -237,7 +237,7 @@ typedef struct args_optical_properties_set {
 	const char *name;
 	double 	   refraction_index_front;
 	double 	   refraction_index_back;
-	st_uint_t  type; // 2 = refraction, otherwise reflection
+	st_uint_t  type; // 1 = refraction, otherwise reflection
 } args_optical_properties_set;
 STAPI_V2 st_return_t st_add_optical_properties_set(st_context_v2_t 				pcxt, 
 												   args_optical_properties_set 	*opt_set,
