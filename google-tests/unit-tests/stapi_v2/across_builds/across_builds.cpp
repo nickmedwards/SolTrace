@@ -1138,17 +1138,17 @@ st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt)
     // when debugging first execution, it passes 
     json root = load_json();
 
-    st_return_t rt = st_read_input_json(pcxt, root.dump().c_str());
+    st_return_t code = st_read_input_json(pcxt, root.dump().c_str());
 
-    if (rt != st_return_code::SUCCESS) return rt;
+    if (code != st_return_code::SUCCESS) return code;
 
-    rt =  st_sim_setup(pcxt, st_runner_type_t::NATIVE);
+    code =  st_sim_setup(pcxt, st_runner_type_t::NATIVE);
     unsigned int *seeds_test = new unsigned int[2] { 608, 303, };
-    rt += st_sim_setup(pcxt, st_runner_type_t::NATIVE, 1, seeds_test, 2);
-    rt += st_sim_setup(pcxt, st_runner_type_t::EMBREE);
-    rt += st_sim_setup(pcxt, st_runner_type_t::OPTIX);
+    code += st_sim_setup(pcxt, st_runner_type_t::NATIVE, 1, seeds_test, 2);
+    code += st_sim_setup(pcxt, st_runner_type_t::EMBREE);
+    code += st_sim_setup(pcxt, st_runner_type_t::OPTIX);
 
-    return rt;
+    return code;
 }
 
 st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runner_type)
@@ -1176,13 +1176,38 @@ st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt,
         cxt->p_data->set_number_of_rays(1000);
     }
 
-    st_return_t rt = st_sim_setup(pcxt, runner_type); 
-    rt += st_sim_run_v2(pcxt);
-    rt += st_sim_report(pcxt, 0);
-    rt += st_write_results_csv(pcxt, filename);
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    code += st_write_results_csv(pcxt, filename);
 
     std::error_code ec;
     std::filesystem::remove(filename, ec);
 
-    return rt;
+    return code;
+}
+
+// functions to get results directly
+
+st_return_t call_stapi_v2_locations(st_context_v2_t  pcxt,
+                                    st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    
+    uint_fast64_t num;
+    
+    code += st_num_intersections(pcxt, &num);
+
+    double *loc_x = new double[num];
+    double *loc_y = new double[num];
+    double *loc_z = new double[num];
+
+    code += st_locations(pcxt, loc_x, loc_y, loc_z);
+
+    return code;
 }

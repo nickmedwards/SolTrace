@@ -39,12 +39,21 @@
 #     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
 import ctypes, random
 from typing import Literal
-from .chedder import dot_h
-# from . import soltrace_constants as _STC
-from . import soltrace_json as st_json
-from .point import Point
-from . import math_utils
-from .stapi_v2 import STAPIv2
+
+try:
+    from chedder import dot_h
+    # import soltrace_constants as _STC
+    import soltrace_json as st_json
+    from point import Point
+    import math_utils
+    from stapi_v2 import STAPIv2
+except ImportError:
+    from .chedder import dot_h
+    # from . import soltrace_constants as _STC
+    from . import soltrace_json as st_json
+    from .point import Point
+    from . import math_utils
+    from .stapi_v2 import STAPIv2
 
 _default_cls_arg = lambda arg, default_cls, *args: arg if arg != None else default_cls(*args)
 
@@ -426,8 +435,10 @@ class _Element:
 
     def surface_parabolic(self, focal_len_x: float, focal_len_y: float):
         self.surface = 'p'
-        self.surface_params[0] = 1. / (2.*focal_len_x)
-        self.surface_params[1] = 1. / (2.*focal_len_y)
+        # skipping conversion, 1. / (2. * focal_len), as it's 
+        # calculated in SolTrace::Data::make_surface_from_type
+        self.surface_params[0] = focal_len_x
+        self.surface_params[1] = focal_len_y
         self.aperture_params[2:8] = [0., 0., 0., 0., 0., 0.]
         return True
     
@@ -644,7 +655,8 @@ class legacy:
                  max_rays_traced:   int   = int(1e7),
                  is_sunshape:       bool  = True,
                  is_surface_errors: bool  = True,
-                 dni:               float = 1000.):
+                 dni:               float = 1000.,
+                 testing:           bool  = False):
         self.sun = sun
         self.optics = optics
         self.stages = stages
@@ -653,6 +665,7 @@ class legacy:
         self.is_sunshape = is_sunshape
         self.is_surface_errors = is_surface_errors
         self.dni = dni  #w/m^2
+        self.testing = testing
         self.raydata = None
         self.sunstats = None
         self.powerperray = None
@@ -673,29 +686,32 @@ class legacy:
         if stnew != None: stnew = new_st
         else:             return new_st
 
-    def Create(self):
-        sun_call = self.sun.Create(self.stapi, False)
-        print(sun_call)
+    def Create(self, as_power_tower: bool, _do: bool = False):
+        el_calls = []
+        for s in self.stages: el_calls.extend(s.Create(self.stapi))
 
-        return self.stapi.batch([
+        calls = [
             self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_PARAMS,
-                                         self.num_ray_hits,
-                                         self.max_rays_traced,
-                                         False),
+                                         int(self.num_ray_hits),
+                                         int(self.max_rays_traced),
+                                         as_power_tower),
             self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_ERRORS,
                                          self.is_sunshape,
                                          self.is_surface_errors),
-            self.sun.Create(self.stapi)
+            self.sun.Create(self.stapi),
             *[op.Create(self.stapi) for op in self.optics],
-            *[s.Create(self.stapi) for s in self.stages]
-        ])
+            *el_calls
+        ]
+        if _do: return self.stapi.batch(calls)
+        return calls
 
     def run(self,
             seed:           int  = -1,
             as_power_tower: bool = False,
             nthread:        int  = 1,
             thread_id:      int  = 0,
-            no_callback:    bool = False):
+            no_callback:    bool = False,
+            runner_type:    Literal[0, 1, 2] = 0):
         # Parameters
         # ----------
         # seed : int
@@ -722,7 +738,7 @@ class legacy:
         #     Argument used by the multi-threading call. Do not manually specify this value.
 
         # pdll = self.__load_dll()
-        self.stapi = STAPIv2()
+        self.stapi = STAPIv2(testing = self.testing)
 
         if seed<0:
             runseed = random.randint(1,int(1e9))
@@ -730,8 +746,16 @@ class legacy:
             runseed = seed
 
         if nthread in [0,1]:
-            print('here')
-            self.Create()
+            sim_data_calls = self.Create(as_power_tower)
+            _seeds = (ctypes.c_uint * 1)(*[runseed])
+            set_up_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, runner_type, 1, _seeds, 1)
+            run_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2)
+            self.stapi.batch([
+                *sim_data_calls,
+                set_up_call,
+                run_call
+            ], True)
+
         #     """self.Create(pdll, p_data)"""
         #     # self.sun.Create(pdll, p_data)
         #     # for opt in self.optics:

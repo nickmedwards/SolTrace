@@ -300,6 +300,12 @@ class STAPIv2:
         self.__pdll.st_write_results_csv.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
         self.__pdll.st_write_results_csv.restype  = dot_h.st_return_t
 
+        #####################################
+        # functions to get results directly #
+        #####################################
+
+        
+
         ############################################
         # function for batching SolTrace API calls #
         ############################################
@@ -683,17 +689,21 @@ class STAPIv2:
         self.__check_return_code(code)
         return installed.value
 
-    def sim_setup(self, 
-                  runner_type: Literal[0, 1, 2], 
-                  num_threads: int = 8, 
+    def sim_setup(self,
+                  runner_type: Literal[0, 1, 2],
+                  num_threads: int = 8,
                   seeds: list = None) -> None:
         num_seeds = 0
         # redefine seeds from list to C array
         _seeds = None
-        if seeds:
+        if seeds and len(seeds):
             num_seeds = len(seeds)
             _seeds = (ctypes.c_uint * num_seeds)(*seeds)
-        code = self.__pdll.st_sim_setup(self.__pcxt, runner_type, num_threads, _seeds, num_seeds)
+        code = self.__pdll.st_sim_setup(self.__pcxt,
+                                        runner_type,
+                                        num_threads,
+                                        _seeds,
+                                        num_seeds)
         self.__check_return_code(code)
 
     def sim_run_v2(self) -> None:

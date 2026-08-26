@@ -37,3 +37,15 @@ TEST(results_tests, results_write_optix)
 
     CLEANUP_TEST_CXT();
 }
+
+TEST(results_tests, results_locations_optix)
+{
+    SETUP_TEST_CXT();
+
+    LOAD_TEST_JSON();
+
+    code = call_stapi_v2_locations(pcxt, st_runner_type_t::OPTIX);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}

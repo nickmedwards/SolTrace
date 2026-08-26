@@ -1243,7 +1243,13 @@ STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
     CONTEXT(pcxt);
     RESULT(cxt);
 
+    uint_fast64_t num_intersections = result->get_number_of_records();
+
     std::vector<double> x, y, z;
+    x.reserve(num_intersections);
+    y.reserve(num_intersections);
+    z.reserve(num_intersections);
+    
     glm::dvec3 loc;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
@@ -1271,7 +1277,13 @@ STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
     CONTEXT(pcxt);
     RESULT(cxt);
 
+    uint_fast64_t num_intersections = result->get_number_of_records();
+
     std::vector<double> x, y, z;
+    x.reserve(num_intersections);
+    y.reserve(num_intersections);
+    z.reserve(num_intersections);
+    
     glm::dvec3 cosine;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
@@ -1296,7 +1308,11 @@ STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, int *element_map)
     CONTEXT(pcxt);
     RESULT(cxt);
 
+    uint_fast64_t num_intersections = result->get_number_of_records();
+
     std::vector<int> els;
+    els.reserve(num_intersections);
+
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
         ray_record_ptr rec = *it;

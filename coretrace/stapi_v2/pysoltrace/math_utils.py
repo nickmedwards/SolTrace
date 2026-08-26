@@ -1,5 +1,9 @@
 import math
-from .point import Point
+
+try:
+    from point import Point
+except ImportError:
+    from .point import Point
 
 def arbitrary_rotation(theta: float,
                        axis:  Point | list,

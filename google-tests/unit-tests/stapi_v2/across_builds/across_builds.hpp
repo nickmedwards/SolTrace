@@ -84,5 +84,8 @@ st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runn
 st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt, 
                                             st_runner_type_t runner_type, 
                                             const char       *filename);
+// functions to get results directly
+st_return_t call_stapi_v2_locations(st_context_v2_t  pcxt,
+                                    st_runner_type_t runner_type);
 
 #endif

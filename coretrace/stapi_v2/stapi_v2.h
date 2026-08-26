@@ -73,6 +73,78 @@ NOTE: may change name convention from marking _v2 to _v1
  st_calc_transform_matrices	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
  st_matrix_transpose		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
 -------------------------------------------------------------------------------------------------
+
+(x: done, -: skipped, i: in progress, T: have TODO, blank: not done)
+
+function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cpp batch | py batch | unittested | legacy.py | unittested 
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ st_create_context 					[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[-]			  [ ]
+ st_free_context 					[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[-]			  [ ]
+ st_read_input_json 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_set_simulation_parameters 		[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sim_params 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
+ st_sim_errors 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
+ st_sim_location 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sim_tolerance 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_get_simulation_parameters 		[x]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_num_optics 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_add_optical_properties_set 		[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [x]
+ st_get_optical_properties_set 		[x]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_delete_optic 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_clear_optics 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_num_elements 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_add_element 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [x]
+ st_get_element 					[x]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_delete_element 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_clear_elements 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_enabled 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_virtual 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_xyz 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_aim 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_zrot 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_aperture 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_surface 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_optic 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_add_sun 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [x]
+ st_get_sun 						[x]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_sun_shape 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sun_xyz 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sun_position 					[x]			 [ ]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sun_userdata 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_get_installed_runners 			[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_is_runner_installed 			[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_sim_setup 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
+ st_sim_run_v2 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
+ st_sim_report 						[x]			 [ ]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_write_results_csv 				[x]			 [x]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_num_intersections				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_locations 	     				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_cosines 	     				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_elementmap 	     				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_stagemap 	     				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_raynumbers 	     				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_sun_stats 	     				[x]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_calc_zrot_azel   				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_calc_euler_angles 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_transform_to_local 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_transform_to_reference 			[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_matrix_vector_mult 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_calc_transform_matrices 		[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_matrix_transpose 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_batch 							[i]			 [ ]		[x]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+-------------------------------------------------------------------------------------------------------------------------------------------------
+other items
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ STAPIv2.__check_return_code  		[ ]			 [ ]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_return_code error messages		[ ]			 [ ]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_return_code warning messages	[ ]			 [ ]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ STAPIv2.generate_api_call  		[ ]			 [ ]		[x]			   [i]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ tower demo					  		[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [i]
+ heliostat template					[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
+ linear fresnel template			[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
+ parabolic trough template			[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
+ parabolic dish template			[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
+-------------------------------------------------------------------------------------------------------------------------------------------------
  */
 
 #ifndef __soltraceapi_v2_h
@@ -377,7 +449,7 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 										  int 			  precision = 12);
 
 // functions to get results directly
-STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, int *num_intersections);
+STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections);
 STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
 									 double 		 *loc_x,
 									 double 		 *loc_y,
@@ -475,6 +547,14 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_SIM_REPORT,
 	// Simlulation Results Functions
 	CALL_ST_WRITE_RESULTS_CSV,
+	// functions to get results directly
+	CALL_ST_NUM_INTERSECTIONS,
+	CALL_ST_LOCATIONS,
+	CALL_ST_COSINES,
+	CALL_ST_ELEMENTMAP,
+	CALL_ST_STAGEMAP,
+	CALL_ST_RAYNUMBERS,
+	CALL_ST_SUN_STATS,
 
 	API_CALL_COUNT			// sentinal
 } st_api_call;
@@ -686,6 +766,43 @@ typedef struct args_st_write_results_csv {
 	int 	   precision = 12;
 } args_st_write_results_csv;
 
+// functions to get results directly
+typedef struct args_st_num_intersections {
+	int *num_intersections;
+} args_st_num_intersections;
+
+typedef struct args_st_locations {
+	double *loc_x;
+	double *loc_y;
+	double *loc_z;
+} args_st_locations;
+
+typedef struct args_st_cosines {
+	double *cos_x;
+	double *cos_y;
+	double *cos_z;
+} args_st_cosines;
+
+typedef struct args_st_elementmap {
+	int *element_map;
+} args_st_elementmap;
+
+typedef struct args_st_stagemap {
+	int *stage_map;
+} args_st_stagemap;
+
+typedef struct args_st_raynumbers {
+	int *ray_numbers;
+} args_st_raynumbers;
+
+typedef struct args_st_sun_stats {
+	double *xmin;
+	double *xmax;
+	double *ymin;
+	double *ymax;
+	int    *nsunrays;
+} args_st_sun_stats;
+
 /* Every argument layout passed through the generic arrays is one of
  * these: a tag telling us which payload is active, plus the payload
  * itself. This is what a void* in the "arguments" array actually
@@ -733,6 +850,14 @@ typedef struct st_api_call_args {
 		args_st_sim_report sim_report_args;
 		// Simlulation Results Functions
 		args_st_write_results_csv write_results_csv_args;
+		// functions to get results directly
+		args_st_num_intersections num_intersections_args;
+		args_st_locations		  locations_args;
+		args_st_cosines		      cosines_args;
+		args_st_elementmap		  elementmap_args;
+		args_st_stagemap		  stagemap_args;
+		args_st_raynumbers		  raynumbers_args;
+		args_st_sun_stats		  sun_stats_args;
     } payload;
     st_api_call type;
 } st_api_call_args;
