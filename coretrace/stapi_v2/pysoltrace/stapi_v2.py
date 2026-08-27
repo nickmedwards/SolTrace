@@ -744,6 +744,92 @@ class STAPIv2:
         code = self.__pdll.st_write_results_csv(self.__pcxt, filename.encode('utf-8'), precision)
         self.__check_return_code(code)
 
+    #####################################
+    # functions to get results directly #
+    #####################################
+
+    def num_intersections(self):
+        pcount = ctypes.c_uint64()
+        code = self.__pdll.st_num_intersections(self.__pcxt, ctypes.byref(pcount))
+        self.__check_return_code(code)
+        return pcount.value
+    
+    def locations(self, n_intersections: int):
+        loc_x = (ctypes.c_double * n_intersections)()
+        loc_y = (ctypes.c_double * n_intersections)()
+        loc_z = (ctypes.c_double * n_intersections)()
+        code = self.__pdll.st_locations(self.__pcxt,
+                                        loc_x,
+                                        loc_y,
+                                        loc_z)
+        self.__check_return_code(code)
+        return loc_x, loc_y, loc_z
+    
+    def cosines(self, n_intersections: int):
+        coz_x = (ctypes.c_double * n_intersections)()
+        coz_y = (ctypes.c_double * n_intersections)()
+        coz_z = (ctypes.c_double * n_intersections)()
+        code = self.__pdll.st_cosines(self.__pcxt,
+                                      coz_x,
+                                      coz_y,
+                                      coz_z)
+        self.__check_return_code(code)
+        return coz_x, coz_y, coz_z
+    
+    def elementmap(self, n_intersections: int):
+        element_map = (ctypes.c_uint64 * n_intersections)()
+        code = self.__pdll.st_elementmap(self.__pcxt, element_map)
+        self.__check_return_code(code)
+        return element_map
+
+    def stagemap(self, n_intersections: int):
+        stage_map = (ctypes.c_uint64 * n_intersections)()
+        code = self.__pdll.st_stagemap(self.__pcxt, stage_map)
+        self.__check_return_code(code)
+        return stage_map
+
+    def raynumbers(self, n_intersections: int):
+        ray_numbers = (ctypes.c_uint64 * n_intersections)()
+        code = self.__pdll.st_raynumbers(self.__pcxt, ray_numbers)
+        self.__check_return_code(code)
+        return ray_numbers
+
+    def sun_stats(self):
+        width    = ctypes.c_double()
+        height   = ctypes.c_double()
+        area     = ctypes.c_double()
+        nsunrays = ctypes.c_uint64()
+        code = self.__pdll.st_sun_stats(self.__pcxt,
+                                        ctypes.byref(width),
+                                        ctypes.byref(height),
+                                        ctypes.byref(area),
+                                        ctypes.byref(nsunrays))
+        self.__check_return_code(code)
+        return width.value, height.value, area.value, nsunrays.value
+    
+    def get_results_data(self, n_intersections: int):
+        loc_x = (ctypes.c_double * n_intersections)()
+        loc_y = (ctypes.c_double * n_intersections)()
+        loc_z = (ctypes.c_double * n_intersections)()
+        coz_x = (ctypes.c_double * n_intersections)()
+        coz_y = (ctypes.c_double * n_intersections)()
+        coz_z = (ctypes.c_double * n_intersections)()
+        element_map = (ctypes.c_uint64 * n_intersections)()
+        stage_map = (ctypes.c_uint64 * n_intersections)()
+        ray_numbers = (ctypes.c_uint64 * n_intersections)()
+        args = dot_h.args_results_data(loc_x,
+                                       loc_y,
+                                       loc_z,
+                                       coz_x,
+                                       coz_y,
+                                       coz_z,
+                                       element_map,
+                                       stage_map,
+                                       ray_numbers)
+        code = self.__pdll.st_get_results_data(self.__pcxt, ctypes.byref(args))
+        self.__check_return_code(code)
+        return args
+
     #####################
     # Batch caller work #
     #####################
@@ -916,6 +1002,17 @@ if __name__ == "__main__":
 
     for i in range(dot_h.st_runner_type_t.RUNNER_COUNT):
         print(i, stapi.is_runner_installed(i))
+
+    # stapi.read_input_json('./sample.json')
+    # stapi.sim_params(1000, 10000, False)
+    # stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+    # stapi.sim_run_v2()
+    # stapi.sim_report()
+    # n_intersections = stapi.num_intersections()
+    # res = stapi.get_results_data(n_intersections)
+    # print(len(list(res.loc_x)))
+    # print(res.loc_x[:n_intersections])
+
 
     # stapi.read_input_json('./sample.json')
     # count = stapi.num_elements()

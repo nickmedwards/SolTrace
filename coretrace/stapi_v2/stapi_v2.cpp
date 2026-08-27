@@ -1674,6 +1674,62 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                                                 call_args->payload.write_results_csv_args.precision);
                     break;
                 }
+                // functions to get results directly
+                case st_api_call::CALL_ST_NUM_INTERSECTIONS:
+                {
+                    code = st_num_intersections(pcxt,
+                                                call_args->payload.num_intersections_args.num_intersections);
+                    break;
+                }
+                case st_api_call::CALL_ST_LOCATIONS:
+                {
+                    code = st_locations(pcxt,
+                                        call_args->payload.locations_args.loc_x,
+                                        call_args->payload.locations_args.loc_y,
+                                        call_args->payload.locations_args.loc_z);
+                    break;
+                }
+                case st_api_call::CALL_ST_COSINES:
+                {
+                    code = st_cosines(pcxt,
+                                      call_args->payload.cosines_args.cos_x,
+                                      call_args->payload.cosines_args.cos_y,
+                                      call_args->payload.cosines_args.cos_z);
+                    break;
+                }
+                case st_api_call::CALL_ST_ELEMENTMAP:
+                {
+                    code = st_elementmap(pcxt,
+                                         call_args->payload.elementmap_args.element_map);
+                    break;
+                }
+                case st_api_call::CALL_ST_STAGEMAP:
+                {
+                    code = st_stagemap(pcxt,
+                                       call_args->payload.stagemap_args.stage_map);
+                    break;
+                }
+                case st_api_call::CALL_ST_RAYNUMBERS:
+                {
+                    code = st_raynumbers(pcxt,
+                                         call_args->payload.raynumbers_args.ray_numbers);
+                    break;
+                }
+                case st_api_call::CALL_ST_SUN_STATS:
+                {
+                    code = st_sun_stats(pcxt,
+                                        call_args->payload.sun_stats_args.width,
+                                        call_args->payload.sun_stats_args.height,
+                                        call_args->payload.sun_stats_args.area,
+                                        call_args->payload.sun_stats_args.nsunrays);
+                    break;
+                }
+                case st_api_call::CALL_ST_GET_RESULTS_DATA:
+                {
+                    code = st_get_results_data(pcxt,
+                                               call_args->payload.get_results_data_args.data);
+                    break;
+                }
                 default:
                     code = st_return_code::UKNOWN_BATCH_API_CALL_FAILURE;
                     break;

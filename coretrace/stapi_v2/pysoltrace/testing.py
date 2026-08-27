@@ -551,7 +551,170 @@ class RunnerTests(STAPIv2TestCase):
 
         self.stapi.sim_run_v2()
         self.stapi.sim_report()
-        
+
+class ResultsNativeTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+        self.stapi.read_input_json('./sample.json')
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+        self.n_intersections = self.stapi.num_intersections()
+
+    def test_locations(self):
+        loc_x, loc_y, loc_z = self.stapi.locations(self.n_intersections)
+        self.assertEqual(len(loc_x), self.n_intersections)
+        self.assertEqual(len(loc_y), self.n_intersections)
+        self.assertEqual(len(loc_z), self.n_intersections)
+
+    def test_cosines(self):
+        coz_x, coz_y, coz_z = self.stapi.cosines(self.n_intersections)
+        self.assertEqual(len(coz_x), self.n_intersections)
+        self.assertEqual(len(coz_y), self.n_intersections)
+        self.assertEqual(len(coz_z), self.n_intersections)
+
+    def test_elementmap(self):
+        element_map = self.stapi.elementmap(self.n_intersections)
+        self.assertEqual(len(element_map), self.n_intersections)
+
+    def test_stagemap(self):
+        stage_map = self.stapi.stagemap(self.n_intersections)
+        self.assertEqual(len(stage_map), self.n_intersections)
+
+    def test_raynumbers(self):
+        ray_numbers = self.stapi.raynumbers(self.n_intersections)
+        self.assertEqual(len(ray_numbers), self.n_intersections)
+
+    def test_sun_stats(self):
+        width, height, area, nsunrays = self.stapi.sun_stats()
+        self.assertGreater(width, 0)
+        self.assertGreater(height, 0)
+        self.assertGreater(area, 0)
+        self.assertGreater(nsunrays, 0)
+
+    def test_get_results_data(self):
+        res = self.stapi.get_results_data(self.n_intersections)
+        self.assertEqual(len(res.loc_x[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.loc_y[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.loc_z[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_x[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_y[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_z[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.element_map[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.stage_map[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.ray_numbers[:self.n_intersections]), self.n_intersections)
+
+@unittest.skipIf(not STAPIv2(testing=True).is_runner_installed(dot_h.st_runner_type_t.EMBREE),
+                 "Embree runner not installed, skip testing EmbreeRunner results.")
+class ResultsEmbreeTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+        self.stapi.read_input_json('./sample.json')
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+        self.n_intersections = self.stapi.num_intersections()
+
+    def test_locations(self):
+        loc_x, loc_y, loc_z = self.stapi.locations(self.n_intersections)
+        self.assertEqual(len(loc_x), self.n_intersections)
+        self.assertEqual(len(loc_y), self.n_intersections)
+        self.assertEqual(len(loc_z), self.n_intersections)
+
+    def test_cosines(self):
+        coz_x, coz_y, coz_z = self.stapi.cosines(self.n_intersections)
+        self.assertEqual(len(coz_x), self.n_intersections)
+        self.assertEqual(len(coz_y), self.n_intersections)
+        self.assertEqual(len(coz_z), self.n_intersections)
+
+    def test_elementmap(self):
+        element_map = self.stapi.elementmap(self.n_intersections)
+        self.assertEqual(len(element_map), self.n_intersections)
+
+    def test_stagemap(self):
+        stage_map = self.stapi.stagemap(self.n_intersections)
+        self.assertEqual(len(stage_map), self.n_intersections)
+
+    def test_raynumbers(self):
+        ray_numbers = self.stapi.raynumbers(self.n_intersections)
+        self.assertEqual(len(ray_numbers), self.n_intersections)
+
+    def test_sun_stats(self):
+        width, height, area, nsunrays = self.stapi.sun_stats()
+        self.assertGreater(width, 0)
+        self.assertGreater(height, 0)
+        self.assertGreater(area, 0)
+        self.assertGreater(nsunrays, 0)
+
+    def test_get_results_data(self):
+        res = self.stapi.get_results_data(self.n_intersections)
+        self.assertEqual(len(res.loc_x[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.loc_y[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.loc_z[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_x[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_y[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_z[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.element_map[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.stage_map[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.ray_numbers[:self.n_intersections]), self.n_intersections)
+
+@unittest.skipIf(not STAPIv2(testing=True).is_runner_installed(dot_h.st_runner_type_t.OPTIX),
+                 "Optix runner not installed, skip testing OptixRunner results.")
+class ResultsOptixTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+        self.stapi.read_input_json('./sample.json')
+        self.stapi.sim_params(1000, 10000, False)
+        self.stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        self.stapi.sim_run_v2()
+        self.stapi.sim_report()
+        self.n_intersections = self.stapi.num_intersections()
+
+    def test_locations(self):
+        loc_x, loc_y, loc_z = self.stapi.locations(self.n_intersections)
+        self.assertEqual(len(loc_x), self.n_intersections)
+        self.assertEqual(len(loc_y), self.n_intersections)
+        self.assertEqual(len(loc_z), self.n_intersections)
+
+    def test_cosines(self):
+        coz_x, coz_y, coz_z = self.stapi.cosines(self.n_intersections)
+        self.assertEqual(len(coz_x), self.n_intersections)
+        self.assertEqual(len(coz_y), self.n_intersections)
+        self.assertEqual(len(coz_z), self.n_intersections)
+
+    def test_elementmap(self):
+        element_map = self.stapi.elementmap(self.n_intersections)
+        self.assertEqual(len(element_map), self.n_intersections)
+
+    def test_stagemap(self):
+        stage_map = self.stapi.stagemap(self.n_intersections)
+        self.assertEqual(len(stage_map), self.n_intersections)
+
+    def test_raynumbers(self):
+        ray_numbers = self.stapi.raynumbers(self.n_intersections)
+        self.assertEqual(len(ray_numbers), self.n_intersections)
+
+    def test_sun_stats(self):
+        width, height, area, nsunrays = self.stapi.sun_stats()
+        self.assertEqual(width, 0)
+        self.assertEqual(height, 0)
+        self.assertGreater(area, 0)
+        self.assertGreater(nsunrays, 0)
+
+    def test_get_results_data(self):
+        res = self.stapi.get_results_data(self.n_intersections)
+        self.assertEqual(len(res.loc_x[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.loc_y[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.loc_z[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_x[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_y[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.cos_z[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.element_map[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.stage_map[:self.n_intersections]), self.n_intersections)
+        self.assertEqual(len(res.ray_numbers[:self.n_intersections]), self.n_intersections)
+
 class BatchTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()
@@ -926,7 +1089,6 @@ class BatchTests(STAPIv2TestCase):
             self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.NATIVE)
         ])
 
-
     def test_call_st_sim_run_v2(self):
         self.stapi.read_input_json('./sample.json')
         self.stapi.sim_params(1000, 10000, False)
@@ -944,16 +1106,113 @@ class BatchTests(STAPIv2TestCase):
             self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)
         ])
 
-    # functions for SolTrace results management
-    def test_call_st_write_results_csv(self):
+    def set_up_run_report(self):
         self.stapi.read_input_json('./sample.json')
         self.stapi.sim_params(1000, 10000, False)
         self.stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
         self.stapi.sim_run_v2()
         self.stapi.sim_report()
+        return self.stapi.num_intersections()
+
+    # functions for SolTrace results management
+    def test_call_st_write_results_csv(self):
+        self.set_up_run_report()
         self.stapi.batch([
             self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_WRITE_RESULTS_CSV, b'./batch_sample.csv')
         ])
+
+    # functions to get results directly
+    def test_call_st_locations(self):
+        n = self.set_up_run_report()
+        loc_x = (ctypes.c_double * n)()
+        loc_y = (ctypes.c_double * n)()
+        loc_z = (ctypes.c_double * n)()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_LOCATIONS, loc_x, loc_y, loc_z)
+        ])
+        self.assertEqual(len(loc_x[:n]), n)
+        self.assertEqual(len(loc_y[:n]), n)
+        self.assertEqual(len(loc_z[:n]), n)
+
+    def test_call_st_cosines(self):
+        n = self.set_up_run_report()
+        cos_x = (ctypes.c_double * n)()
+        cos_y = (ctypes.c_double * n)()
+        cos_z = (ctypes.c_double * n)()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_COSINES, cos_x, cos_y, cos_z)
+        ])
+        self.assertEqual(len(cos_x[:n]), n)
+        self.assertEqual(len(cos_y[:n]), n)
+        self.assertEqual(len(cos_z[:n]), n)
+
+    def test_call_st_elementmap(self):
+        n = self.set_up_run_report()
+        els = (ctypes.c_uint64 * n)()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ELEMENTMAP, els)
+        ])
+        self.assertEqual(len(els[:n]), n)
+        
+    def test_call_st_stagemap(self):
+        n = self.set_up_run_report()
+        stages = (ctypes.c_uint64 * n)()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_STAGEMAP, stages)
+        ])
+        self.assertEqual(len(stages[:n]), n)
+
+    def test_call_st_raynumbers(self):
+        n = self.set_up_run_report()
+        ray_numbers = (ctypes.c_uint64 * n)()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_RAYNUMBERS, ray_numbers)
+        ])
+        self.assertEqual(len(ray_numbers[:n]), n)
+
+    def test_call_st_sun_stats(self):
+        self.set_up_run_report()
+        width    = ctypes.c_double()
+        height   = ctypes.c_double()
+        area     = ctypes.c_double()
+        nsunrays = ctypes.c_uint64()
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_STATS,
+                                         ctypes.pointer(width),
+                                         ctypes.pointer(height),
+                                         ctypes.pointer(area),
+                                         ctypes.pointer(nsunrays))
+        ])
+        self.assertGreater(width.value, 0.)
+        self.assertGreater(height.value, 0.)
+        self.assertGreater(area.value, 0.)
+        self.assertGreater(nsunrays.value, 0)
+
+    def test_call_st_get_results_data(self):
+        n = self.set_up_run_report()
+        args = dot_h.args_results_data((ctypes.c_double * n)(),
+                                       (ctypes.c_double * n)(),
+                                       (ctypes.c_double * n)(),
+                                       (ctypes.c_double * n)(),
+                                       (ctypes.c_double * n)(),
+                                       (ctypes.c_double * n)(),
+                                       (ctypes.c_uint64 * n)(),
+                                       (ctypes.c_uint64 * n)(),
+                                       (ctypes.c_uint64 * n)())
+        self.stapi.batch([
+            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_GET_RESULTS_DATA, ctypes.pointer(args))
+        ])
+
+        self.assertEqual(len(args.loc_x[:n]), n)
+        self.assertEqual(len(args.loc_y[:n]), n)
+        self.assertEqual(len(args.loc_z[:n]), n)
+        self.assertEqual(len(args.cos_x[:n]), n)
+        self.assertEqual(len(args.cos_y[:n]), n)
+        self.assertEqual(len(args.cos_z[:n]), n)
+        self.assertEqual(len(args.element_map[:n]), n)
+        self.assertEqual(len(args.stage_map[:n]), n)
+        self.assertEqual(len(args.ray_numbers[:n]), n)
+
 
 class LegacyTests(STAPIv2TestCase):
     def setUp(self):
@@ -1039,11 +1298,12 @@ class TowerDemoTest(STAPIv2TestCase):
 
     def test(self):
         PT = legacy(testing = True)
-
+        # this object has data from previous legacy tests?
+        PT.clear_optics()
+        PT.clear_stages()
         # Create two optics types - one for reflector, and one for absorber.
         opt_ref = PT.add_optic("Reflector")
         opt_ref.front.reflectivity = 1.
-
         opt_abs = PT.add_optic("Absorber")
         opt_abs.front.reflectivity = 0.
 

@@ -39,6 +39,7 @@
 #     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
 import ctypes, random
 from typing import Literal
+import pandas as pd
 
 try:
     from chedder import dot_h
@@ -704,6 +705,75 @@ class legacy:
         ]
         if _do: return self.stapi.batch(calls)
         return calls
+    
+    def add_optic(self, 
+                  optic_name: str,
+                  type: Literal[1, 2] = 2,
+                  front: _Optics = None,
+                  back: _Optics = None) -> _Optics:
+        new_optics = _Optics(len(self.optics),
+                             optic_name,
+                             type,
+                             front,
+                             back)
+        self.optics.append(new_optics)
+        return new_optics
+
+    def clear_optics(self):
+        self.optics = []
+
+    def add_sun(self):
+        self.sun = _Sun()
+        return self.sun
+
+    def add_stage(self, snew: _Stage = None) -> _Stage:
+        snew    = _default_cls_arg(snew, _Stage, len(self.stages))
+        snew.id = len(self.stages)
+        self.stages.append(snew)
+        return snew
+
+    def clear_stages(self):
+        self.stages = []
+    
+
+    def get_ray_dataframe(self):
+        # """
+        # Get a pandas dataframe with all of the ray data from the simulation.
+
+        # Returns
+        # ----------
+        # Pandas.DataFrame
+        #     with columns:
+        #     loc_x   | Ray hit location, x-coordinate
+        #     loc_y   | Ray hit location, y-coordinate
+        #     loc_z   | Ray hit location, z-coordinate
+        #     cos_x   | Ray directional vector, x-component
+        #     cos_y   | Ray directional vector, y-component
+        #     cos_z   | Ray directional vector, z-component
+        #     element | Element associated with ray hit
+        #     stage   | Stage associated with ray hit
+        #     number  | Ray number
+        # """
+        if not self.stapi: raise ValueError("No SolTrace API object (STAPIv2) created. Call PySolTrace.run to initialize the object.")
+
+        if self.raydata: return self.raydata
+
+        n_intersections = self.stapi.num_intersections()
+        results_data = self.stapi.get_results_data(n_intersections)
+
+        self.raydata = pd.DataFrame({
+            "loc_x":   results_data.loc_x[:n_intersections],
+            "loc_y":   results_data.loc_y[:n_intersections],
+            "loc_z":   results_data.loc_z[:n_intersections],
+            "cos_x":   results_data.cos_x[:n_intersections],
+            "cos_y":   results_data.cos_y[:n_intersections],
+            "cos_z":   results_data.cos_z[:n_intersections],
+            "element": results_data.element_map[:n_intersections],
+            "stage":   results_data.stage_map[:n_intersections],
+            "number":  results_data.ray_numbers[:n_intersections]
+        })
+
+        return self.raydata
 
     def run(self,
             seed:           int  = -1,
@@ -750,11 +820,17 @@ class legacy:
             _seeds = (ctypes.c_uint * 1)(*[runseed])
             set_up_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, runner_type, 1, _seeds, 1)
             run_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2)
+            report_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)
+
             self.stapi.batch([
                 *sim_data_calls,
                 set_up_call,
-                run_call
+                run_call,
+                report_call
             ], True)
+
+            raydata = self.get_ray_dataframe()
+            # print(raydata)
 
         #     """self.Create(pdll, p_data)"""
         #     # self.sun.Create(pdll, p_data)
@@ -844,29 +920,7 @@ class legacy:
         #     return 1
         pass
 
-    def add_optic(self, 
-                  optic_name: str,
-                  type: Literal[1, 2] = 2,
-                  front: _Optics = None,
-                  back: _Optics = None) -> _Optics:
-        new_optics = _Optics(len(self.optics),
-                             optic_name,
-                             type,
-                             front,
-                             back)
-        self.optics.append(new_optics)
-        return new_optics
 
-    def add_sun(self):
-        self.sun = _Sun()
-        return self.sun
-
-    def add_stage(self, snew: _Stage = None) -> _Stage:
-        snew    = _default_cls_arg(snew, _Stage, len(self.stages))
-        snew.id = len(self.stages)
-        self.stages.append(snew)
-        return snew
-    
     ####################################
     # utility transform/math functions #
     ####################################
