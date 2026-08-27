@@ -37,6 +37,13 @@ auto check = [](auto val, auto should_be)
     return (st_return_t)!(val == (decltype(val))should_be); 
 };
 
+auto check_not = [](auto val, auto should_be)
+{
+    // false = 0, true = 1, to make successful test = 0 
+    // -> a == b returns 0 if the are not equal, 1 otherwise
+    return (st_return_t)(val == (decltype(val))should_be); 
+};
+
 st_return_t check_optical_side(optical_set_ptr  set,
                                OpticalSide      side,
                                DistributionType dist,
@@ -1208,6 +1215,266 @@ st_return_t call_stapi_v2_locations(st_context_v2_t  pcxt,
     double *loc_z = new double[num];
 
     code += st_locations(pcxt, loc_x, loc_y, loc_z);
+
+    code += check_not(loc_x, nullptr);
+    code += check_not(loc_y, nullptr);
+    code += check_not(loc_z, nullptr);
+
+    uint_fast64_t n = 0;
+    glm::dvec3 loc;
+    for (auto it = cxt->p_results->get_ray_record_iterator(); !cxt->p_results->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            loc = (*jt)->location;
+            code += check(loc_x[n], loc[0]);
+            code += check(loc_y[n], loc[1]);
+            code += check(loc_z[n], loc[2]);
+            ++n;
+        }
+    }
+
+    return code;
+}
+
+st_return_t call_stapi_v2_cosines(st_context_v2_t  pcxt,
+                                  st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    
+    uint_fast64_t num;
+    
+    code += st_num_intersections(pcxt, &num);
+
+    double *cos_x = new double[num];
+    double *cos_y = new double[num];
+    double *cos_z = new double[num];
+
+    code += st_cosines(pcxt, cos_x, cos_y, cos_z);
+
+    code += check_not(cos_x, nullptr);
+    code += check_not(cos_y, nullptr);
+    code += check_not(cos_z, nullptr);
+
+    uint_fast64_t n = 0;
+    glm::dvec3 cosine;
+    for (auto it = cxt->p_results->get_ray_record_iterator(); !cxt->p_results->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            cosine = (*jt)->direction;
+            code += check(cos_x[n], cosine[0]);
+            code += check(cos_y[n], cosine[1]);
+            code += check(cos_z[n], cosine[2]);
+            ++n;
+        }
+    }
+
+    return code;
+}
+
+st_return_t call_stapi_v2_elementmap(st_context_v2_t  pcxt,
+                                     st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    
+    uint_fast64_t num;
+    
+    code += st_num_intersections(pcxt, &num);
+
+    uint_fast64_t *els = new uint_fast64_t[num];
+
+    code += st_elementmap(pcxt, els);
+
+    code += check_not(els, nullptr);
+
+    uint_fast64_t n = 0;
+    for (auto it = cxt->p_results->get_ray_record_iterator(); !cxt->p_results->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            code += check(els[n], (*jt)->element);
+            ++n;
+        }
+    }
+
+    return code;
+}
+
+st_return_t call_stapi_v2_stagemap(st_context_v2_t  pcxt,
+                                   st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    
+    uint_fast64_t num;
+    
+    code += st_num_intersections(pcxt, &num);
+
+    uint_fast64_t *stages = new uint_fast64_t[num];
+
+    code += st_stagemap(pcxt, stages);
+
+    code += check_not(stages, nullptr);
+
+    for (uint_fast64_t n = 0; n < num; ++n)
+        code += check(stages[n], 0);
+    
+    return code;
+}
+
+st_return_t call_stapi_v2_raynumbers(st_context_v2_t  pcxt,
+                                     st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    
+    uint_fast64_t num;
+    
+    code += st_num_intersections(pcxt, &num);
+
+    uint_fast64_t *raynumbers = new uint_fast64_t[num];
+
+    code += st_raynumbers(pcxt, raynumbers);
+
+    code += check_not(raynumbers, nullptr);
+
+    uint_fast64_t n = 0;
+    for (auto it = cxt->p_results->get_ray_record_iterator(); !cxt->p_results->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            code += check(raynumbers[n], rec->id);
+            ++n;
+        }
+    }
+
+    return code;
+}
+
+st_return_t call_stapi_v2_sun_stats(st_context_v2_t  pcxt,
+                                    st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+
+    double        height;
+    double        width;
+    double        area;
+    uint_fast64_t nrunrays;
+
+    code += st_sun_stats(pcxt,
+                         &height,
+                         &width,
+                         &area,
+                         &nrunrays);
+
+    double _width, _height, _area;
+    
+    if (runner_type == st_runner_type_t::OPTIX)
+    {
+        _area = cxt->p_results->get_sun_A_box(); 
+        code += check(area, _area);
+    }
+    else
+    {
+        cxt->p_results->get_sun_dimensions(_width, _height);
+        code += check(width, _width);
+        code += check(height, _height);
+    }
+    uint_fast64_t num = cxt->p_results->get_sun_ray_count();
+
+    code += check(nrunrays, num);
+
+    return code;
+}
+
+st_return_t call_stapi_v2_get_results_data(st_context_v2_t  pcxt,
+                                           st_runner_type_t runner_type)
+{
+    st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+    cxt->p_data->set_number_of_rays(1000);
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 0);
+    
+    uint_fast64_t num;
+    
+    code += st_num_intersections(pcxt, &num);
+
+    args_results_data data;
+    data.loc_x = new double[num];
+    data.loc_y = new double[num];
+    data.loc_z = new double[num];
+    data.cos_x = new double[num];
+    data.cos_y = new double[num];
+    data.cos_z = new double[num];
+    data.element_map = new uint_fast64_t[num];
+    data.stage_map   = new uint_fast64_t[num];
+    data.ray_numbers = new uint_fast64_t[num];
+
+    code += st_get_results_data(pcxt, &data);
+
+    code += check_not(data.loc_x, nullptr);
+    code += check_not(data.loc_y, nullptr);
+    code += check_not(data.loc_z, nullptr);
+    code += check_not(data.cos_x, nullptr);
+    code += check_not(data.cos_y, nullptr);
+    code += check_not(data.cos_z, nullptr);
+    code += check_not(data.element_map, nullptr);
+    code += check_not(data.stage_map, nullptr);
+    code += check_not(data.ray_numbers, nullptr);
+
+    uint_fast64_t n = 0;
+    glm::dvec3 loc;
+    glm::dvec3 cosine;    
+    for (auto it = cxt->p_results->get_ray_record_iterator(); !cxt->p_results->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            loc = (*jt)->location;
+            cosine = (*jt)->direction;
+            
+            code += check(data.loc_x[n], loc[0]);
+            code += check(data.loc_y[n], loc[1]);
+            code += check(data.loc_z[n], loc[2]);
+            code += check(data.cos_x[n], cosine[0]);
+            code += check(data.cos_y[n], cosine[1]);
+            code += check(data.cos_z[n], cosine[2]);
+            code += check(data.element_map[n], (*jt)->element);
+            code += check(data.stage_map[n], 0);
+            code += check(data.ray_numbers[n], rec->id);
+            ++n;
+        }
+    }
 
     return code;
 }

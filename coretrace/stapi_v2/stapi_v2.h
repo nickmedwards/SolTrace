@@ -458,15 +458,27 @@ STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
 							 	   double 		   *cos_x,
 							 	   double 		   *cos_y,
 							 	   double 		   *cos_z);
-STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, int *element_map);
-STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, int *stage_map);
-STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, int *ray_numbers);
+STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, uint_fast64_t *element_map);
+STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map);
+STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers);
 STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
-									 double 		 *xmin,
-									 double 		 *xmax,
-									 double 		 *ymin,
-									 double 		 *ymax,
-									 int 			 *nsunrays);
+									 double 		 *height,
+									 double 		 *width,
+									 double 		 *area,
+									 uint_fast64_t	 *nsunrays);
+typedef struct args_results_data {
+	double 		  *loc_x;
+	double 		  *loc_y;
+	double 		  *loc_z;
+	double 		  *cos_x;
+	double 		  *cos_y;
+	double 		  *cos_z;
+	uint_fast64_t *element_map;
+	uint_fast64_t *stage_map;
+	uint_fast64_t *ray_numbers;
+} args_results_data;
+STAPI_V2 st_return_code st_get_results_data(st_context_v2_t pcxt, args_results_data *data);
+
 /*
 create simualtion information -> st_context_v2_t st_create_context_v2();
 free simualtion information   -> int st_free_context_v2(st_context_v2_t pcxt):
@@ -555,6 +567,7 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_STAGEMAP,
 	CALL_ST_RAYNUMBERS,
 	CALL_ST_SUN_STATS,
+	CALL_ST_GET_RESULTS_DATA,
 
 	API_CALL_COUNT			// sentinal
 } st_api_call;
@@ -768,7 +781,7 @@ typedef struct args_st_write_results_csv {
 
 // functions to get results directly
 typedef struct args_st_num_intersections {
-	int *num_intersections;
+	uint_fast64_t *num_intersections;
 } args_st_num_intersections;
 
 typedef struct args_st_locations {
@@ -784,24 +797,27 @@ typedef struct args_st_cosines {
 } args_st_cosines;
 
 typedef struct args_st_elementmap {
-	int *element_map;
+	uint_fast64_t *element_map;
 } args_st_elementmap;
 
 typedef struct args_st_stagemap {
-	int *stage_map;
+	uint_fast64_t *stage_map;
 } args_st_stagemap;
 
 typedef struct args_st_raynumbers {
-	int *ray_numbers;
+	uint_fast64_t *ray_numbers;
 } args_st_raynumbers;
 
 typedef struct args_st_sun_stats {
-	double *xmin;
-	double *xmax;
-	double *ymin;
-	double *ymax;
-	int    *nsunrays;
+	double 		  *height;
+	double 		  *width;
+	double 		  *area;
+	uint_fast64_t *nsunrays;
 } args_st_sun_stats;
+
+typedef struct args_st_get_results_data {
+	args_results_data *data;
+} args_st_get_results_data;
 
 /* Every argument layout passed through the generic arrays is one of
  * these: a tag telling us which payload is active, plus the payload
@@ -858,6 +874,7 @@ typedef struct st_api_call_args {
 		args_st_stagemap		  stagemap_args;
 		args_st_raynumbers		  raynumbers_args;
 		args_st_sun_stats		  sun_stats_args;
+		args_st_get_results_data  get_results_data_args;
     } payload;
     st_api_call type;
 } st_api_call_args;

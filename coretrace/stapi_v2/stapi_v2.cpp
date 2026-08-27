@@ -1226,12 +1226,22 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
 }
 
 // functions to get results directly
+uint_fast64_t number_of_interactions(SimulationResult *result)
+{
+    uint_fast64_t num = 0;
+
+    for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
+        num += (*it)->get_number_of_interactions();
+    
+    return num;
+}
+
 STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections)
 {
     CONTEXT(pcxt);
     RESULT(cxt);
 
-    *num_intersections = result->get_number_of_records();
+    *num_intersections = number_of_interactions(result);
     return st_return_code::SUCCESS;
 }
 
@@ -1240,16 +1250,12 @@ STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
 									 double 		 *loc_y,
 									 double 		 *loc_z)
 {
+    /* *loc_x, *loc_y, *loc_z must be allocated by 
+       caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
 
-    uint_fast64_t num_intersections = result->get_number_of_records();
-
-    std::vector<double> x, y, z;
-    x.reserve(num_intersections);
-    y.reserve(num_intersections);
-    z.reserve(num_intersections);
-    
+    uint_fast64_t n = 0;
     glm::dvec3 loc;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
@@ -1257,15 +1263,13 @@ STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
         for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
         {
             loc = (*jt)->location;
-            x.push_back(loc[0]);
-            y.push_back(loc[1]);
-            z.push_back(loc[2]);
+            loc_x[n] = loc[0];
+            loc_y[n] = loc[1];
+            loc_z[n] = loc[2];
+            ++n;
         }
     }
 
-    loc_x = x.data();
-    loc_y = y.data();
-    loc_z = z.data();
     return st_return_code::SUCCESS;
 }
 
@@ -1274,16 +1278,12 @@ STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
 							 	   double 		   *cos_y,
 							 	   double 		   *cos_z)
 {
+    /* *cos_x, *cos_y, *cos_z must be allocated by 
+       caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
 
-    uint_fast64_t num_intersections = result->get_number_of_records();
-
-    std::vector<double> x, y, z;
-    x.reserve(num_intersections);
-    y.reserve(num_intersections);
-    z.reserve(num_intersections);
-    
+    uint_fast64_t n = 0;
     glm::dvec3 cosine;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
@@ -1291,85 +1291,124 @@ STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
         for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
         {
             cosine = (*jt)->direction;
-            x.push_back(cosine[0]);
-            y.push_back(cosine[1]);
-            z.push_back(cosine[2]);
+            cos_x[n] = cosine[0];
+            cos_y[n] = cosine[1];
+            cos_z[n] = cosine[2];
+            ++n;
         }
     }
 
-    cos_x = x.data();
-    cos_y = y.data();
-    cos_z = z.data();
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, int *element_map)
+STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, uint_fast64_t *element_map)
 {
+    /* *element_map must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
 
-    uint_fast64_t num_intersections = result->get_number_of_records();
-
-    std::vector<int> els;
-    els.reserve(num_intersections);
-
+    uint_fast64_t n = 0;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
         ray_record_ptr rec = *it;
         for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
         {
-            els.push_back((int)(*jt)->element);
+            element_map[n] = (*jt)->element;
+            ++n;
         }
     }
 
-    element_map = els.data();
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, int *stage_map)
+STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map)
 {
+    /* *stage_map must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
 
+    uint_fast64_t n = number_of_interactions(result);
     // deprecating stages return array of 0s
-    stage_map = new int[result->get_number_of_records()]{};
+    for (uint_fast64_t i = 0; i < n; ++i)
+        stage_map[i] = 0;
 
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, int *ray_numbers)
+STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers)
 {
+    /* *ray_numbers must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
 
-    std::vector<int> nums;
+    uint_fast64_t n = 0;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
     {
         ray_record_ptr rec = *it;
         for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
         {
-            nums.push_back((int)rec->id);
+            ray_numbers[n] = rec->id;
+            ++n;
         }
     }
 
-    ray_numbers = nums.data();
     return st_return_code::SUCCESS;
 }
 
 STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
-									 double 		 *xmin,
-									 double 		 *xmax,
-									 double 		 *ymin,
-									 double 		 *ymax,
-									 int 			 *nsunrays)
+									 double 		 *height,
+									 double 		 *width,
+									 double 		 *area,
+									 uint_fast64_t	 *nsunrays)
 {
     CONTEXT(pcxt);
     RESULT(cxt);
 
-    *xmin = 0;
-    *ymin = 0;
-    result->get_sun_dimensions(*xmax, *ymax);
     *nsunrays = result->get_sun_ray_count();
+
+    if (cxt->runner_type == st_runner_type_t::OPTIX)
+    {
+        // optix only sets sun area
+        *area = result->get_sun_A_box();
+    }
+    else
+    {
+        result->get_sun_dimensions(*height, *width);
+        *area = (*height) * (*width);
+    }
+
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_code st_get_results_data(st_context_v2_t pcxt, args_results_data *data)
+{
+    /* all arrays in data must be allocated by caller using st_num_intersections */
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    uint_fast64_t n = 0;
+    glm::dvec3 loc;
+    glm::dvec3 cosine;
+    for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
+    {
+        ray_record_ptr rec = *it;
+        for (auto jt = rec->get_interaction_record_iterator(); !rec->is_at_end(jt); ++jt)
+        {
+            loc = (*jt)->location;
+            cosine = (*jt)->direction;
+            
+            data->loc_x[n]       = loc[0];
+            data->loc_y[n]       = loc[1];
+            data->loc_z[n]       = loc[2];
+            data->cos_x[n]       = cosine[0];
+            data->cos_y[n]       = cosine[1];
+            data->cos_z[n]       = cosine[2];
+            data->element_map[n] = (*jt)->element;
+            data->stage_map[n]   = 0;
+            data->ray_numbers[n] = rec->id;
+            ++n;
+        }
+    }
 
     return st_return_code::SUCCESS;
 }

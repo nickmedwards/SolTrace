@@ -304,7 +304,29 @@ class STAPIv2:
         # functions to get results directly #
         #####################################
 
+        self.__pdll.st_num_intersections.argtypes = self.__get_argtypes(dot_h.args_st_num_intersections)
+        self.__pdll.st_num_intersections.restype  = dot_h.st_return_t
         
+        self.__pdll.st_locations.argtypes = self.__get_argtypes(dot_h.args_st_locations)
+        self.__pdll.st_locations.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_cosines.argtypes = self.__get_argtypes(dot_h.args_st_cosines)
+        self.__pdll.st_cosines.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_elementmap.argtypes = self.__get_argtypes(dot_h.args_st_elementmap)
+        self.__pdll.st_elementmap.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_stagemap.argtypes = self.__get_argtypes(dot_h.args_st_stagemap)
+        self.__pdll.st_stagemap.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_raynumbers.argtypes = self.__get_argtypes(dot_h.args_st_raynumbers)
+        self.__pdll.st_raynumbers.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_sun_stats.argtypes = self.__get_argtypes(dot_h.args_st_sun_stats)
+        self.__pdll.st_sun_stats.restype  = dot_h.st_return_t
+        
+        self.__pdll.st_get_results_data.argtypes = self.__get_argtypes(dot_h.args_st_get_results_data)
+        self.__pdll.st_get_results_data.restype  = dot_h.st_return_t
 
         ############################################
         # function for batching SolTrace API calls #
