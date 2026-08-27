@@ -1390,25 +1390,26 @@ st_return_t call_stapi_v2_sun_stats(st_context_v2_t  pcxt,
     uint_fast64_t nrunrays;
 
     code += st_sun_stats(pcxt,
-                         &height,
                          &width,
+                         &height,
                          &area,
                          &nrunrays);
 
+    SimulationResult* results =
+        reinterpret_cast<SimulationResult*>(cxt->p_results);
     double _width, _height, _area;
-    
+    results->get_sun_dimensions(_width, _height);
+    _area = results->get_sun_A_box(); 
     if (runner_type == st_runner_type_t::OPTIX)
     {
-        _area = cxt->p_results->get_sun_A_box(); 
         code += check(area, _area);
     }
     else
     {
-        cxt->p_results->get_sun_dimensions(_width, _height);
         code += check(width, _width);
         code += check(height, _height);
     }
-    uint_fast64_t num = cxt->p_results->get_sun_ray_count();
+    uint_fast64_t num = results->get_sun_ray_count();
 
     code += check(nrunrays, num);
 

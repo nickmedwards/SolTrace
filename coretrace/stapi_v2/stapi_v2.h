@@ -462,8 +462,8 @@ STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, uint_fast64_t *eleme
 STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map);
 STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers);
 STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
-									 double 		 *height,
 									 double 		 *width,
+									 double 		 *height,
 									 double 		 *area,
 									 uint_fast64_t	 *nsunrays);
 typedef struct args_results_data {
@@ -809,8 +809,8 @@ typedef struct args_st_raynumbers {
 } args_st_raynumbers;
 
 typedef struct args_st_sun_stats {
-	double 		  *height;
 	double 		  *width;
+	double 		  *height;
 	double 		  *area;
 	uint_fast64_t *nsunrays;
 } args_st_sun_stats;

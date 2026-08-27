@@ -1356,8 +1356,8 @@ STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_n
 }
 
 STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
+                                     double 		 *width,
 									 double 		 *height,
-									 double 		 *width,
 									 double 		 *area,
 									 uint_fast64_t	 *nsunrays)
 {
@@ -1373,8 +1373,8 @@ STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
     }
     else
     {
-        result->get_sun_dimensions(*height, *width);
-        *area = (*height) * (*width);
+        result->get_sun_dimensions(*width, *height);
+        *area = (*width) * (*height);
     }
 
     return st_return_code::SUCCESS;
