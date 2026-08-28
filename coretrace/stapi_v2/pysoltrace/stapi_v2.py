@@ -271,6 +271,13 @@ class STAPIv2:
         self.__pdll.st_sun_userdata.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
 
+        ##################################################
+        # functions for writing input files for SolTrace #
+        ##################################################
+
+        self.__pdll.st_export_json_file.argtypes = self.__get_argtypes(dot_h.args_st_export_json_file)
+        self.__pdll.st_export_json_file.restype  = dot_h.st_return_t
+
         ############################################
         # functions for SolTrace runner management #
         ############################################
@@ -687,7 +694,15 @@ class STAPIv2:
                                            _angle,
                                            _intensity)
         self.__check_return_code(code)
-
+    
+    ##################################################
+    # functions for writing input files for SolTrace #
+    ##################################################
+    
+    def export_json_file(self, filename: str):
+        code = self.__pdll.st_export_json_file(self.__pcxt, filename.encode())
+        self.__check_return_code(code)
+    
     ############################################
     # functions for SolTrace runner management #
     ############################################
@@ -741,7 +756,7 @@ class STAPIv2:
     #############################################
 
     def write_results_csv(self, filename: str, precision: int = 12) -> None:
-        code = self.__pdll.st_write_results_csv(self.__pcxt, filename.encode('utf-8'), precision)
+        code = self.__pdll.st_write_results_csv(self.__pcxt, filename.encode(), precision)
         self.__check_return_code(code)
 
     #####################################
@@ -815,7 +830,7 @@ class STAPIv2:
         coz_y = (ctypes.c_double * n_intersections)()
         coz_z = (ctypes.c_double * n_intersections)()
         element_map = (ctypes.c_uint64 * n_intersections)()
-        stage_map = (ctypes.c_uint64 * n_intersections)()
+        stage_map   = (ctypes.c_uint64 * n_intersections)()
         ray_numbers = (ctypes.c_uint64 * n_intersections)()
         args = dot_h.args_results_data(loc_x,
                                        loc_y,

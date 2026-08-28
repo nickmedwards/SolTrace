@@ -117,13 +117,14 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
  st_sim_run_v2 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
  st_sim_report 						[x]			 [ ]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_write_results_csv 				[x]			 [x]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
- st_num_intersections				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
- st_locations 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
- st_cosines 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
- st_elementmap 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
- st_stagemap 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
- st_raynumbers 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
- st_sun_stats 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[ ]			[ ]			  [ ]
+ st_num_intersections				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_locations 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
+ st_cosines 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
+ st_elementmap 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
+ st_stagemap 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
+ st_raynumbers 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
+ st_sun_stats 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
+ st_get_results_data   				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
  st_calc_zrot_azel   				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_calc_euler_angles 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_transform_to_local 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
@@ -135,15 +136,51 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
 -------------------------------------------------------------------------------------------------------------------------------------------------
 other items
 -------------------------------------------------------------------------------------------------------------------------------------------------
- STAPIv2.__check_return_code  		[ ]			 [ ]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
- st_return_code error messages		[ ]			 [ ]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
- st_return_code warning messages	[ ]			 [ ]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
- STAPIv2.generate_api_call  		[ ]			 [ ]		[x]			   [i]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ STAPIv2.__check_return_code  		[-]			 [-]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_return_code error messages		[-]			 [-]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_return_code warning messages	[-]			 [-]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ STAPIv2.generate_api_call  		[-]			 [-]		[x]			   [i]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ legacy.write_soltrace_input_file	[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[x]			  [ ]
  tower demo					  		[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [i]
  heliostat template					[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
  linear fresnel template			[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
  parabolic trough template			[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
  parabolic dish template			[-]			 [-]		[-]			   [-]			[-]			[-]			[-]			[-]			  [ ]
+ point.__repr__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__bool__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__float__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__int__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__iter__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__get_set_item__ 			[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__len__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__negation__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__abs__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__add__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__radd__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__iadd__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__sub__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__rsub__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__isub__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__mul__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__rmul__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__imul__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__floordiv__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__ifloordiv__				[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__truediv__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__itruediv__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__matmul__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__imatmul__					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__eq__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__neq__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__lt__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__gt__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__lte__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.__gte__						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.reduce						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.radius						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.unitize						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ point.as_list						[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
+ Point.from_list					[-]			 [-]		[x]			   [x]			[-]			[-]			[-]			[-]			  [-]
 -------------------------------------------------------------------------------------------------------------------------------------------------
  */
 
@@ -421,6 +458,9 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
 									 double 		 *angle,
 									 double 		 *intensity);
 
+// functions for writing input files for SolTrace
+STAPI_V2 st_return_t st_export_json_file(st_context_v2_t pcxt, const char *filename);
+
 //////////////////////////////////
 // Simlulation Runner Functions //
 //////////////////////////////////
@@ -553,6 +593,8 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_SUN_XYZ,
 	CALL_ST_SUN_POSITION,
 	CALL_ST_SUN_USERDATA,
+	// functions for writing input files for SolTrace
+	CALL_ST_EXPORT_JSON_FILE,
 	// Simlulation Runner Functions
 	CALL_ST_SIM_SETUP,
 	CALL_ST_SIM_RUN_V2,
@@ -750,6 +792,11 @@ typedef struct args_st_sun_userdata {
 	double*	  intensity;
 } args_st_sun_userdata;
 
+// functions for writing input files for SolTrace
+typedef struct args_st_export_json_file {
+	const char *filename;
+} args_st_export_json_file;
+
 // Simlulation Runner Functions
 typedef struct args_st_get_installed_runners {
 	uint8_t *installed;
@@ -775,7 +822,7 @@ typedef struct args_st_sim_report {
 
 // Simlulation Results Functions
 typedef struct args_st_write_results_csv {
-	const char *filename; 
+	const char *filename;
 	int 	   precision = 12;
 } args_st_write_results_csv;
 
@@ -860,6 +907,8 @@ typedef struct st_api_call_args {
 		args_st_sun_xyz 	 sun_xyz_args;
 		args_st_sun_position sun_position_args;
 		args_st_sun_userdata sun_userdata_args;
+		// functions for writing input files for SolTrace
+		args_st_export_json_file export_json_file_args;
 		// Simlulation Runner Functions
 		args_st_sim_setup  sim_setup_args;
 		args_st_sim_run_v2 sim_run_v2_args;

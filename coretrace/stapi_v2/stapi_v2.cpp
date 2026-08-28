@@ -1060,10 +1060,15 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
+// functions for writing input files for SolTrace
+STAPI_V2 st_return_t st_export_json_file(st_context_v2_t pcxt, const char *filename)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
 
-
-// functions for SolTrace data information
-
+    ST_WRAP_CB_TRY_CATCH(data->export_json_file(std::string(filename)), cxt->p_cb);
+    return st_return_code::SUCCESS;
+}
 
 //////////////////////////////////
 // Simlulation Runner Functions //
@@ -1644,6 +1649,12 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                                            call_args->payload.sun_userdata_args.npoints,
                                            call_args->payload.sun_userdata_args.angle,
                                            call_args->payload.sun_userdata_args.intensity);
+                    break;
+                }
+                // functions for writing input files for SolTrace
+                case st_api_call::CALL_ST_EXPORT_JSON_FILE:
+                {
+                    code = st_export_json_file(pcxt, call_args->payload.export_json_file_args.filename);
                     break;
                 }
                 // Simlulation Runner Functions
