@@ -737,23 +737,23 @@ class legacy:
     
 
     def get_ray_dataframe(self):
-        # """
-        # Get a pandas dataframe with all of the ray data from the simulation.
+        """
+        Get a pandas dataframe with all of the ray data from the simulation.
 
-        # Returns
-        # ----------
-        # Pandas.DataFrame
-        #     with columns:
-        #     loc_x   | Ray hit location, x-coordinate
-        #     loc_y   | Ray hit location, y-coordinate
-        #     loc_z   | Ray hit location, z-coordinate
-        #     cos_x   | Ray directional vector, x-component
-        #     cos_y   | Ray directional vector, y-component
-        #     cos_z   | Ray directional vector, z-component
-        #     element | Element associated with ray hit
-        #     stage   | Stage associated with ray hit
-        #     number  | Ray number
-        # """
+        Returns
+        ----------
+        Pandas.DataFrame
+            with columns:
+            loc_x   | Ray hit location, x-coordinate
+            loc_y   | Ray hit location, y-coordinate
+            loc_z   | Ray hit location, z-coordinate
+            cos_x   | Ray directional vector, x-component
+            cos_y   | Ray directional vector, y-component
+            cos_z   | Ray directional vector, z-component
+            element | Element associated with ray hit
+            stage   | Stage associated with ray hit
+            number  | Ray number
+        """
         if not self.stapi: raise ValueError("No SolTrace API object (STAPIv2) created. Call PySolTrace.run to initialize the object.")
 
         if self.raydata: return self.raydata
@@ -774,6 +774,33 @@ class legacy:
         })
 
         return self.raydata
+
+    def get_sun_stats(self):
+        """
+        Get information on the sun box.
+
+        Returns
+        ----------
+        dict
+            Keys in the return dictionary are:
+            'width' --> width of sun box (not set if using OptixRunner)
+            'height' --> height of sun box (not set if using OptixRunner)
+            'area' --> area of sun box
+            'nsunrays' --> Number of sun rays simulated
+        """
+        if not self.stapi: raise ValueError("No SolTrace API object (STAPIv2) created. Call PySolTrace.run to initialize the object.")
+        
+        if self.sunstats: return self.sunstats
+
+        self.sunstats = {
+            item[0]: item[1] 
+            for item in 
+            zip(['width', 'height', 'area', 'nsunrays'],
+                self.stapi.sun_stats())
+        }
+        self.sunstats['position'] = self.sun.position
+
+        return self.sunstats
 
     def run(self,
             seed:           int  = -1,
@@ -829,7 +856,10 @@ class legacy:
                 report_call
             ], True)
 
-            raydata = self.get_ray_dataframe()
+            self.get_ray_dataframe()
+            self.get_sun_stats()
+            self.powerperray = self.sunstats['area'] * self.dni / self.sunstats['nsunrays']
+
             # print(raydata)
 
         #     """self.Create(pdll, p_data)"""
