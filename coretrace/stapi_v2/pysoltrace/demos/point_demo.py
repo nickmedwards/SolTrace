@@ -176,6 +176,8 @@ print(f'c /= [6, 2, 8] -> {c}')
 # __matmul__
 # __imatmul__
 print('\nExamples of matmul (cross product):')
+print(a)
+print(b)
 print(f'a @ b          -> {a @ b}')
 print(f'a.dot(a @ b)   -> {a.dot(a @ b)}')
 print(f'a @ [3, 10, 3] -> {a @ [3, 10, 3]}')

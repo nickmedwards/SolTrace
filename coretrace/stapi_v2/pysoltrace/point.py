@@ -228,13 +228,13 @@ class Point:
 
     def __imul__(self, obj: Point | list | float | int) -> Point:
         if isinstance(obj, Point):
-            self.x * obj.x
-            self.y * obj.y
-            self.z * obj.z
+            self.x *= obj.x
+            self.y *= obj.y
+            self.z *= obj.z
         elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
-            self.x * obj[0]
-            self.y * obj[1]
-            self.z * obj[2]
+            self.x *= obj[0]
+            self.y *= obj[1]
+            self.z *= obj[2]
         elif isinstance(obj, (float, int)):
             self.x *= obj
             self.y *= obj
@@ -383,10 +383,10 @@ class Point:
         return self
 
     def __eq__(self, obj: Point | list) -> bool:
-        if isinstance(obj, list) or hasattr(obj, '__getitem__'):
-            obj = self.from_list(obj)
         if isinstance(obj, Point):
             return self.x == obj.x and self.y == obj.y and self.z == obj.z
+        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+            return self.x == obj[0] and self.y == obj[1] and self.z == obj[2]
         return NotImplemented
 
     def __ne__(self, obj: Point | list) -> bool:

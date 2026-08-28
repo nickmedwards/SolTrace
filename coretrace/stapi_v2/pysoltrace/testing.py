@@ -1,7 +1,8 @@
 import ctypes, unittest
-from math import sin, cos, pi
-
+from math import sin, cos, pi, sqrt
 import orjson
+import numpy as np
+
 
 try:
     from chedder import dot_h, found_in
@@ -16,7 +17,312 @@ except ImportError:
     from .stapi_v2 import STAPIv2, STAPIv2Exception
     from .legacy import legacy
 
-# TODO: point tests
+class PointTests(unittest.TestCase):
+    def setUp(self):
+        self.a = Point(6, 0, 8)
+        self.b = Point(3, 0, 3)
+        self.d = Point(3.2, 5.0, 2.4)
+        self.e = Point(6, 0, 8)
+        self.zeros = Point()
+        return super().setUp()
+    
+    def test_repr(self):
+        self.assertEqual(f'{self.a}', '[6.00, 0.00, 8.00]')
+        self.assertEqual(f'{self.a:.4e}', '[6.0000e+00, 0.0000e+00, 8.0000e+00]')
+
+    def test_bool(self):
+        self.assertEqual(bool(self.a), True)
+        self.assertEqual(bool(self.zeros), False)
+
+    def test_float(self):
+        self.assertEqual(float(self.a), 10.0)
+
+    def test_int(self):
+        self.assertEqual(int(self.a), 10)
+
+    def test_iter(self):
+        sum = 0
+        for v in self.a: sum += v
+        self.assertEqual(sum, 14)
+
+    def test_get_set_item(self):
+        self.assertEqual(self.a[1], 0)
+        self.a[1] = -17
+        self.assertEqual(self.a[1], -17)
+
+    def test_len(self):
+        self.assertEqual(len(self.a), 3)
+
+    def test_negation(self):
+        self.assertEqual(-self.a, Point(-6, 0, -8))
+
+    def test_abs(self):
+        self.a[1] = -17
+        self.assertEqual(abs(self.a), 19.72308292331602)
+
+    def test_add(self):
+        self.assertEqual(self.a + self.b,              Point(9, 0, 11))
+        self.assertEqual(self.a + 1,                   Point(7, 1, 9))
+        self.assertEqual(self.a + 2.1,                 Point(8.1, 2.1, 10.1))
+        self.assertEqual(self.a + [3, 0, 3],           Point(9, 0, 11))
+        self.assertEqual(self.a + np.array([3, 0, 3]), Point(9, 0, 11))
+        # self.assertEqual(self.a + 'not implemented',   NotImplemented)
+
+    def test_radd(self):
+        self.assertEqual(1 + self.b,                   Point(4, 1, 4))
+        self.assertEqual(2.1 + self.b,                 Point(5.1, 2.1, 5.1))
+        self.assertEqual([6, 0, 8] + self.b,           Point(9, 0, 11))
+        # right add with np.array returns np.array
+        temp = np.array([6, 0, 8]) + self.b
+        self.assertAlmostEqual(Point(9, 0, 11) - temp, 0)
+
+    def test_iadd(self):
+        c = Point()
+        c += self.a + self.b
+        self.assertEqual(c, Point(9, 0, 11))
+        c += 1
+        self.assertEqual(c, Point(10, 1, 12))
+        c += 2.1
+        self.assertEqual(c, Point(12.1, 3.1, 14.1))
+        c += [2, 2, 2]
+        self.assertEqual(c, Point(14.1, 5.1, 16.1))
+        c += np.array([-2, -2, -2])
+        # floating point error makes assertEqual fail
+        self.assertAlmostEqual(c - Point(12.1, 3.1, 14.1), 0)
+
+    def test_sub(self):
+        self.assertEqual(self.a - self.b,              Point(3, 0, 5))
+        self.assertEqual(self.a - 1,                   Point(5, -1, 7))
+        self.assertEqual(self.a - 2.1,                 Point(3.9, -2.1, 5.9))
+        self.assertEqual(self.a - [3, 0, 3],           Point(3, 0, 5))
+        self.assertEqual(self.a - np.array([3, 0, 3]), Point(3, 0, 5))
+
+    def test_rsub(self):
+        self.assertEqual(1 - self.b, Point(-2, 1, -2))
+        # floating point error makes assertEqual fail
+        self.assertAlmostEqual(2.1 - self.b - Point(-.9, 2.1, -.9), 0)
+        self.assertEqual([6, 0, 8] - self.b,           Point(3, 0, 5))
+        # right subtraction with np.array returns np.array
+        temp = np.array([6, 0, 8]) - self.b
+        self.assertAlmostEqual(Point(3, 0, 5) - temp, 0)
+
+    def test_isub(self):
+        c = Point()
+        c -= self.a + self.b
+        self.assertEqual(c, Point(-9, 0, -11))
+        c -= 1
+        self.assertEqual(c, Point(-10, -1, -12))
+        c -= 2.1
+        self.assertEqual(c, Point(-12.1, -3.1, -14.1))
+        c -= [2, 2, 2]
+        self.assertEqual(c, Point(-14.1, -5.1, -16.1))
+        c -= np.array([-2, -2, -2])
+        # floating point error makes assertEqual fail
+        self.assertAlmostEqual(c - Point(-12.1, -3.1, -14.1), 0)
+
+    def test_mul(self):
+        self.assertEqual(self.a * self.b, Point(18, 0, 24))
+        self.assertEqual(self.a * 4,      Point(24, 0, 32))
+        # floating point error makes assertEqual fail
+        self.assertAlmostEqual(self.a * 2.1 - Point(12.6, 0, 16.8), 0)
+        self.assertEqual(self.a * [3, 0, 3],           Point(18, 0, 24))
+        self.assertEqual(self.a * np.array([3, 0, 3]), Point(18, 0, 24))
+
+    def test_rmul(self):
+        self.assertEqual(4 * self.b, Point(12, 0, 12))
+        # floating point error makes assertEqual fail
+        self.assertAlmostEqual(2.1 * self.b - Point(6.3, 0, 6.3), 0)
+        self.assertEqual([6, 0, 8] * self.b,           Point(18, 0, 24))
+        # right subtraction with np.array returns np.array
+        temp = np.array([6, 0, 8]) * self.b
+        self.assertAlmostEqual(Point(18, 0, 24) - temp, 0)
+
+    def test_imul(self):
+        c = self.a.copy()
+        c *= self.b
+        self.assertEqual(c, Point(18, 0, 24))
+        c *= 4
+        self.assertEqual(c, Point(72, 0, 96))
+        c *= 2.1
+        # floating point error makes assertEqual fail
+        self.assertAlmostEqual(c - Point(151.2, 0, 201.6), 0)
+        c *= [2, 2, 2]
+        self.assertAlmostEqual(c - Point(302.4, 0, 403.2), 0)
+        c *= np.array([2, 2, 2])
+        self.assertAlmostEqual(c - Point(604.8, 0, 806.4), 0)
+
+    def test_floordiv(self):
+        self.assertEqual(self.a // self.d,              Point(1, 0, 3))
+        self.assertEqual(self.a // 4,                   Point(1, 0, 2))
+        self.assertEqual(self.a // 2.1,                 Point(2, 0, 3))
+        self.assertEqual(self.a // [3, 1, 3],           Point(2, 0, 2))
+        self.assertEqual(self.a // np.array([3, 1, 3]), Point(2, 0, 2))
+
+    def test_ifloordiv(self):
+        c = self.a.copy()
+        c //= self.d
+        self.assertEqual(c, Point(1, 0, 3))
+        c = self.a.copy()
+        c //= 4
+        self.assertEqual(c, Point(1, 0, 2))
+        c = self.a.copy()
+        c //= 2.1
+        self.assertEqual(c, Point(2, 0, 3))
+        c = self.a.copy()
+        c //= [3, 1, 3]
+        self.assertEqual(c, Point(2, 0, 2))
+        c = self.a.copy()
+        c //= np.array([3, 1, 3])
+        self.assertEqual(c, Point(2, 0, 2))
+
+    def test_truediv(self):
+        self.assertEqual(self.a / self.d,              Point(6 / 3.2, 0, 8 / 2.4))
+        self.assertEqual(self.a / 4,                   Point(3 / 2, 0, 2))
+        self.assertEqual(self.a / 2.1,                 Point(6 / 2.1, 0, 8 / 2.1))
+        self.assertEqual(self.a / [3, 1, 3],           Point(2, 0, 8 / 3))
+        self.assertEqual(self.a / np.array([3, 1, 3]), Point(2, 0, 8 / 3))
+
+    def test_itruediv(self):
+        c = self.a.copy()
+        c /= self.d
+        self.assertEqual(c, Point(6 / 3.2, 0, 8 / 2.4))
+        c = self.a.copy()
+        c /= 4
+        self.assertEqual(c, Point(3 / 2, 0, 2))
+        c = self.a.copy()
+        c /= 2.1
+        self.assertEqual(c, Point(6 / 2.1, 0, 8 / 2.1))
+        c = self.a.copy()
+        c /= [3, 1, 3]
+        self.assertEqual(c, Point(2, 0, 8 / 3))
+        c = self.a.copy()
+        c /= np.array([3, 1, 3])
+        self.assertEqual(c, Point(2, 0, 8 / 3))
+
+    def test_cross(self):
+        self.a[1] = -17
+        self.assertEqual(self.a @ self.b,               Point(-51, 6, 51))
+        self.assertEqual(self.a.dot(self.a @ self.b),   0)
+        self.assertEqual(self.a @ [3, 10, 3],           Point(-131, 6, 111))
+        self.assertEqual(self.a @ np.array([3, 10, 3]), Point(-131, 6, 111))
+
+    def test_icross(self):
+        self.a[1] = -17
+        c = self.a.copy()
+        c @= self.b
+        self.assertEqual(c, Point(-51, 6, 51))
+        c = self.a.copy()
+        c @= [3, 10, 3]
+        self.assertEqual(c, Point(-131, 6, 111))
+        c = self.a.copy()
+        c @= np.array([3, 10, 3])
+        self.assertEqual(c, Point(-131, 6, 111))
+
+    def test_eq(self):
+        self.assertEqual(self.a,    self.e)
+        self.assertNotEqual(self.a, self.e + 1)
+        self.assertEqual(self.a,    [6, 0, 8])
+        self.assertNotEqual(self.a, [6, 1, 8])
+        self.assertEqual(self.a,    np.array([6, 0, 8]))
+        self.assertNotEqual(self.a, np.array([6, 1, 8]))
+
+    def test_neq(self):
+        self.assertEqual(self.a != self.e,              False)
+        self.assertEqual(self.a != self.e + 1,          True)
+        self.assertEqual(self.a != [6, 0, 8],           False)
+        self.assertEqual(self.a != [6, 1, 8],           True)
+        self.assertEqual(self.a != np.array([6, 0, 8]), False)
+        self.assertEqual(self.a != np.array([6, 1, 8]), True)
+
+    def test_lt(self):
+        self.assertEqual(self.a < self.e,               False)
+        self.assertEqual(self.a < self.e + 1,           True)
+        self.assertEqual(self.a < self.e - 1,           False)
+        self.assertEqual(self.a < [6, 0, 8],            False)
+        self.assertEqual(self.a < [6, 1, 8],            True)
+        self.assertEqual(self.a < [6, -1, 8],           True)
+        self.assertEqual(self.a < [5, -1, 7],           False)
+        self.assertEqual(self.a < np.array([6, 0, 8]),  False)
+        self.assertEqual(self.a < np.array([6, 1, 8]),  True)
+        self.assertEqual(self.a < np.array([6, -1, 8]), True)
+        self.assertEqual(self.a < np.array([5, -1, 7]), False)
+
+    def test_gt(self):
+        self.assertEqual(self.a > self.e,               False)
+        self.assertEqual(self.a > self.e + 1,           False)
+        self.assertEqual(self.a > self.e - 1,           True)
+        self.assertEqual(self.a > [6, 0, 8],            False)
+        self.assertEqual(self.a > [6, 1, 8],            False)
+        self.assertEqual(self.a > [6, -1, 8],           False)
+        self.assertEqual(self.a > [5, -1, 7],           True)
+        self.assertEqual(self.a > np.array([6, 0, 8]),  False)
+        self.assertEqual(self.a > np.array([6, 1, 8]),  False)
+        self.assertEqual(self.a > np.array([6, -1, 8]), False)
+        self.assertEqual(self.a > np.array([5, -1, 7]), True)
+
+    def test_lte(self):
+        self.assertEqual(self.a <= self.e,               True)
+        self.assertEqual(self.a <= self.e + 1,           True)
+        self.assertEqual(self.a <= self.e - 1,           False)
+        self.assertEqual(self.a <= [6, 0, 8],            True)
+        self.assertEqual(self.a <= [6, 1, 8],            True)
+        self.assertEqual(self.a <= [6, -1, 8],           True)
+        self.assertEqual(self.a <= [5, -1, 7],           False)
+        self.assertEqual(self.a <= np.array([6, 0, 8]),  True)
+        self.assertEqual(self.a <= np.array([6, 1, 8]),  True)
+        self.assertEqual(self.a <= np.array([6, -1, 8]), True)
+        self.assertEqual(self.a <= np.array([5, -1, 7]), False)
+
+    def test_gte(self):
+        self.assertEqual(self.a >= self.e,               True)
+        self.assertEqual(self.a >= self.e + 1,           False)
+        self.assertEqual(self.a >= self.e - 1,           True)
+        self.assertEqual(self.a >= [6, 0, 8],            True)
+        self.assertEqual(self.a >= [6, 1, 8],            False)
+        self.assertEqual(self.a >= [6, -1, 8],           False)
+        self.assertEqual(self.a >= [5, -1, 7],           True)
+        self.assertEqual(self.a >= np.array([6, 0, 8]),  True)
+        self.assertEqual(self.a >= np.array([6, 1, 8]),  False)
+        self.assertEqual(self.a >= np.array([6, -1, 8]), False)
+        self.assertEqual(self.a >= np.array([5, -1, 7]), True)
+
+    def test_reduce(self):
+        self.assertEqual(self.a.reduce(),     14)
+        self.assertEqual(self.b.reduce(),     6)
+        self.assertEqual(self.d.reduce(),     10.6)
+        self.assertEqual(self.e.reduce(),     14)
+        self.assertEqual(self.zeros.reduce(), 0)
+
+    def test_radius(self):
+        self.assertEqual(self.a.radius(),     10)
+        self.assertEqual(self.b.radius(),     4.242640687119285)
+        self.assertEqual(self.d.radius(),     6.4031242374328485)
+        self.assertEqual(self.e.radius(),     10)
+        self.assertEqual(self.zeros.radius(), 0)
+
+    def test_unitize(self):
+        self.assertEqual(self.a.unitize(),     Point(.6, 0, .8))
+        self.assertEqual(self.b.unitize(),     Point(3 / sqrt(18), 0, 3 / sqrt(18)))
+        self.assertEqual(self.d.unitize(),     Point(self.d.x / self.d.radius(),
+                                                     self.d.y / self.d.radius(),
+                                                     self.d.z / self.d.radius()))
+        self.assertEqual(self.e.unitize(),     Point(.6, 0, .8))
+        self.assertEqual(self.zeros.unitize(), Point())
+
+    def test_as_list(self):
+        self.assertEqual(self.a.as_list(),     [6, 0, 8])
+        self.assertEqual(self.b.as_list(),     [3, 0, 3])
+        self.assertEqual(self.d.as_list(),     [3.2, 5, 2.4])
+        self.assertEqual(self.e.as_list(),     [6, 0, 8])
+        self.assertEqual(self.zeros.as_list(), [0, 0, 0])
+
+    def test_from_list(self):
+        self.assertEqual(Point.from_list([6, 0, 8]),     Point(6, 0, 8))
+        self.assertEqual(Point.from_list([3, 0, 3]),     Point(3, 0, 3))
+        self.assertEqual(Point.from_list([3.2, 5, 2.4]), Point(3.2, 5, 2.4))
+        self.assertEqual(Point.from_list(np.array([6, 0, 8])),     Point(6, 0, 8))
+        self.assertEqual(Point.from_list(np.array([3, 0, 3])),     Point(3, 0, 3))
+        self.assertEqual(Point.from_list(np.array([3.2, 5, 2.4])), Point(3.2, 5, 2.4))
 
 class STAPIv2TestCase(unittest.TestCase):
     def setUp(self):
