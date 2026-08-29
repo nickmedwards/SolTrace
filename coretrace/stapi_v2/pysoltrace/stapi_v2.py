@@ -68,7 +68,7 @@ STAPIv2Warning = lambda code, name, msg: warnings.warn(
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
 #############################################################################
 class STAPIv2:
-    def __init__(self, stapi_v2_dll_path: str = '', testing: bool = False):
+    def __init__(self, stapi_v2_dll_path: str = '', testing: bool = False, benchmarking: bool = False):
         if len(stapi_v2_dll_path): self.__setup_dll(stapi_v2_dll_path)
         else:
             _here = pathlib.Path(__file__).parent.resolve()
@@ -96,6 +96,7 @@ class STAPIv2:
         self.__stash_batch_args = []
 
         self.__testing = testing
+        self.__benchmarking = benchmarking
 
     def __repr__(self):
         rt = f'STAPIv2 Object at ({id(self.__pdll):#x})'
@@ -141,6 +142,9 @@ class STAPIv2:
                                                                    ctypes.c_char_p,
                                                                    ctypes.c_char_p)]
         self.__pdll.st_create_context.restype  = dot_h.st_return_t
+
+        self.__pdll.st_reset_context.argtypes = [ctypes.c_void_p]
+        self.__pdll.st_reset_context.restype  = dot_h.st_return_t
 
         self.__pdll.st_free_context.argtypes = [ctypes.c_void_p]
         self.__pdll.st_free_context.restype  = dot_h.st_return_t
@@ -353,6 +357,13 @@ class STAPIv2:
         code = self.__pdll.st_free_context(self.__pcxt)
         if not self.__testing:
             sys.stdout.write(f'Freed context ({self.__pcxt:#x}) with code ({code}) from SolTrace DLL ({self.__pdll})\n')
+
+    def reset(self):
+        code = self.__pdll.st_reset_context(self.__pcxt)
+        self.__check_return_code(code)
+        if not self.__benchmarking:
+            sys.stdout.write(f'Reset context ({self.__pcxt:#x})\n')
+
 
     def __check_return_code(self, code):
         if code > dot_h.st_return_code.SUCCESS and code < dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:

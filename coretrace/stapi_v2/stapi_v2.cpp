@@ -47,6 +47,19 @@ STAPI_V2 st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb)
     return st_return_code::SUCCESS;
 }
 
+STAPI_V2 st_return_t st_reset_context(st_context_v2_t pcxt)
+{
+	CONTEXT(pcxt);
+
+    delete cxt->p_data;
+    delete cxt->p_runner;
+    delete cxt->p_results;
+
+    cxt->p_data = new SimulationData();
+
+	return st_return_code::SUCCESS;
+}
+
 STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
 {
 	CONTEXT(pcxt);

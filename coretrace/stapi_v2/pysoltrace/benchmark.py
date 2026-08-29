@@ -1,0 +1,620 @@
+import ctypes, orjson
+
+try:
+    from timer import timer
+    from chedder import dot_h, found_in
+    import soltrace_constants as _STC
+    import soltrace_json as _stjson
+    from point import Point
+    from stapi_v2 import STAPIv2, STAPIv2Exception
+    from legacy import legacy
+except ImportError:
+    from .timer import timer
+    from .chedder import dot_h, found_in
+    from . import soltrace_constants as _STC
+    from . import soltrace_json as _stjson
+    from .point import Point
+    from .stapi_v2 import STAPIv2, STAPIv2Exception
+    from .legacy import legacy
+
+# set up dummy values
+bytes_str = b'string of bytes'
+c_double = ctypes.c_double()
+c_uint64 = ctypes.c_uint64()
+double_ptr = (ctypes.c_double * 64)()
+uint64_ptr  = (ctypes.c_uint64 * 64)()
+
+sim_params = dot_h.args_simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
+
+args_sun_buie     = dot_h.args_sun(0, 2, 2, 2, .5, 'b'.encode())
+args_sun_user     = dot_h.args_sun(len(_stjson.SUN_DEFAULT_USER_ANGLE), 608, 303, 1000, 5, 'd'.encode())
+angles            = [0, 1, 2]
+intensities       = [0, 1, 2]
+batch_angles      = (ctypes.c_double * 3)(*angles)
+batch_intensities = (ctypes.c_double * 3)(*intensities)
+
+opt_set = dot_h.args_optical_properties_set("dummy".encode(), 1.1, 1.1, 2)
+front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, 'g'.encode())
+back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, 'g'.encode())
+
+el_args = dot_h.args_element(2, 2, 2, 2, 2, 2, 2, False, True, 'c'.encode(), 'p'.encode())
+opt_id = 0
+
+ap   = b'c'
+surf = b'p'
+a_params = [2]
+s_params = [2, 2]
+batch_a_params = (ctypes.c_double * 8)(*a_params)
+batch_s_params = (ctypes.c_double * 8)(*s_params)
+
+results_args = dot_h.args_results_data(double_ptr, double_ptr, double_ptr, 
+                                       double_ptr, double_ptr, double_ptr,
+                                       uint64_ptr, uint64_ptr, uint64_ptr)
+
+f = open('./sample.json', mode='rb')
+sample_json = orjson.loads(f.read())
+f.close()
+
+stapi = STAPIv2(testing = True, benchmarking = True)
+
+def do_benchmark(_t: timer, key: str, func: callable, args: tuple, count: int):
+    for _ in range(count):
+        _t.ic(key)
+        func(*args)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def generic_inner(key: str, func: callable, args: tuple, count: int = 10):
+    toggle = isinstance(args, tuple)
+    def _inner(_t: timer):
+        stapi.reset()
+        for _ in range(count):
+            _t.ic(key)
+            func(*args) if toggle else func(args)
+            _t.oc(key)
+        return key
+    return _inner
+
+# get varience from summary of timer key
+get_var = lambda _t, key: _t.summarize(key)[2] ** 2
+
+def do_var_ctrl_benchmark(_t: timer, inner: callable[[timer], str], tol: float = .001):
+    # init benchmark
+    key = inner(_t)
+    prev_var = get_var(_t, key)
+    var_err = tol * 10
+
+    # do variance controlled benchmark
+    while var_err > tol:
+        inner(_t)
+        var = get_var(_t, key)
+        var_err = ((prev_var - var) / prev_var) ** 2
+        prev_var = var
+
+    return _t.summarize(key)
+
+generate_api_func_args = [
+    ('generate read input json call',            stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_READ_INPUT_JSON, bytes_str)),
+    ('generate set simulation parameters call',  stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SET_SIMULATION_PARAMETERS, ctypes.pointer(sim_params))),
+    ('generate sim params call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_PARAMS, 1, 100, True)),
+    ('generate sim errors call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_ERRORS, True, True)),
+    ('generate sim location call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_LOCATION, 35.962278, -106.5122622)),
+    ('generate sim tolerance call',              stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_TOLERANCE, .1)),
+    ('generate num optics call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_NUM_OPTICS, ctypes.pointer(c_uint64))),
+    ('generate add optical properties set call', stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ADD_OPTICAL_PROPERIES_SET,
+                                                                           ctypes.pointer(opt_set),
+                                                                           ctypes.pointer(front),
+                                                                           ctypes.pointer(back),
+                                                                           ctypes.pointer(c_uint64))),
+    ('generate delete optic call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_DELETE_OPTIC, 0)),
+    ('generate clear optics call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_CLEAR_OPTICS)),
+    ('generate num elements call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_NUM_ELEMENTS, ctypes.pointer(c_uint64))),
+    ('generate add element call',                stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ADD_ELEMENT,
+                                                                           ctypes.pointer(el_args),
+                                                                           opt_id,
+                                                                           batch_a_params,
+                                                                           batch_s_params,
+                                                                           ctypes.pointer(c_uint64))),
+    ('generate delete element call',             stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_DELETE_ELEMENT, 0)),
+    ('generate clear elements call',             stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_CLEAR_ELEMENTS)),
+    ('generate element enabled call',            stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_ENABLED, 0, True)),
+    ('generate element virtual call',            stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_VIRTUAL, 0, False)),
+    ('generate element xyz call',                stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_XYZ, 0, 4, 4, 4)),
+    ('generate element aim call',                stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_AIM, 0, 4, 4, 4)),
+    ('generate element zrot call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_ZROT, 0, 4)),
+    ('generate element aperture call',           stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_APERTURE, 0, ap, batch_a_params)),
+    ('generate element surface call',            stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_SURFACE, 0, surf, batch_s_params)),
+    ('generate element optic call',              stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_OPTIC, 0, opt_id)),
+    ('generate add user sun call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ADD_SUN,
+                                                                           ctypes.pointer(args_sun_user),
+                                                                           batch_angles,
+                                                                           batch_intensities)),
+    ('generate add user sun call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ADD_SUN,
+                                                                           ctypes.pointer(args_sun_buie),
+                                                                           ctypes.pointer(ctypes.c_double()),
+                                                                           ctypes.pointer(ctypes.c_double()))),
+    ('generate sun xyz call',                    stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SUN_XYZ, 608, 303, 1000)),
+    ('generate sun userdata call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SUN_USERDATA, 3, batch_angles, batch_intensities)),
+    ('generate sim setup call',                  stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.NATIVE)),
+    ('generate sim run v2 call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_RUN_V2)),
+    ('generate sim report call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)),
+    ('generate write results csv call',          stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_WRITE_RESULTS_CSV, b'./batch_sample.csv')),
+    ('generate locations call',                  stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_LOCATIONS, double_ptr, double_ptr, double_ptr)),
+    ('generate cosines call',                    stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_COSINES, double_ptr, double_ptr, double_ptr)),
+    ('generate elementmap call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENTMAP, uint64_ptr)),
+    ('generate stagemap call',                   stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_STAGEMAP, uint64_ptr)),
+    ('generate raynumbers call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_RAYNUMBERS, uint64_ptr)),
+    ('generate raynumbers call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SUN_STATS,
+                                                                           ctypes.pointer(c_double),
+                                                                           ctypes.pointer(c_double),
+                                                                           ctypes.pointer(c_double),
+                                                                           ctypes.pointer(c_uint64))),
+    ('generate get results data call',           stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_GET_RESULTS_DATA, ctypes.pointer(results_args)))
+]
+
+def inner_delete_optic(_t: timer, count: int = 10):
+    key = 'delete optic'
+    stapi.reset()
+    ids = [stapi.add_optical_properties_set(opt_set, front, back) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.delete_optic(i)
+        _t.oc(key)
+    return key
+
+def inner_clear_optics(_t: timer, count: int = 10):
+    key = 'clear optics'
+    stapi.reset()
+    for _ in range(count):
+        for _ in range(10): stapi.add_optical_properties_set(opt_set, front, back)
+        _t.ic(key)
+        stapi.clear_optics()
+        _t.oc(key)
+    return key
+
+def inner_add_element(_t: timer, count: int = 10):
+    key = 'add element'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    for _ in range(count):
+        _t.ic(key)
+        stapi.add_element(el_args, opt_id, a_params, s_params)
+        _t.oc(key)
+    return key
+
+def inner_delete_element(_t: timer, count: int = 10):
+    key = 'delete element'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.delete_element(i)
+        _t.oc(key)
+    return key
+
+def inner_clear_elements(_t: timer, count: int = 10):
+    key = 'clear elements'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    for _ in range(count):
+        for _ in range(10): stapi.add_element(el_args, opt_id, a_params, s_params)
+        _t.ic(key)
+        stapi.clear_elements()
+        _t.oc(key)
+    return key
+
+def inner_element_enabled(_t: timer, count: int = 10):
+    key = 'element enabled'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_enabled(i, True)
+        _t.oc(key)
+    return key
+
+def inner_element_virtual(_t: timer, count: int = 10):
+    key = 'element virtual'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_virtual(i, False)
+        _t.oc(key)
+    return key
+
+def inner_element_xyz(_t: timer, count: int = 10):
+    key = 'element xyz'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_xyz(i, 6.08, 6.08, 6.08)
+        _t.oc(key)
+    return key
+
+def inner_element_aim(_t: timer, count: int = 10):
+    key = 'element aim'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_aim(i, 6.08, 6.08, 6.08)
+        _t.oc(key)
+    return key
+
+def inner_element_zrot(_t: timer, count: int = 10):
+    key = 'element zrot'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_zrot(i, 6.08)
+        _t.oc(key)
+    return key
+
+def inner_element_aperture(_t: timer, count: int = 10):
+    key = 'element aperture'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_aperture(i, 'r', [6.08, 6.08])
+        _t.oc(key)
+    return key
+
+def inner_element_surface(_t: timer, count: int = 10):
+    key = 'element surface'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_surface(i, 's', [6.08])
+        _t.oc(key)
+    return key
+
+def inner_element_optic(_t: timer, count: int = 10):
+    key = 'element optic'
+    stapi.reset()
+    opt_id = stapi.add_optical_properties_set(opt_set, front, back)
+    other_id = stapi.add_optical_properties_set(opt_set, front, back)
+    ids = [stapi.add_element(el_args, opt_id, a_params, s_params) for _ in range(count)]
+    for i in ids:
+        _t.ic(key)
+        stapi.element_optic(i, other_id)
+        _t.oc(key)
+    return key
+
+def inner_add_sun_buie(_t: timer, count: int = 10):
+    key = 'add sun buie'
+    for _ in range(count):
+        stapi.reset()
+        _t.ic(key)
+        stapi.add_sun(args_sun_buie)
+        _t.oc(key)
+    return key
+
+def inner_add_sun_userdata(_t: timer, count: int = 10):
+    key = 'add sun userdata'
+    for _ in range(count):
+        stapi.reset()
+        _t.ic(key)
+        stapi.add_sun(args_sun_user, _stjson.SUN_DEFAULT_USER_ANGLE, _stjson.SUN_DEFAULT_USER_INTENSITY)
+        _t.oc(key)
+    return key
+
+def inner_check_success_code(_t: timer, count: int = 10):
+    key = 'check success code'
+    _, _, check_return_code = stapi.sneak()
+    for _ in range(count):
+        _t.ic(key)
+        check_return_code(dot_h.st_return_code.SUCCESS)
+        _t.oc(key)
+    return key
+
+def inner_check_error_code(_t: timer, count: int = 10):
+    key = 'check error code'
+    _, _, check_return_code = stapi.sneak()
+    for _ in range(count):
+        for c in range(1, dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE):
+            try: 
+                _t.ic(key)
+                check_return_code(c)
+            except: _t.oc(key)
+    return key
+
+stapi_func_calls = [
+    ('read input json dict',       stapi.read_input_json,            (sample_json)),
+    ('read input json bytes',      stapi.read_input_json,            ('./sample.json')),
+    ('set simulation parameters',  stapi.set_simulation_parameters,  (sim_params)),
+    ('sim params',                 stapi.sim_params,                 (1, 100, True)),
+    ('sim errors',                 stapi.sim_errors,                 (True, True)),
+    ('sim location',               stapi.sim_location,               (35.962278, -106.5122622)),
+    ('sim tolerance',              stapi.sim_tolerance,              (.1)),
+    ('num optics',                 stapi.num_optics,                 ()),
+    ('add optical properties set', stapi.add_optical_properties_set, (opt_set, front, back)),
+    ('',                           inner_delete_optic,               ()),
+    ('',                           inner_clear_optics,               ()),
+    ('num elements',               stapi.num_elements,               ()),
+    ('',                           inner_add_element,                ()),
+    ('',                           inner_delete_element,             ()),
+    ('',                           inner_clear_elements,             ()),
+    ('',                           inner_element_enabled,            ()),
+    ('',                           inner_element_virtual,            ()),
+    ('',                           inner_element_xyz,                ()),
+    ('',                           inner_element_aim,                ()),
+    ('',                           inner_element_zrot,               ()),
+    ('',                           inner_element_aperture,           ()),
+    ('',                           inner_element_surface,            ()),
+    ('',                           inner_element_optic,              ()),
+    ('',                           inner_add_sun_buie,               ()),
+    ('',                           inner_add_sun_userdata,           ()),
+    ('sun shape',                  stapi.sun_shape,                  ('b', .5)),
+    ('sun xyz',                    stapi.sun_xyz,                    (6.08, 6.08, 6.08)),
+    ('sun user data',              stapi.sun_userdata,               (len(_stjson.SUN_DEFAULT_USER_ANGLE),
+                                                                      _stjson.SUN_DEFAULT_USER_ANGLE,
+                                                                      _stjson.SUN_DEFAULT_USER_INTENSITY)),
+    ('', inner_check_success_code, ()),
+    ('', inner_check_error_code, ()),
+]
+
+def benchmark_set_up_native(_t: timer, count: int = 10):
+    key = 'set up native'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _t.ic(key)
+        _stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_set_up_embree(_t: timer, count: int = 10):
+    key = 'set up embree'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _t.ic(key)
+        _stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_set_up_optix(_t: timer, count: int = 10):
+    key = 'set up optix'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _t.ic(key)
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_run_native(_t: timer, count: int = 10):
+    key = 'run native'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        _t.ic(key)
+        _stapi.sim_run_v2()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_run_embree(_t: timer, count: int = 10):
+    key = 'run embree'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        _t.ic(key)
+        _stapi.sim_run_v2()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_run_optix(_t: timer, count: int = 10):
+    key = 'run optix'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _t.ic(key)
+        _stapi.sim_run_v2()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_report_native(_t: timer, count: int = 10):
+    key = 'report native'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
+        _stapi.sim_run_v2()
+        _t.ic(key)
+        _stapi.sim_report()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_report_embree(_t: timer, count: int = 10):
+    key = 'report embree'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
+        _stapi.sim_run_v2()
+        _t.ic(key)
+        _stapi.sim_report()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_report_optix(_t: timer, count: int = 10):
+    key = 'report optix'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _t.ic(key)
+        _stapi.sim_report()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_locations(_t: timer, count: int = 10):
+    key = 'locations'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        n = _stapi.num_intersections()
+        _t.ic(key)
+        _, _, _ = _stapi.locations(n)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_cosines(_t: timer, count: int = 10):
+    key = 'cosines'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        n = _stapi.num_intersections()
+        _t.ic(key)
+        _, _, _ = _stapi.cosines(n)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_elementmap(_t: timer, count: int = 10):
+    key = 'element map'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        n = _stapi.num_intersections()
+        _t.ic(key)
+        _ = _stapi.elementmap(n)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_stagemap(_t: timer, count: int = 10):
+    key = 'stage map'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        n = _stapi.num_intersections()
+        _t.ic(key)
+        _ = _stapi.stagemap(n)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_raynumbers(_t: timer, count: int = 10):
+    key = 'ray numbers'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        n = _stapi.num_intersections()
+        _t.ic(key)
+        _ = _stapi.raynumbers(n)
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_sun_stats(_t: timer, count: int = 10):
+    key = 'sun stats'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        _t.ic(key)
+        _, _, _, _ = _stapi.sun_stats()
+        _t.oc(key)
+    return _t.summarize(key)
+
+def benchmark_get_results_data(_t: timer, count: int = 10):
+    key = 'get results data'
+    for _ in range(count):
+        _stapi = STAPIv2(testing = True, benchmarking = True)
+        _stapi.read_input_json('./sample.json')
+        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
+        _stapi.sim_run_v2()
+        _stapi.sim_report()
+        n = _stapi.num_intersections()
+        _t.ic(key)
+        _ = _stapi.get_results_data(n)
+        _t.oc(key)
+    return _t.summarize(key)
+
+skip_embree = '' if stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE) else None
+skip_optix  = '' if stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX) else None
+
+big_stapi_calls = [
+    # ('',          benchmark_set_up_native,     ()),
+    # (skip_embree, benchmark_set_up_embree,     ()),
+    # (skip_optix,  benchmark_set_up_optix,      ()), # ave ~ 0.2386330, comment out if don't want to wait
+    # ('',          benchmark_run_native,        ()), # ave ~ 1.4342657, comment out if don't want to wait
+    # (skip_embree, benchmark_run_embree,        ()),
+    # (skip_optix,  benchmark_run_optix,         ()),
+    # ('',          benchmark_report_native,     ()),
+    # (skip_embree, benchmark_report_embree,     ()),
+    # (skip_optix,  benchmark_report_optix,      ()),
+    # (skip_optix,  benchmark_locations,         ()),
+    # (skip_optix,  benchmark_cosines,           ()),
+    # (skip_optix,  benchmark_elementmap,        ()),
+    # (skip_optix,  benchmark_stagemap,          ()),
+    # (skip_optix,  benchmark_raynumbers,        ()),
+    # (skip_optix,  benchmark_sun_stats,         ()),
+    # (skip_optix,  benchmark_get_results_data,  ()),
+]
+
+if __name__ == '__main__':
+    overall_t = timer()
+    t = timer()
+    results = []
+
+    clean_bmf_name = lambda f: " ".join(f.__name__.split("_")[1:])
+
+    # TODO: Point benchmarking
+
+    overall_t.ic('stapi function calls')
+    for key, f, args in stapi_func_calls:
+        if key == None:
+            print(f'skipping {clean_bmf_name(f)}...')
+            continue
+        print(f'benchmarking {key if len(key) else clean_bmf_name(f)}')
+        results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args))
+                       if len(key) else
+                       do_var_ctrl_benchmark(t, f))
+
+    for key, f, args in big_stapi_calls:
+        if key == None:
+            print(f'skipping {clean_bmf_name(f)}...')
+            continue
+        print(f'benchmarking {key if len(key) else clean_bmf_name(f)}')
+        results.append(f(t))
+    overall_t.oc('stapi function calls')
+
+    # overall_t.ic('generate api calls')
+    # for key, f, args in generate_api_func_args:
+    #     results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
+    # overall_t.oc('generate api calls')
+
+    print(f'\n\n{t}')
+    print(f'\n\n{overall_t}')

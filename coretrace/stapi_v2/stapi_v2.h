@@ -298,6 +298,7 @@ typedef void* st_context_v2_t;
 
 // functions for SolTrace context management
 STAPI_V2 st_return_t st_create_context(st_context_v2_t* pcxt, p_callback cb = nullptr);
+STAPI_V2 st_return_t st_reset_context(st_context_v2_t pcxt);
 STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 
 ////////////////////////////////
