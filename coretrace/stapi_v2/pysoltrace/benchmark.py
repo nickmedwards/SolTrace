@@ -1,3 +1,52 @@
+"""
+(x: done, -: skipped, i: in progress, T: have TODO, blank: not done)
+
+function name | ctrl type: |   range   |   varience
+-------------------------------------------------------
+ generate_api_call              [ ]           [x]
+ read_input_json (dict)         [ ]           [x]
+ read_input_json (bytes)        [ ]           [x]
+ set_simulation_parameters      [ ]           [x]
+ sim_params                     [ ]           [x]
+ sim_errors                     [ ]           [x]
+ sim_location                   [ ]           [x]
+ sim_tolerance                  [ ]           [x]
+ num_optics                     [ ]           [x]
+ add_optical_properties_set     [ ]           [x]
+ delete_optic                   [ ]           [x]
+ clear_optics                   [ ]           [x]
+ num_elements                   [ ]           [x]
+ add_element                    [ ]           [x]
+ delete_element                 [ ]           [x]
+ clear_elements                 [ ]           [x]
+ element_enabled                [ ]           [x]
+ element_virtual                [ ]           [x]
+ element_xyz                    [ ]           [x]
+ element_aim                    [ ]           [x]
+ element_zrot                   [ ]           [x]
+ element_aperture               [ ]           [x]
+ element_surface                [ ]           [x]
+ element_optic                  [ ]           [x]
+ add_sun_buie                   [ ]           [x]
+ add_sun_userdata               [ ]           [x]
+ sun_shape                      [ ]           [x]
+ sun_xyz                        [ ]           [x]
+ sun_userdata                   [ ]           [x]
+ check_success_code             [ ]           [x]
+ check_error_code               [ ]           [x]
+ sim_setup                      [x]           [ ]
+ sim_run_v2                     [x]           [ ]
+ sim_report                     [x]           [ ]
+ num_intersections              [x]           [ ]
+ locations                      [x]           [ ]
+ cosines                        [x]           [ ]
+ elementmap                     [x]           [ ]
+ stagemap                       [x]           [ ]
+ raynumbers                     [x]           [ ]
+ sun_stats                      [x]           [ ]
+ get_results_data               [x]           [ ]
+"""
+
 import ctypes, orjson
 
 try:
@@ -415,6 +464,7 @@ def benchmark_simulation(runner_type):
             _t.ic(keys[10])
             _ = _stapi.get_results_data(n)
             _t.oc(keys[10])
+        # TODO: do variance controlled benchmarking on any/all of the variences here
         return [_t.summarize(k) for k in keys]
     return inner
     
@@ -447,19 +497,22 @@ if __name__ == '__main__':
                        do_var_ctrl_benchmark(t, f))
     overall_t.oc('stapi function calls')
     
-    # for key, f, args in simulation_calls:
-    #     if key[0] == '_':
-    #         print(f'skipping {key[1:]}...')
-    #         continue
-    #     overall_t.ic(f'running sample {key}')
-    #     print(f'benchmarking {key}')
-    #     results.extend(f(t, *args))
-    #     overall_t.oc(f'running sample {key}')
+    for key, f, args in simulation_calls:
+        if key[0] == '_':
+            print(f'skipping {key[1:]}...')
+            continue
+        overall_t.ic(f'running sample {key}')
+        print(f'benchmarking {key}')
+        results.extend(f(t, *args))
+        overall_t.oc(f'running sample {key}')
 
-    # overall_t.ic('generate api calls')
-    # for key, f, args in generate_api_func_args:
-    #     results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
-    # overall_t.oc('generate api calls')
+    overall_t.ic('generate api calls')
+    for key, f, args in generate_api_func_args:
+        results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
+    overall_t.oc('generate api calls')
 
     print(f'\n\n{t}')
     print(f'\n\n{overall_t}')
+
+    # TODO: save results, keep track of previous run of benchmark, and historical fastest/slowest runs
+    #       maybe sql db with rows for each call of benchmark? (need to handle null values)

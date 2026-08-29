@@ -79,6 +79,7 @@ NOTE: may change name convention from marking _v2 to _v1
 function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cpp batch | py batch | unittested | legacy.py | unittested 
 -------------------------------------------------------------------------------------------------------------------------------------------------
  st_create_context 					[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[-]			  [ ]
+ st_reset_context 					[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[-]			  [ ]
  st_free_context 					[x]			 [ ]		[x]			   [ ]			[-]			[ ]			[-]			[-]			  [ ]
  st_read_input_json 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_set_simulation_parameters 		[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
