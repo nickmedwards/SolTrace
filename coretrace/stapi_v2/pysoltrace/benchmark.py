@@ -65,12 +65,12 @@ def do_benchmark(_t: timer, key: str, func: callable, args: tuple, count: int):
     return _t.summarize(key)
 
 def generic_inner(key: str, func: callable, args: tuple, count: int = 10):
-    toggle = isinstance(args, tuple)
     def _inner(_t: timer):
         stapi.reset()
         for _ in range(count):
             _t.ic(key)
-            func(*args) if toggle else func(args)
+            # single arged funcs should be defined like (arg1, )
+            func(*args)
             _t.oc(key)
         return key
     return _inner
@@ -107,7 +107,7 @@ generate_api_func_args = [
                                                                            ctypes.pointer(back),
                                                                            ctypes.pointer(c_uint64))),
     ('generate delete optic call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_DELETE_OPTIC, 0)),
-    ('generate clear optics call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_CLEAR_OPTICS)),
+    ('generate clear optics call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_CLEAR_OPTICS, )),
     ('generate num elements call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_NUM_ELEMENTS, ctypes.pointer(c_uint64))),
     ('generate add element call',                stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ADD_ELEMENT,
                                                                            ctypes.pointer(el_args),
@@ -116,7 +116,7 @@ generate_api_func_args = [
                                                                            batch_s_params,
                                                                            ctypes.pointer(c_uint64))),
     ('generate delete element call',             stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_DELETE_ELEMENT, 0)),
-    ('generate clear elements call',             stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_CLEAR_ELEMENTS)),
+    ('generate clear elements call',             stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_CLEAR_ELEMENTS, )),
     ('generate element enabled call',            stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_ENABLED, 0, True)),
     ('generate element virtual call',            stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_VIRTUAL, 0, False)),
     ('generate element xyz call',                stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_ELEMENT_XYZ, 0, 4, 4, 4)),
@@ -136,7 +136,7 @@ generate_api_func_args = [
     ('generate sun xyz call',                    stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SUN_XYZ, 608, 303, 1000)),
     ('generate sun userdata call',               stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SUN_USERDATA, 3, batch_angles, batch_intensities)),
     ('generate sim setup call',                  stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_SETUP, dot_h.st_runner_type_t.NATIVE)),
-    ('generate sim run v2 call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_RUN_V2)),
+    ('generate sim run v2 call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_RUN_V2, )),
     ('generate sim report call',                 stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)),
     ('generate write results csv call',          stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_WRITE_RESULTS_CSV, b'./batch_sample.csv')),
     ('generate locations call',                  stapi.generate_api_call, (dot_h.st_api_call.CALL_ST_LOCATIONS, double_ptr, double_ptr, double_ptr)),
@@ -332,13 +332,13 @@ def inner_check_error_code(_t: timer, count: int = 10):
     return key
 
 stapi_func_calls = [
-    ('read input json dict',       stapi.read_input_json,            (sample_json)),
-    ('read input json bytes',      stapi.read_input_json,            ('./sample.json')),
-    ('set simulation parameters',  stapi.set_simulation_parameters,  (sim_params)),
+    ('read input json dict',       stapi.read_input_json,            (sample_json, )),
+    ('read input json bytes',      stapi.read_input_json,            ('./sample.json', )),
+    ('set simulation parameters',  stapi.set_simulation_parameters,  (sim_params, )),
     ('sim params',                 stapi.sim_params,                 (1, 100, True)),
     ('sim errors',                 stapi.sim_errors,                 (True, True)),
     ('sim location',               stapi.sim_location,               (35.962278, -106.5122622)),
-    ('sim tolerance',              stapi.sim_tolerance,              (.1)),
+    ('sim tolerance',              stapi.sim_tolerance,              (.1, )),
     ('num optics',                 stapi.num_optics,                 ()),
     ('add optical properties set', stapi.add_optical_properties_set, (opt_set, front, back)),
     ('',                           inner_delete_optic,               ()),
@@ -366,222 +366,65 @@ stapi_func_calls = [
     ('', inner_check_error_code, ()),
 ]
 
-def benchmark_set_up_native(_t: timer, count: int = 10):
-    key = 'set up native'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _t.ic(key)
-        _stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
-        _t.oc(key)
-    return _t.summarize(key)
+def benchmark_simulation(runner_type):
+    def inner(_t: timer, count: int = 10):
+        keys = [f'set up {runner_type.name.lower()}',
+                f'run {runner_type.name.lower()}',
+                f'report {runner_type.name.lower()}',
+                f'num intersections {runner_type.name.lower()}',
+                f'locations {runner_type.name.lower()}',
+                f'cosines {runner_type.name.lower()}',
+                f'element map {runner_type.name.lower()}',
+                f'stage map {runner_type.name.lower()}',
+                f'ray numbers {runner_type.name.lower()}',
+                f'sun stats {runner_type.name.lower()}',
+                f'get results data {runner_type.name.lower()}']
+        for _ in range(count):
+            _stapi = STAPIv2(testing = True, benchmarking = True)
+            _stapi.read_input_json('./sample.json')
+            _t.ic(keys[0])
+            _stapi.sim_setup(runner_type)
+            _t.oc(keys[0])
+            _t.ic(keys[1])
+            _stapi.sim_run_v2()
+            _t.oc(keys[1])
+            _t.ic(keys[2])
+            _stapi.sim_report()
+            _t.oc(keys[2])
+            _t.ic(keys[3])
+            n = _stapi.num_intersections()
+            _t.oc(keys[3])
+            _t.ic(keys[4])
+            _, _, _ = _stapi.locations(n)
+            _t.oc(keys[4])
+            _t.ic(keys[5])
+            _, _, _ = _stapi.cosines(n)
+            _t.oc(keys[5])
+            _t.ic(keys[6])
+            _ = _stapi.elementmap(n)
+            _t.oc(keys[6])
+            _t.ic(keys[7])
+            _ = _stapi.stagemap(n)
+            _t.oc(keys[7])
+            _t.ic(keys[8])
+            _ = _stapi.raynumbers(n)
+            _t.oc(keys[8])
+            _t.ic(keys[9])
+            _, _, _, _ = _stapi.sun_stats()
+            _t.oc(keys[9])
+            _t.ic(keys[10])
+            _ = _stapi.get_results_data(n)
+            _t.oc(keys[10])
+        return [_t.summarize(k) for k in keys]
+    return inner
+    
+skip_embree = 'embree' if stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE) else '_embree'
+skip_optix  = 'optix' if stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX) else '_optix'
 
-def benchmark_set_up_embree(_t: timer, count: int = 10):
-    key = 'set up embree'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _t.ic(key)
-        _stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_set_up_optix(_t: timer, count: int = 10):
-    key = 'set up optix'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _t.ic(key)
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_run_native(_t: timer, count: int = 10):
-    key = 'run native'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
-        _t.ic(key)
-        _stapi.sim_run_v2()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_run_embree(_t: timer, count: int = 10):
-    key = 'run embree'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
-        _t.ic(key)
-        _stapi.sim_run_v2()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_run_optix(_t: timer, count: int = 10):
-    key = 'run optix'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _t.ic(key)
-        _stapi.sim_run_v2()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_report_native(_t: timer, count: int = 10):
-    key = 'report native'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.NATIVE)
-        _stapi.sim_run_v2()
-        _t.ic(key)
-        _stapi.sim_report()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_report_embree(_t: timer, count: int = 10):
-    key = 'report embree'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.EMBREE)
-        _stapi.sim_run_v2()
-        _t.ic(key)
-        _stapi.sim_report()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_report_optix(_t: timer, count: int = 10):
-    key = 'report optix'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _t.ic(key)
-        _stapi.sim_report()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_locations(_t: timer, count: int = 10):
-    key = 'locations'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        n = _stapi.num_intersections()
-        _t.ic(key)
-        _, _, _ = _stapi.locations(n)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_cosines(_t: timer, count: int = 10):
-    key = 'cosines'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        n = _stapi.num_intersections()
-        _t.ic(key)
-        _, _, _ = _stapi.cosines(n)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_elementmap(_t: timer, count: int = 10):
-    key = 'element map'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        n = _stapi.num_intersections()
-        _t.ic(key)
-        _ = _stapi.elementmap(n)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_stagemap(_t: timer, count: int = 10):
-    key = 'stage map'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        n = _stapi.num_intersections()
-        _t.ic(key)
-        _ = _stapi.stagemap(n)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_raynumbers(_t: timer, count: int = 10):
-    key = 'ray numbers'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        n = _stapi.num_intersections()
-        _t.ic(key)
-        _ = _stapi.raynumbers(n)
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_sun_stats(_t: timer, count: int = 10):
-    key = 'sun stats'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        _t.ic(key)
-        _, _, _, _ = _stapi.sun_stats()
-        _t.oc(key)
-    return _t.summarize(key)
-
-def benchmark_get_results_data(_t: timer, count: int = 10):
-    key = 'get results data'
-    for _ in range(count):
-        _stapi = STAPIv2(testing = True, benchmarking = True)
-        _stapi.read_input_json('./sample.json')
-        _stapi.sim_setup(dot_h.st_runner_type_t.OPTIX)
-        _stapi.sim_run_v2()
-        _stapi.sim_report()
-        n = _stapi.num_intersections()
-        _t.ic(key)
-        _ = _stapi.get_results_data(n)
-        _t.oc(key)
-    return _t.summarize(key)
-
-skip_embree = '' if stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE) else None
-skip_optix  = '' if stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX) else None
-
-big_stapi_calls = [
-    # ('',          benchmark_set_up_native,     ()),
-    # (skip_embree, benchmark_set_up_embree,     ()),
-    # (skip_optix,  benchmark_set_up_optix,      ()), # ave ~ 0.2386330, comment out if don't want to wait
-    # ('',          benchmark_run_native,        ()), # ave ~ 1.4342657, comment out if don't want to wait
-    # (skip_embree, benchmark_run_embree,        ()),
-    # (skip_optix,  benchmark_run_optix,         ()),
-    # ('',          benchmark_report_native,     ()),
-    # (skip_embree, benchmark_report_embree,     ()),
-    # (skip_optix,  benchmark_report_optix,      ()),
-    # (skip_optix,  benchmark_locations,         ()),
-    # (skip_optix,  benchmark_cosines,           ()),
-    # (skip_optix,  benchmark_elementmap,        ()),
-    # (skip_optix,  benchmark_stagemap,          ()),
-    # (skip_optix,  benchmark_raynumbers,        ()),
-    # (skip_optix,  benchmark_sun_stats,         ()),
-    # (skip_optix,  benchmark_get_results_data,  ()),
+simulation_calls = [
+    ('native',    benchmark_simulation(dot_h.st_runner_type_t.NATIVE),  ()), # increase count -> (40, ) # ave ~ 1.51397166, comment out if don't want to wait
+    (skip_embree, benchmark_simulation(dot_h.st_runner_type_t.EMBREE),  ()), # increase count -> (40, )
+    (skip_optix,  benchmark_simulation(dot_h.st_runner_type_t.OPTIX),   ()), # increase count -> (40, ) # ave ~ .36015468, comment out if don't want to wait
 ]
 
 if __name__ == '__main__':
@@ -602,14 +445,16 @@ if __name__ == '__main__':
         results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args))
                        if len(key) else
                        do_var_ctrl_benchmark(t, f))
-
-    for key, f, args in big_stapi_calls:
-        if key == None:
-            print(f'skipping {clean_bmf_name(f)}...')
-            continue
-        print(f'benchmarking {key if len(key) else clean_bmf_name(f)}')
-        results.append(f(t))
     overall_t.oc('stapi function calls')
+    
+    # for key, f, args in simulation_calls:
+    #     if key[0] == '_':
+    #         print(f'skipping {key[1:]}...')
+    #         continue
+    #     overall_t.ic(f'running sample {key}')
+    #     print(f'benchmarking {key}')
+    #     results.extend(f(t, *args))
+    #     overall_t.oc(f'running sample {key}')
 
     # overall_t.ic('generate api calls')
     # for key, f, args in generate_api_func_args:

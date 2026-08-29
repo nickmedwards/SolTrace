@@ -1,9 +1,16 @@
 import math
+import numpy as np
 
 try:
     from point import Point
 except ImportError:
     from .point import Point
+
+# Freedman–Diaconis rule
+def freedman_diaconis_np(arr, fudge: float = 1.0):
+    min_val, iqr25, iqr75, max_val = np.quantile(arr, [0, .25, .75, 1])
+    bin_width = 2 * (iqr75 - iqr25) * len(arr) ** (-1/3)
+    return int(np.ceil(fudge * (max_val - min_val) / bin_width))
 
 def arbitrary_rotation(theta: float,
                        axis:  Point | list,

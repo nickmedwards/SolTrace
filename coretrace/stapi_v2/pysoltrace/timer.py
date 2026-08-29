@@ -2,11 +2,47 @@ from datetime import datetime
 import time
 import numpy as np # pyright: ignore[reportMissingImports]
 import orjson # pyright: ignore[reportMissingImports]
+from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
+just_fix_windows_console()
 
 right_float = lambda fl, buf, p: f"{f'{fl:.{p}f}':>{buf}}"
 right_int = lambda i, buf: f"{str(i):>{buf}}"
 right_str = lambda s, buf: f"{s:>{buf}}"
 left_float = lambda fl, buf, p: f"{f'{fl:.{p}f}':<{buf}}"
+
+def _min_max_n_values(arr, n):
+    sort = np.sort(arr)
+    return sort[:n], sort[-n:]
+
+def _fmt_header(cols: list[str], key_buf: int, col_buf: int):
+    lines = [f'{"timer summary:":<{key_buf}}    ' + ''.join(f'{c:>{col_buf}}' for c in cols)]
+    lines.append('-'*(len(lines[0])))
+    return lines
+
+def _highlight_float(val: float, buf: int, p: int, color_bounds: tuple[list[float], list[float], float, float]):
+    if val == color_bounds[2]:
+        return f'{Fore.LIGHTGREEN_EX}{right_float(val, buf, p)}{Style.RESET_ALL}'
+    elif val == color_bounds[3]:
+        return f'{Fore.RED}{right_float(val, buf, p)}{Style.RESET_ALL}'
+    elif val in color_bounds[0]:
+        return f'{Fore.YELLOW}{right_float(val, buf, p)}{Style.RESET_ALL}'
+    elif val in color_bounds[1]:
+        return f'{Fore.MAGENTA}{right_float(val, buf, p)}{Style.RESET_ALL}'
+    else: return right_float(val, buf, p)
+
+def _highlight_int(val: int, buf: int, color_bounds: tuple[list[float], list[float], float, float]):
+    if val == color_bounds[2]:
+        return f'{Fore.LIGHTGREEN_EX}{right_int(val, buf)}{Style.RESET_ALL}'
+    elif val == color_bounds[3]:
+        return f'{Fore.RED}{right_int(val, buf)}{Style.RESET_ALL}'
+    elif val in color_bounds[0]:
+        return f'{Fore.YELLOW}{right_int(val, buf)}{Style.RESET_ALL}'
+    elif val in color_bounds[1]:
+        return f'{Fore.MAGENTA}{right_int(val, buf)}{Style.RESET_ALL}'
+    else: return right_int(val, buf)
+
+def _highlight_toggle(toggle: bool, highlight_f: callable, fmt: callable, *args):
+    return highlight_f(*args) if toggle else fmt(*args[:-1])
 
 class timer():
     def __init__(self, verbose: bool = False, precision: int = 7):
@@ -14,38 +50,55 @@ class timer():
         self.verbose = verbose
         self.history = { 'total': 0 }
         self.precision = precision
+    
+    # pretty print
+    # amdahl util
 
     def __repr__(self):
         if not len(self.history) > 1: return 'Timer has no times to report.'
 
-        # 1. Find the maximum key length to align the values properly
+        # get info to print
+        timed_keys = [k for k in self.history.keys() if k != 'total']
+        stats = np.array([self.summarize(k) for k in timed_keys])
+        # toggle at over 12 so fastest/slowest 3 are highlighted
+        color_toggle = stats.shape[0] > 11
+        colored_values = []
+
+        if color_toggle:
+            threshold = int(np.ceil(.2 * stats.shape[0]))
+            for i in range(stats.shape[1]):
+                _mins, _maxs = _min_max_n_values(stats[:, i], threshold)
+                colored_values.append((_mins, _maxs, _mins[0], _maxs[-1]))
+
+        # find the buffers for keys and total col to align the values properly
         max_key_len = max(len(str(k)) for k in self.history.keys())
-        max_sum_len = max(len(f'{sum(v):.{self.precision}f}') for k, v in self.history.items() if k != 'total') + 2
-        
-        formatted_lines = [f'{"timer summary:":<{max_key_len}}    {"total":>{max_sum_len}}{"average":>{max_sum_len}}{"std":>{max_sum_len}}{"median":>{max_sum_len}}{"counts":>{max_sum_len}}']
-        formatted_lines.append('-'*(len(formatted_lines[0])))
-        
-        # 2. Iterate through all keys except 'total'
-        for key, diffs in self.history.items():
-            if key != 'total':
-                value = sum(diffs)
-                report_str = f"  {str(key):<{max_key_len}}  {right_float(value, max_sum_len, self.precision)}"
-                if (c := len(diffs)) > 1: 
-                    report_str += right_float(value/c, max_sum_len, self.precision)
-                    report_str += right_float(np.std(diffs), max_sum_len, self.precision)
-                    report_str += right_float(np.median(diffs), max_sum_len, self.precision)
-                    report_str += right_int(c, max_sum_len)
-                formatted_lines.append(report_str)
-                
-        # 3. Append 'total' at the very end if it exists in the dictionary
-        report_str = f'{(self.history['total'] / 60):.{self.precision}f} [m]' if self.history['total'] > 60 else f'{self.history['total']:.{self.precision}f} [s]'
+        max_sum_len = max(len(f'{_sum:.{self.precision}f}') for _sum in stats[:, 0]) + 2
+
+        # format header
+        stats_cols = ["total", "average", "std", "median", "counts"]
+        formatted_lines = _fmt_header(stats_cols, max_key_len, max_sum_len)
+
+        # for each row in the stats array add key name and timing stats
+        # if enough events timed highlight values
+        for i in range(stats.shape[0]):
+            vals = stats[i, :]
+            report_line = [f"  {timed_keys[i]:<{max_key_len}}  "]
+            report_line.append(_highlight_toggle(color_toggle, _highlight_float, right_float,
+                                                 vals[0], max_sum_len, self.precision, colored_values[0] if color_toggle else None))
+            if (count := int(vals[-1])) > 1:
+                report_line.extend([_highlight_toggle(color_toggle, _highlight_float, right_float,
+                                                      vals[j], max_sum_len, self.precision, colored_values[j])
+                                    for j in range(1, stats.shape[1] - 1)])
+                report_line.append(_highlight_toggle(color_toggle, _highlight_int, right_int,
+                                                     count, max_sum_len, colored_values[-1]))
+            formatted_lines.append(''.join(report_line))
+
+        # add total row and footer
         report_str = f'{right_float(self.history['total'] / 60, max_sum_len)} [m]' if self.history['total'] > 60 else f'{right_float(self.history['total'], max_sum_len, self.precision)} [s]'
         formatted_lines.append(f"  {'total':<{max_key_len}}  {report_str}")
+        formatted_lines.append(formatted_lines[1])
         
         return "\n".join(formatted_lines)
-    
-    # pretty print
-    # amdahl util
     
     def __iadd__(self, other: dict):
         # if not a dictionary skip
