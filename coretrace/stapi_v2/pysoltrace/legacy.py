@@ -39,6 +39,7 @@
 #     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
 import ctypes, random
 from typing import Literal
+import numpy as np
 import pandas as pd
 from datetime import datetime
 
@@ -271,25 +272,13 @@ class _Sun:
                               self.position.z,
                               self.sigma,
                               self.shape[0].encode())
-        # calls = [
-        #     stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN,
-        #                             self.point_source,
-        #                             self.shape[0],
-        #                             self.sigma),
-        #     stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_XYZ,
-        #                             self.position.x,
-        #                             self.position.y,
-        #                             self.position.z)
-        # ]
+
         _angle     = ctypes.pointer(ctypes.c_double())
         _intensity = ctypes.pointer(ctypes.c_double())
         if npoints > 2 and self.shape.lower()[0] == 'd':
             _angle     = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[0]))
             _intensity = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[1]))
-            # calls.append(stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SUN_USERDATA,
-            #                                      npoints,
-            #                                      _angle,
-            #                                      _intensity))
+
         call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_SUN,
                                        ctypes.pointer(args),
                                        _angle,
@@ -1061,7 +1050,52 @@ class legacy:
     ####################################
     # utility transform/math functions #
     ####################################
-    util_calc_zrot_azel = lambda _, *args: math_utils.zrot_from_azel(*args)
+    @staticmethod
+    def util_calc_euler_angles(origin:   Point | list | np.ndarray,
+                               aimpoint: Point | list | np.ndarray,
+                               zrot:     float):
+        return math_utils.euler_angles(origin, aimpoint, zrot)
+    
+    @staticmethod
+    def util_transform_to_local(posref:    np.ndarray,
+                                cosref:    np.ndarray,
+                                origin:    np.ndarray,
+                                rreftoloc: np.ndarray):
+        return math_utils.transform_to_local(posref, cosref, origin, rreftoloc)
+    
+    @staticmethod
+    def util_transform_to_ref(posloc:    np.ndarray,
+                              cosloc:    np.ndarray,
+                              origin:    np.ndarray,
+                              rloctoref: np.ndarray):
+        return math_utils.util_transform_to_ref(posloc, cosloc, origin, rloctoref)
+    
+    @staticmethod
+    def util_matrix_vector_mult(m: np.ndarray, v: np.ndarray):
+        return math_utils.matrix_vector_mult(m, v)
+    
+    @staticmethod
+    def util_calc_transforms(euler: Point | list): 
+        return math_utils.euler_transforms(euler)
+    
+    @staticmethod
+    def util_matrix_transpose(m: np.ndarray): 
+        return m.T
+    
+    @staticmethod
+    def util_rotation_arbitrary(theta: float,
+                                axis:  Point | list,
+                                axloc: Point | list,
+                                pt:    Point | list):
+        return math_utils.arbitrary_rotation(theta, axis, axloc, pt)
+
+    @staticmethod
+    def util_calc_unitvect(vect: Point | list): 
+        return math_utils.unitize(vect)
+
+    @staticmethod
+    def util_calc_zrot_azel(vect: Point | list): 
+        return math_utils.zrot_from_azel(vect)
 
 # end class legacy ---------------------------------------------
 
@@ -1117,22 +1151,22 @@ class PySolTrace_v1:
     [ ] - PySolTrace.delete_stage
     [ ] - PySolTrace.__load_dll
     [ ] - PySolTrace.run
-    [ ] - PySolTrace.__get_num_intersections
-    [ ] - PySolTrace.__get_sun_stats
-    [ ] - PySolTrace.__get_ray_dataframe
+    [x] - PySolTrace.__get_num_intersections
+    [x] - PySolTrace.__get_sun_stats     -> PySolTrace.get_sun_stats
+    [x] - PySolTrace.__get_ray_dataframe -> PySolTrace.get_ray_dataframe
     [ ] - PySolTrace.plot_trace
     [ ] - PySolTrace.plot_flux
     [ ] - PySolTrace.bin_rays
-    [ ] - PySolTrace.util_calc_euler_angles
-    [ ] - PySolTrace.util_transform_to_local
-    [ ] - PySolTrace.util_transform_to_ref
-    [ ] - PySolTrace.util_matrix_vector_mult
-    [ ] - PySolTrace.util_calc_transforms
-    [ ] - PySolTrace.util_matrix_transpose
-    [T] - PySolTrace.util_rotation_arbitrary
-    [ ] - PySolTrace.util_calc_unitvect
-    [T] - PySolTrace.util_calc_zrot_azel
-    [ ] - PySolTrace.write_soltrace_input_file
+    [x] - PySolTrace.util_calc_euler_angles
+    [x] - PySolTrace.util_transform_to_local
+    [x] - PySolTrace.util_transform_to_ref
+    [x] - PySolTrace.util_matrix_vector_mult
+    [x] - PySolTrace.util_calc_transforms
+    [x] - PySolTrace.util_matrix_transpose
+    [x] - PySolTrace.util_rotation_arbitrary
+    [x] - PySolTrace.util_calc_unitvect
+    [x] - PySolTrace.util_calc_zrot_azel
+    [x] - PySolTrace.write_soltrace_input_file
     """
 
     class Optics:

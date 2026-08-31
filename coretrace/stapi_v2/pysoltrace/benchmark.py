@@ -513,21 +513,21 @@ if __name__ == '__main__':
                        do_var_ctrl_benchmark(t, f))
     overall_t.oc('stapi function calls')
     
-    # for key, f, args in simulation_calls:
-    #     if key[0] == '_':
-    #         print(f'skipping {key[1:]}...')
-    #         continue
-    #     overall_t.ic(f'running sample {key}')
-    #     print(f'benchmarking {key}')
-    #     results.extend(f(t, *args))
-    #     overall_t.oc(f'running sample {key}')
+    for key, f, args in simulation_calls:
+        if key[0] == '_':
+            print(f'skipping {key[1:]}...')
+            continue
+        overall_t.ic(f'running sample {key}')
+        print(f'benchmarking {key}')
+        results.extend(f(t, *args))
+        overall_t.oc(f'running sample {key}')
 
-    # overall_t.ic('generate api calls')
-    # for key, f, args in generate_api_func_args:
-    #     results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
-    # overall_t.oc('generate api calls')
+    overall_t.ic('generate api calls')
+    for key, f, args in generate_api_func_args:
+        results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
+    overall_t.oc('generate api calls')
 
     print(f'\n\n{t}')
-    print(f'\n\n{overall_t}')
+    print(f'\n\n{overall_t}\n\n')
 
     stash(t)

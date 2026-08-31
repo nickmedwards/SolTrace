@@ -44,6 +44,14 @@ auto check_not = [](auto val, auto should_be)
     return (st_return_t)(val == (decltype(val))should_be); 
 };
 
+auto check_near = [](auto val, auto should_be_near, double abs_tol)
+{
+    // false = 0, true = 1, to make successful test = 0 
+    // -> (abs(a - b) > abs_tol) returns 0 if the diff 
+    //    is less than the tolerance, 1 otherwise
+    return (st_return_t)((double)abs(val - (decltype(val))should_be_near) > abs_tol); 
+};
+
 st_return_t check_optical_side(optical_set_ptr  set,
                                OpticalSide      side,
                                DistributionType dist,
@@ -1130,6 +1138,83 @@ st_return_t call_stapi_v2_sun_userdata(st_context_v2_t pcxt)
     double bad_intensities[2] = {0, -1};
     // expect += st_return_code::EXCEPTION
     code += st_sun_userdata(pcxt, 3, good_angles, bad_intensities);
+    
+    return code;
+}
+
+typedef struct expected_solar_values {
+    double azimuth;
+    double elevation;
+    double sun_x;
+    double sun_y;
+    double sun_z;
+} expected_solar_values;
+
+st_return_t test_calculator_method(st_context_v2_t pcxt,
+                                   SolTrace::Data::SolarPositionCalculationMethod calc,
+                                   expected_solar_values *expected)
+{
+    args_sun_location loc = { 40.0, -105.0, -7.0 };
+    args_sun_datetime dt = {2025, 6, 20, 12};
+
+    double azimuth, elevation, zenith, sun_x, sun_y, sun_z;
+    
+    // azimuth/elevation
+    st_get_sun_az_el(pcxt, calc, &loc, &dt, &azimuth, &elevation);
+    st_return_t code = check_near(azimuth, expected->azimuth, 1e-3);
+    code += check_near(elevation, expected->elevation, 1e-3);
+
+        // azimuth/elevation
+    st_get_sun_az_zen(pcxt, calc, &loc, &dt, &azimuth, &zenith);
+    
+    double expected_zenith = 90.0 - expected->elevation;
+    code += check_near(azimuth, expected->azimuth, 1e-3);
+    code += check_near(zenith, expected_zenith, 1e-3);
+
+    // sun vector
+    st_get_sun_vector(pcxt, calc, &loc, &dt, &sun_x, &sun_y, &sun_z);
+
+    code += check_near(sun_x, expected->sun_x, 1e-6);
+    code += check_near(sun_y, expected->sun_y, 1e-6);
+    code += check_near(sun_z, expected->sun_z, 1e-6);
+
+    return code;
+}
+
+st_return_t call_stapi_v2_solar_calculator(st_context_v2_t pcxt)
+{
+    // st_return_t code = st_return_code::SUCCESS;
+
+    // method: SPA
+    // Expected values - confirmed with https://gml.noaa.gov/grad/solcalc/azel.html
+    expected_solar_values expected_SPA = {178.61128380, 73.439035265, 0.006908, -0.2849516, 0.9585169};
+    st_return_t code = test_calculator_method(pcxt,
+                                              SolTrace::Data::SolarPositionCalculationMethod::SPA,
+                                              &expected_SPA);
+    
+    // method: SPA_ORIGINAL
+    expected_solar_values expected_SPA_ORIGINAL = {178.614529, 73.443097, 0.006890135, -0.284884148, 0.95853719};
+    code += test_calculator_method(pcxt,
+                                   SolTrace::Data::SolarPositionCalculationMethod::SPA_ORIGINAL,
+                                   &expected_SPA_ORIGINAL);
+    
+    // method: SOLPOS
+    expected_solar_values expected_SOLPOS = {178.6119537, 73.430931, 0.006907870, -0.28508729, 0.95847666};
+    code += test_calculator_method(pcxt,
+                                   SolTrace::Data::SolarPositionCalculationMethod::SOLPOS,
+                                   &expected_SOLPOS);
+    
+    // method: LEGACY
+    expected_solar_values expected_LEGACY = {179.9991897, 73.435378, 4.031894e-06, -0.28509658, 0.958498794};
+    code += test_calculator_method(pcxt,
+                                   SolTrace::Data::SolarPositionCalculationMethod::LEGACY,
+                                   &expected_LEGACY);
+    
+    // method: DUFFIE
+    expected_solar_values expected_DUFFIE = {179.110386, 73.43996784, 0.00442455, -0.284985454, 0.958521629};
+    code += test_calculator_method(pcxt,
+                                   SolTrace::Data::SolarPositionCalculationMethod::DUFFIE,
+                                   &expected_DUFFIE);
     
     return code;
 }

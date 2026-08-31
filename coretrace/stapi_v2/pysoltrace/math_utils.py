@@ -12,13 +12,206 @@ def freedman_diaconis_np(arr, fudge: float = 1.0):
     bin_width = 2 * (iqr75 - iqr25) * len(arr) ** (-1/3)
     return int(np.ceil(fudge * (max_val - min_val) / bin_width))
 
+def euler_angles(origin:   Point | list | np.ndarray,
+                 aimpoint: Point | list | np.ndarray,
+                 zrot:     float) -> Point | list | np.ndarray:
+        """
+        Calculate the Euler angles associated with a given origin, aimpoint, and z-axis rotation.
+
+        Parameters
+        ----------
+        origin : [float,*3]
+            Origin of the coordinate system
+        aimpoint : [float,*3]
+            Aimpoint of the vector originating at the origin
+        zrot : float
+            Rotation around the z-axis coordinate (degr)
+
+        Returns
+        ----------
+        list
+            Calculated Euler angles (rad)
+        """
+        _arg_origin_type = type(origin)
+        if _arg_origin_type == np.ndarray:
+            _origin = origin
+        elif _arg_origin_type == list:
+            _origin = np.ndarray(origin)
+        elif _arg_origin_type == Point:
+            _origin = np.array(origin.to_list())
+        else:
+            ValueError(f'Can\'t convert {_arg_origin_type} to numpy array.')
+
+        _arg_aimpoint_type = type(aimpoint)
+        if _arg_aimpoint_type == np.ndarray:
+            _aimpoint = aimpoint
+        elif _arg_aimpoint_type == list:
+            _aimpoint = np.ndarray(aimpoint)
+        elif _arg_aimpoint_type == Point:
+            _aimpoint = np.array(aimpoint.to_list())
+        else:
+            ValueError(f'Can\'t convert {_arg_aimpoint_type} to numpy array.')
+
+        # This duplicates the built-in function but uses numpy operators directly
+        dv = _aimpoint - _origin
+        d = math.sqrt(sum(dv**2))
+        if d == 0:
+            return
+        dv /= d
+        euler = np.array([
+            math.atan2(dv[0], dv[2]),
+            math.asin(dv[1]),
+            zrot * 0.017453292519943295 # acos(-1)/180.0
+        ])
+
+
+        if _arg_origin_type == list:
+            return euler.tolist()
+        elif _arg_origin_type == Point:
+            return Point.from_list(euler)
+        return euler
+
+def transform_to_local(posref:    np.ndarray,
+                       cosref:    np.ndarray,
+                       origin:    np.ndarray,
+                       rreftoloc: np.ndarray):
+    """
+    Perform coordinate transformation from reference system to local system.
+
+    Parameters
+    ----------
+    PosRef : numpy.array([float,]*3)
+        X,Y,Z coordinates of ray point in reference system
+    CosRef : numpy.array([float,]*3)
+        Direction cosines of ray in reference system
+    Origin : numpy.array([float,]*3)
+        X,Y,Z coordinates of origin of local system as measured in reference system
+    RRefToLoc : numpy.array([float,]*3)
+        Rotation matrices required for coordinate transform from reference to local
+
+    Returns
+    ----------
+    (dict)  Keys in return dictionary include:
+        posloc : ([float,]*3) X,Y,Z coordinates of ray point in local system
+        cosloc : ([float,]*3) Direction cosines of ray in local system
+    """
+    assert type(rreftoloc) == type(np.array([]))
+    assert rreftoloc.shape == (3,3)
+
+    # This duplicates the built-in function but uses numpy operators directly
+    posdum = posref - origin
+    rreftoloc_m = rreftoloc.reshape((3,3))
+    posloc = np.dot(rreftoloc_m, posdum.T).T
+    cosloc = np.dot(rreftoloc_m, cosref.T).T
+
+    return {'cosloc': cosloc, 'posloc': posloc}
+
+def util_transform_to_ref(posloc:    np.ndarray,
+                          cosloc:    np.ndarray,
+                          origin:    np.ndarray,
+                          rloctoref: np.ndarray):
+    """
+    Perform coordinate transformation from local system to reference system.
+
+    Parameters
+    ----------
+    PosLoc : [float,]*3
+        X,Y,Z coordinates of ray point in local system
+    CosLoc : [float,]*3
+        Direction cosines of ray in local system
+    Origin : [float,]*3
+        X,Y,Z coordinates of origin of local system as measured in reference system
+    RLocToRef
+        Rotation matrices required for coordinate transform from local to reference
+        -- inverse of reference to local transformation
+
+    Returns
+    ----------
+    dict
+        Keys in return dictionary include:
+        posref : ([float,]*3) X,Y,Z coordinates of ray point in reference system
+        cosref : ([float,]*3) Direction cosines of ray in reference system
+    """
+    assert type(rloctoref) == type(np.array([]))
+    assert rloctoref.shape == (3,3)
+
+    posdum = np.dot(rloctoref, posloc)
+    cosref = np.dot(rloctoref, cosloc, cosref)
+    posref = posdum + origin
+
+    return {'cosref': cosref, 'posref': posref}
+        
+
+def matrix_vector_mult(m: np.ndarray, v: np.ndarray):
+    """
+    Perform multiplication of a 3x3 matrix and a length-3 vector, returning the result vector.
+
+    Parameters
+    ----------
+    m : array
+        m[3][3] - a 3x3 matrix
+    v : array
+        v[3] - a list, length 3
+
+    Returns
+    ----------
+    list
+        m x v [3]
+    """
+    assert type(m) == type(np.array([]))
+    assert m.shape == (3,3)
+    assert type(v) == type(np.array([]))
+    assert m.shape == (3,)
+
+    return np.dot(m, v)
+
+def euler_transforms(euler: Point | list):
+    """
+    Calculate matrix transforms
+
+    Parameters
+    ----------
+    euler : [float,]*3
+        Euler angles
+
+    Returns
+    ----------
+    (dict) A dictionary containing the keys:
+        rreftoloc : Transformation matrix from Reference to Local system
+        rloctoref : Transformation matrix from Local to Reference system
+    """
+
+    assert isinstance(euler, (Point, list)) or hasattr(euler, '__getitem__'), 'Euler angle values must be a Point or list.'
+    if isinstance(euler, list):       assert len(euler) == 3,                 f'Must have 3 Euler angles, not {len(euler)}.'
+    if isinstance(euler, np.ndarray): assert euler.shape == (3,),             f'Must have 3 Euler angles, not {euler.shape}.'
+
+    Alpha = euler.x
+    Beta  = euler.y
+    Gamma = euler.z
+    CosAlpha = np.cos(Alpha)
+    CosBeta  = np.cos(Beta)
+    CosGamma = np.cos(Gamma)
+    SinAlpha = np.sin(Alpha)
+    SinBeta  = np.sin(Beta)
+    SinGamma = np.sin(Gamma)
+
+    # Fill in elements of the transformation matrix as per 
+    # Spencer and Murty paper page 673 equation (2)
+    rreftoloc = np.array([[CosAlpha * CosGamma + SinAlpha * SinBeta * SinGamma,
+                           CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma,
+                           SinAlpha * CosBeta],
+                         [-CosBeta * SinGamma, CosBeta * CosGamma, SinBeta],
+                         [-SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma,
+                          -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma,
+                          CosAlpha * CosBeta]])
+
+    return {'rreftoloc':rreftoloc, 'rloctoref':rreftoloc.T}
+
 def arbitrary_rotation(theta: float,
                        axis:  Point | list,
                        axloc: Point | list,
                        pt:    Point | list):
-    """
-    Basically, copypasta from pysoltrace.
-    
+    """    
     Rotation of a point 'pt' about an arbitrary axis with direction 'axis' centered at point 'axloc'.
     The point is rotated through 'theta' radians.
 
@@ -56,7 +249,52 @@ def arbitrary_rotation(theta: float,
                  (b*(u*u+w*w) - v*(a*u + c*w - u*x - v*y - w*z))*(1.-costh) + y*costh + ( c*u - a*w + w*x - u*z)*sinth,
                  (c*(u*u+v*v) - w*(a*u + b*v - u*x - v*y - w*z))*(1.-costh) + z*costh + (-b*u + a*v - v*x + u*y)*sinth)
 
-def zrot_from_azel(vect: Point | list) -> float: # TODO: expose a st_util_calc_zrot_azel
+def unitize(vect: Point | list):
+    """
+    Scales a vector to have total magnitude of 1
+
+    Parameters
+    ----------
+    vect : list | Point
+        list or Point containing the vector
+
+    Returns
+    ----------
+    list | Point
+        Unitized vector of type list or Point, depending on input type
+    """
+    _arg_type = type(vect)
+    if _arg_type == list or _arg_type == np.ndarray:
+        v = Point.from_list(vect)
+    elif _arg_type == Point:
+        v = vect
+    else:
+        raise ValueError(f'Can\'t convert {_arg_type} to Point.')
+
+    v.unitize(inplace = True)
+
+    if _arg_type == list:
+        return v.as_list()
+    elif _arg_type == np.ndarray:
+        return np.array(v.as_list())
+    else:
+        return v
+
+def zrot_from_azel(vect: Point | list) -> float:
+    """
+    Compute the z-rotation of a vector, assuming the vector's deviation from (0,0,1)
+    has been realized using azimuth-elevation transforms.
+
+    Parameters
+    ----------
+    vect : (list OR Point)
+        i,j,k components of a vector
+
+    Returns
+    ----------
+    float
+        Computed z-rotation (degrees)
+    """
     if isinstance(vect, (Point, list)) or hasattr(vect, '__getitem__'):
         vect_i, vect_j, vect_k = vect[0], vect[1], vect[2]
     else:
@@ -93,11 +331,7 @@ def zrot_from_azel(vect: Point | list) -> float: # TODO: expose a st_util_calc_z
     )
     # the sign of the rotation angle is determined by whether the 'k' component of the cross product
     # vector is positive or negative.
-    cp = Point(
-        protv.y*azelref.z - protv.z*azelref.y,
-        protv.z*azelref.x - protv.x*azelref.z,
-        protv.x*azelref.y - protv.y*azelref.x
-    )
+    cp = protv @ azelref
 
     gamma = math.asin(cp.radius())
     gsign = (1 if cp.z > 0. else -1.) * (1 if vect_j > 0. else -1.)

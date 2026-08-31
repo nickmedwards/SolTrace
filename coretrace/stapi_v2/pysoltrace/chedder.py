@@ -110,7 +110,8 @@ from __future__ import annotations
 
 import ctypes, enum, os, re, sys, warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
+from dataclasses import dataclass, field
 
 from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
 just_fix_windows_console()
@@ -174,7 +175,37 @@ def locate_header(filename: str = _HEADER_FILENAME) -> Path:
     raise FileNotFoundError(f"Could not locate header '{filename}'. Set {_ENV_HEADER_PATH} to an "
                             f"explicit path, or place the header in one of:\n  {searched}")
 
+@dataclass
+class header_values:
+    path: Path
+    values: dict[Literal['defines', 'enums', 'funcptrs', 'typedefs', 'structs'], list[str]] \
+            = field(default_factory = lambda: { k: [] for k in ['defines', 'enums', 'funcptrs', 'typedefs', 'structs']})
+    # kind: Literal['defines', 'enums', 'funcptrs', 'typedefs', 'structs']
+    # name: str
 
+    def __repr__(self):
+        return f'Extra header at {self.path}\n' + '\n'.join(f'{k}: {v}' for k, v in self.values.items())
+
+    def add_define(self, s: str):
+        self.values['defines'].append(s)
+
+    def add_enum(self, s: str):
+        self.values['enums'].append(s)
+
+    def add_funcptr(self, s: str):
+        self.values['funcptrs'].append(s)
+
+    def add_typedef(self, s: str):
+        self.values['typedefs'].append(s)
+
+    def add_struct(self, s: str):
+        self.values['structs'].append(s)
+
+
+def locate_extras(path: Path):
+    solar_calc = header_values(path.parent.parent / 'simulation_data/solar_position_calculators/solar_position_calculator.hpp')
+    solar_calc.add_enum('SolarPositionCalculationMethod')
+    return [solar_calc]
 # ---------------------------------------------------------------------------
 # ctypes type resolution
 # ---------------------------------------------------------------------------
@@ -397,10 +428,17 @@ _DEFINE_RE = re.compile(
 # typedef enum [class] [TAG] [: UNDERLYING] { BODY } NAME;
 # (enum bodies never contain nested braces, so a simple non-nested-brace
 # body match is fine here, unlike structs/unions below.)
+# _ENUM_RE = re.compile(
+#     r"typedef\s+enum\s*(?:class\s+)?\s*(?:(?P<tag>[A-Za-z_]\w*)\s*)?"
+#     r"(?::\s*(?P<underlying>[A-Za-z_][\w\s]*?)\s*)?"
+#     r"\{(?P<body>[^}]*)\}\s*(?P<name>[A-Za-z_]\w*)\s*;",
+#     re.DOTALL,
+# )
+
 _ENUM_RE = re.compile(
-    r"typedef\s+enum\s*(?:class\s+)?\s*(?:(?P<tag>[A-Za-z_]\w*)\s*)?"
+    r"(?:typedef\s+)?enum\s*(?:class\s+)?\s*(?:(?P<tag>[A-Za-z_]\w*)\s*)?"
     r"(?::\s*(?P<underlying>[A-Za-z_][\w\s]*?)\s*)?"
-    r"\{(?P<body>[^}]*)\}\s*(?P<name>[A-Za-z_]\w*)\s*;",
+    r"\{(?P<body>[^}]*)\}\s*(?:(?P<name>[A-Za-z_]\w*)\s*)?;",
     re.DOTALL,
 )
 
@@ -781,6 +819,76 @@ def found_in(header_defs: type) -> str:
     header += f"\n{'-' * len(header)}\n"
     return header + "\n".join(lines)
 
+def _should_append(name: str, names: list[str] = []):
+    return len(names) == 0 or name in names
+
+def _append_defines(defines: Dict[str, any], match: re.Match[str], names: list[str] = []):
+    name = match.group("name")
+    if not _should_append(name, names): return
+    defines[name] = _parse_define_value(match.group("value"))
+
+def _append_enums(enums:           Dict[str, Dict[str, int]],
+                  enum_underlying: Dict[str, Optional[str]],
+                  match:           re.Match[str],
+                  names:           list[str] = []):
+    name = match.group("name")
+    if name == None: name = match.group("tag")
+    if not _should_append(name, names): return
+
+    enums[name] = _parse_enum_body(match.group("body"))
+    underlying = match.group("underlying")
+    enum_underlying[name] = underlying.strip() if underlying else None
+
+def _append_funcptrs(funcptrs: Dict[str, Tuple[str, List[str]]],
+                     match:    re.Match[str],
+                     names:    list[str] = []):
+    name = match.group("name")
+    if not _should_append(name, names): return
+
+    ret = match.group("ret").strip()
+    args = _parse_funcptr_args(match.group("args"))
+    funcptrs[name] = (ret, args)
+
+def _append_typedefs(typedefs: Dict[str, str],
+                     match:    re.Match[str],
+                     names:    list[str] = []):
+    split = _split_type_and_name(match.group("rest"))
+    if split is None: return 
+
+    type_str, name = split
+    if not _should_append(name, names): return
+
+    typedefs[name] = type_str
+
+def _append_structs(structs:     Dict[str, Tuple[Optional[str], str, List[Tuple]]],
+                    cleaned_txt: str,
+                    match:       re.Match[str],
+                    names:       list[str] = []):
+    kind = match.group("kind")
+    tag = match.group("tag")
+    open_idx = match.end() - 1
+    close_idx = _find_matching_brace(cleaned_txt, open_idx)
+    if close_idx is None:
+        warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                        f"unterminated {kind} body near offset "
+                        f"{match.start()}; skipping.",
+                        stacklevel=2)
+        return
+    
+    name_match = _NAME_SEMI_RE.match(cleaned_txt, close_idx + 1)
+    if not name_match:
+        warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
+                        f"could not find a typedef alias name "
+                        f"for the {kind} near offset {match.start()}; skipping.",
+                        stacklevel=2)
+        return
+    
+    name = name_match.group("name")
+    if not _should_append(name, names): return
+
+    inner_body = cleaned_txt[open_idx + 1:close_idx]
+    members = _parse_compound_body(inner_body)
+    structs[name] = (tag, kind, members)
 
 def _parse_header_text(header_path: Path) -> _ParsedHeader:
     text = header_path.read_bytes().decode("utf-8", errors="replace")
@@ -788,55 +896,24 @@ def _parse_header_text(header_path: Path) -> _ParsedHeader:
 
     defines: Dict[str, any] = {}
     for match in _DEFINE_RE.finditer(clean):
-        name = match.group("name")
-        defines[name] = _parse_define_value(match.group("value"))
+        _append_defines(defines, match)
 
     enums: Dict[str, Dict[str, int]] = {}
     enum_underlying: Dict[str, Optional[str]] = {}
     for match in _ENUM_RE.finditer(clean):
-        name = match.group("name")
-        enums[name] = _parse_enum_body(match.group("body"))
-        underlying = match.group("underlying")
-        enum_underlying[name] = underlying.strip() if underlying else None
+        _append_enums(enums, enum_underlying, match)
 
     funcptrs: Dict[str, Tuple[str, List[str]]] = {}
     for match in _FUNCPTR_RE.finditer(clean):
-        ret = match.group("ret").strip()
-        name = match.group("name")
-        args = _parse_funcptr_args(match.group("args"))
-        funcptrs[name] = (ret, args)
+        _append_funcptrs(funcptrs, match)
 
     typedefs: Dict[str, str] = {}
     for match in _TYPEDEF_RE.finditer(clean):
-        split = _split_type_and_name(match.group("rest"))
-        if split is None:
-            continue
-        type_str, name = split
-        typedefs[name] = type_str
+        _append_typedefs(typedefs, match)
 
     structs: Dict[str, Tuple[Optional[str], str, List[Tuple]]] = {}
     for match in _STRUCT_HEADER_RE.finditer(clean):
-        kind = match.group("kind")
-        tag = match.group("tag")
-        open_idx = match.end() - 1
-        close_idx = _find_matching_brace(clean, open_idx)
-        if close_idx is None:
-            warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
-                          f"unterminated {kind} body near offset "
-                          f"{match.start()}; skipping.",
-                          stacklevel=2)
-            continue
-        name_match = _NAME_SEMI_RE.match(clean, close_idx + 1)
-        if not name_match:
-            warnings.warn(f"{Fore.YELLOW}[chedder] - warning{Style.RESET_ALL}: "
-                          f"could not find a typedef alias name "
-                          f"for the {kind} near offset {match.start()}; skipping.",
-                          stacklevel=2)
-            continue
-        name = name_match.group("name")
-        inner_body = clean[open_idx + 1:close_idx]
-        members = _parse_compound_body(inner_body)
-        structs[name] = (tag, kind, members)
+        _append_structs(structs, clean, match)
 
     return _ParsedHeader(defines,
                          enums,
@@ -845,6 +922,43 @@ def _parse_header_text(header_path: Path) -> _ParsedHeader:
                          typedefs,
                          structs)
 
+def _append_extras(_parsed: _ParsedHeader, _extra: header_values):
+    text = _extra.path.read_bytes().decode("utf-8", errors="replace")
+    clean = _strip_comments(text)
+
+    if len(_extra.values['defines']):
+        for match in _DEFINE_RE.finditer(clean):
+            _append_defines(_parsed.defines,
+                            match,
+                            _extra.values['defines'])
+
+    if len(_extra.values['enums']):
+        print([*_ENUM_RE.finditer(clean)])
+        for match in _ENUM_RE.finditer(clean):
+            print(match)
+            _append_enums(_parsed.enums,
+                          _parsed.enum_underlying,
+                          match,
+                          _extra.values['enums'])
+
+    if len(_extra.values['funcptrs']):
+        for match in _FUNCPTR_RE.finditer(clean):
+            _append_funcptrs(_parsed.funcptrs,
+                             match,
+                             _extra.values['funcptrs'])
+
+    if len(_extra.values['typedefs']):
+        for match in _TYPEDEF_RE.finditer(clean):
+            _append_typedefs(_parsed.typedefs,
+                             match,
+                             _extra.values['typedefs'])
+
+    if len(_extra.values['structs']):
+        for match in _STRUCT_HEADER_RE.finditer(clean):
+            _append_structs(_parsed.structs,
+                            clean,
+                            match,
+                            _extra.values['structs'])
 
 # ---------------------------------------------------------------------------
 # Build the Python-facing namespace class from parsed data
@@ -1057,6 +1171,8 @@ def reload_header_defs(header_filename: str = _HEADER_FILENAME) -> type:
 
 _header_path = locate_header()
 _parsed = _parse_header_text(_header_path)
+for extra_header in locate_extras(_header_path):
+    _append_extras(_parsed, extra_header)
 dot_h = _build_namespace(_parsed)
 
 if __name__ == "__main__":

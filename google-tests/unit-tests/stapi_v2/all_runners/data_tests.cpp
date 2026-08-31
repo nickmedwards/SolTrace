@@ -194,3 +194,13 @@ TEST(data_tests, data_sun_userdata)
 
     CLEANUP_TEST_CXT();
 }
+
+TEST(data_tests, data_sun_calculator)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_solar_calculator(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}

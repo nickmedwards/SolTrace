@@ -42,8 +42,14 @@ def _highlight_int(val: int, buf: int, color_bounds: tuple[list[float], list[flo
         return f'{Fore.MAGENTA}{right_int(val, buf)}{Style.RESET_ALL}'
     else: return right_int(val, buf)
 
-def _highlight_toggle(toggle: bool, highlight_f: callable, fmt: callable, *args):
-    return highlight_f(*args) if toggle else fmt(*args[:-1])
+def _highlight(toggle: bool, val: float | int, buf: int, p: int = 7, color_bounds: tuple[list[float], list[float], float, float] = None):
+        if toggle:
+            buf_func = _highlight_float if isinstance(val, float) else _highlight_int
+            _args = (val, buf, p, color_bounds) if isinstance(val, float) else (val, buf, color_bounds)
+        else:
+            buf_func = right_float if isinstance(val, float) else right_int
+            _args = (val, buf, p) if isinstance(val, float) else (val, buf)
+        return buf_func(*_args)
 
 class timer():
     def __init__(self, verbose: bool = False, precision: int = 7):
@@ -52,7 +58,6 @@ class timer():
         self.history = { 'total': 0 }
         self.precision = precision
     
-    # pretty print
     # amdahl util
 
     def __repr__(self):
@@ -82,14 +87,11 @@ class timer():
         for i in range(stats.shape[0]):
             vals = stats[i, :]
             report_line = [f"  {timed_keys[i]:<{max_key_len}}  "]
-            report_line.append(_highlight_toggle(color_toggle, _highlight_float, right_float,
-                                                 vals[0], max_sum_len, self.precision, colored_values[0] if color_toggle else None))
+            report_line.append(_highlight(color_toggle, vals[0], max_sum_len, self.precision, colored_values[0] if color_toggle else None))
             if (count := int(vals[-1])) > 1:
-                report_line.extend([_highlight_toggle(color_toggle, _highlight_float, right_float,
-                                                      vals[j], max_sum_len, self.precision, colored_values[j])
+                report_line.extend([_highlight(color_toggle, vals[j], max_sum_len, self.precision, colored_values[j])
                                     for j in range(1, stats.shape[1] - 1)])
-                report_line.append(_highlight_toggle(color_toggle, _highlight_int, right_int,
-                                                     count, max_sum_len, colored_values[-1]))
+                report_line.append(_highlight(color_toggle, count, max_sum_len, self.precision, colored_values[-1]))
             formatted_lines.append(''.join(report_line))
 
         # add total row and footer
@@ -285,17 +287,14 @@ class benchmark_store:
         # find the buffers for keys and total col to align the values properly
         max_key_len = max(len(str(_b)) for _b in common_benchmarks)
         max_sum_len = max(len(f'{_sum:.{p}f}') for _sum in stats[:, _js[common_stats_cols[0]]]) + 2
-        # max_sum_len = max(len(f'{_sum:.{p}f} ({_sum:.{p}f})') for _sum in stats[:, _js[common_stats_cols[0]]]) + 2
 
         # format header
         formatted_lines = _fmt_header('store comparison:', common_stats_cols, max_key_len, 2 * max_sum_len + 1)
 
         for _b in common_benchmarks:
-            # print(_b)
             report_line = [f"  {_b:<{max_key_len}}  "]
 
             for _c in common_stats_cols:
-                # print(_c)
                 _rec = self.store[_b][_c]
                 report_line.append(f'{_rec.highlight(stats[_is[_b], _js[_c]], max_sum_len, p)} ({_rec:.{p}f})')
             formatted_lines.append(''.join(report_line))
