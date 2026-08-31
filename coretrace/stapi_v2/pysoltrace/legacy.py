@@ -1075,14 +1075,14 @@ class PySolTrace_v1:
     [x] - PySolTrace.Optics.Face.copy
     [x] - PySolTrace.Optics.__init__
     [x] - PySolTrace.Optics.copy
-    [ ] - PySolTrace.Optics.Create
+    [x] - PySolTrace.Optics.Create
     [x] - PySolTrace.Sun.__init__
     [x] - PySolTrace.Sun.copy
     [x] - PySolTrace.Sun.Create
     [T] - PySolTrace.Sun.calc_sun_vector
     [x] - PySolTrace.Stage.Element.__init__
     [x] - PySolTrace.Stage.Element.copy
-    [ ] - PySolTrace.Stage.Element.Create
+    [T] - PySolTrace.Stage.Element.Create
     [x] - PySolTrace.Stage.Element.surface_spherical
     [x] - PySolTrace.Stage.Element.surface_parabolic
     [x] - PySolTrace.Stage.Element.surface_flat

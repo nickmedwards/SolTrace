@@ -55,7 +55,9 @@ STAPI_V2 st_return_t st_reset_context(st_context_v2_t pcxt)
     delete cxt->p_runner;
     delete cxt->p_results;
 
-    cxt->p_data = new SimulationData();
+    cxt->p_data    = new SimulationData();
+    cxt->p_runner  = nullptr;
+    cxt->p_results = nullptr;
 
 	return st_return_code::SUCCESS;
 }
@@ -71,11 +73,6 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt)
     delete cxt;
 	return st_return_code::SUCCESS;
 }
-
-// TODO: renumber st_runner_type_t::NAME to 1 << idx
-//       move ifdef stuff to a function that returns a sum based on enum 
-//       call it get_built_runners() or something 
-//       add another function to check if a runner is built 
 
 ////////////////////////////////
 // Simlulation Data Functions //
@@ -1121,6 +1118,8 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
 
     delete cxt->p_runner;
     delete cxt->p_results;
+    cxt->p_runner  = nullptr;
+    cxt->p_results = nullptr;
 
     bool use_embree = runner_type == st_runner_type_t::EMBREE;
     bool use_optix = runner_type == st_runner_type_t::OPTIX;
@@ -1163,18 +1162,26 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     }
 
     sts = runner->initialize();
-    if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_INILIALIZE_FAILURE;
+    if (sts != RunnerStatus::SUCCESS)
+    {
+        delete runner;
+        return st_return_code::RUNNER_INILIALIZE_FAILURE;
+    }
 
     /* optix doesn't use threads the way native/embree does, 
        and check if user requested optix but didn't build it,
        in either case, set the number of threads for the runner */
     if (!use_optix || rt == st_return_code::WARNING_FELLBACK_FROM_OPTIX)
     {
-        NativeRunner *temp_native = reinterpret_cast<NativeRunner*>(runner);
+        NativeRunner *temp_native = dynamic_cast<NativeRunner*>(runner);
         if (seeds != nullptr)
         {
             // ensures runtime_error won't be raised
-            if (num_threads != num_seeds) return st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE;
+            if (num_threads != num_seeds)
+            {
+                delete runner;
+                return st_return_code::RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE;
+            }
 
             const std::vector<st_uint_t> temp_seeds(seeds, seeds + num_seeds);
             temp_native->set_number_of_threads(num_threads, temp_seeds);
@@ -1192,7 +1199,11 @@ STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt,
     // auto t_setup_start = std::chrono::steady_clock::now();
     sts = runner->setup_simulation(data);
     // auto t_setup_end = std::chrono::steady_clock::now();
-    if (sts != RunnerStatus::SUCCESS) return st_return_code::RUNNER_SETUP_FAILURE;
+    if (sts != RunnerStatus::SUCCESS)
+    {
+        delete runner;
+        return st_return_code::RUNNER_SETUP_FAILURE;
+    }
     
     cxt->runner_type = runner_type;
     cxt->p_runner = runner;
@@ -1221,6 +1232,7 @@ STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level)
 
     if (!runner->is_ready_to_report()) return st_return_code::RUNNER_NOT_READY;
 
+    delete cxt->p_results;
     cxt->p_results = new SimulationResult();
     RunnerStatus sts = runner->report_simulation(cxt->p_results, level);
 

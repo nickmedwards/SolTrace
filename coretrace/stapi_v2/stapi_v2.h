@@ -2,78 +2,6 @@
 STCORE_API: version 2
 functions for interacting with new SimulationData/Runner/Results structure through json
 
-this was the wrong approach, spoof these on the python side, implement functions that make sense for the current structures, make diagram
-
-recreate stapi.h functions TODO list 
-(x: done, 2: tagged with _v2, -: skipped, T: TODO, blank: not done)
-NOTE: may change name convention from marking _v2 to _v1
-
- function name		| stapi_v2.h/cpp | tested | stapi_v2.py | h/cpp batch | py batch | legacy.py
--------------------------------------------------------------------------------------------------
- st_create_context			[x]			[x]			[x]			  [-]		  [-]		  [x]
- st_free_context			[x]			[x]			[x]			  [-]		  [-]		  [x]
- st_num_messages			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_message					[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_clear_messages			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_dump					[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_load_file				[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_write_output			[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_reset					[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_num_optics				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_add_optic				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_delete_optic			[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_clear_optics			[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_optic					[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_num_stages				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_add_stage				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_add_stages				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_delete_stage			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_clear_stages			[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_stage_xyz				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_stage_aim				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_stage_zrot				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_stage_flags				[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_num_elements			[x]			[x]			[x]			  [x]		  [x]		  [x]
- st_add_element				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_add_elements			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_delete_element			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_clear_elements			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_enabled			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_xyz				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_aim				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_zrot			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_aperture		[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_aperture_params	[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_surface			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_surface_params	[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_surface_file	[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_interaction		[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_element_optic			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sun						[x]			[x]			[x]			  [x]		  [x]		  [x]
- st_sun_xyz					[x]			[x]			[x]			  [x]		  [x]		  [x]
- st_sun_position			[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sun_userdata			[x]			[x]			[x]			  [x]		  [x]		  [x]
- st_num_intersections		[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_locations				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_cosines					[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_elementmap				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_stagemap				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_raynumbers				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sun_stats				[x]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_sim_params				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_sim_errors				[x]			[x]			[ ]			  [ ]		  [ ]		  [ ]
- st_sim_run					[2]			[2]			[2]			  [2]		  [2]		  [2]
- st_sim_run_with_refactor	[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_sim_run_SolTrace20		[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_sim_run_data			[-]			[-]			[-]			  [-]		  [-]		  [-]
- st_calc_euler_angles		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_transform_to_local		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_transform_to_reference	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_matrix_vector_mult		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_calc_transform_matrices	[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
- st_matrix_transpose		[ ]			[ ]			[ ]			  [ ]		  [ ]		  [ ]
--------------------------------------------------------------------------------------------------
-
 (x: done, -: skipped, i: in progress, T: have TODO, blank: not done)
 
 function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cpp batch | py batch | unittested | legacy.py | unittested 
@@ -107,10 +35,10 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
  st_element_surface 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_element_optic 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_add_sun 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [x]
- st_get_sun 						[x]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
+ st_get_sun 						[T]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
  st_sun_shape 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_sun_xyz 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
- st_sun_position 					[x]			 [ ]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sun_position 					[T]			 [ ]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
  st_sun_userdata 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_get_installed_runners 			[x]			 [x]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
  st_is_runner_installed 			[x]			 [x]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
@@ -133,7 +61,7 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
  st_matrix_vector_mult 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_calc_transform_matrices 		[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_matrix_transpose 				[ ]			 [ ]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
- st_batch 							[i]			 [ ]		[x]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_batch 							[i,T]		 [ ]		[x]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
 -------------------------------------------------------------------------------------------------------------------------------------------------
 other items
 -------------------------------------------------------------------------------------------------------------------------------------------------
