@@ -43,13 +43,14 @@ def _highlight_int(val: int, buf: int, color_bounds: tuple[list[float], list[flo
     else: return right_int(val, buf)
 
 def _highlight(toggle: bool, val: float | int, buf: int, p: int = 7, color_bounds: tuple[list[float], list[float], float, float] = None):
-        if toggle:
-            buf_func = _highlight_float if isinstance(val, float) else _highlight_int
-            _args = (val, buf, p, color_bounds) if isinstance(val, float) else (val, buf, color_bounds)
-        else:
-            buf_func = right_float if isinstance(val, float) else right_int
-            _args = (val, buf, p) if isinstance(val, float) else (val, buf)
-        return buf_func(*_args)
+    is_float = isinstance(val, float)
+    if toggle:
+        buf_func = _highlight_float if is_float else _highlight_int
+        _args = (val, buf, p, color_bounds) if is_float else (val, buf, color_bounds)
+    else:
+        buf_func = right_float if is_float else right_int
+        _args = (val, buf, p) if is_float else (val, buf)
+    return buf_func(*_args)
 
 class timer():
     def __init__(self, verbose: bool = False, precision: int = 7):

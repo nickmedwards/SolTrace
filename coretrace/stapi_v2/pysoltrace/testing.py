@@ -692,6 +692,13 @@ class SunTests(STAPIv2TestCase):
         self.bad_intensities  = [0, -1]
         self.args_sun = dot_h.args_sun(3, 608, 303, 1000, 5, ' '.encode())
 
+        self.loc = dot_h.args_sun_location(40.0, -105.0, -7.0)
+        self.dt  = dot_h.args_sun_datetime(2025, 6, 20)
+        self.az = 178.61128380
+        self.el = 73.439035265
+        self.zen = 90 - self.el
+        self.sun_vector = Point(0.006908, -0.2849516, 0.9585169)
+
     def test_add_sun(self):
         # test bad intensities
         with self.assertRaises(STAPIv2Exception) as ex:
@@ -745,6 +752,20 @@ class SunTests(STAPIv2TestCase):
 
         self.stapi.sun_userdata(3, self.good_angles, self.good_intensities)
 
+    def test_get_sun_az_zen(self):
+        az, zen = self.stapi.get_sun_az_zen(4, self.loc, self.dt)
+        self.assertAlmostEqual(az, self.az, 7)
+        self.assertAlmostEqual(zen, self.zen, 7)
+
+    def test_get_sun_az_el(self):
+        az, el = self.stapi.get_sun_az_el(4, self.loc, self.dt)
+        self.assertAlmostEqual(az, self.az, 7)
+        self.assertAlmostEqual(el, self.el, 7)
+
+    def test_get_sun_vector(self):
+        v = self.stapi.get_sun_vector(4, self.loc, self.dt)
+        self.assertAlmostEqual((v - self.sun_vector).radius(), 0, 6)
+        
 class RunnerTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()

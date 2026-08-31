@@ -1070,6 +1070,15 @@ STAPI_V2 st_return_t st_sun_userdata(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
+st_return_code int_to_calc_method(int *arg, spcm *calc_method)
+{
+    if (*arg >= spcm::CALCULATOR_COUNT)
+        return st_return_code::INVALID_ARGUMENTS;
+
+    *calc_method = static_cast<spcm>(*arg);
+    return st_return_code::SUCCESS;
+}
+
 void set_up_calculator(spcm				       calc,
 					   args_sun_location       *loc,
 					   args_sun_datetime       *dt,
@@ -1081,47 +1090,59 @@ void set_up_calculator(spcm				       calc,
 }
 
 STAPI_V2 st_return_t st_get_sun_az_zen(st_context_v2_t   pcxt,
-									   spcm				 calc,
+									   int				 calc,
 									   args_sun_location *loc,
 									   args_sun_datetime *dt,
 									   double 			 *azimuth,
 									   double 			 *zenith)
 {
+    spcm method;
+    st_return_code code = int_to_calc_method(&calc, &method);
+    if (code != st_return_code::SUCCESS) return code;
+
     CONTEXT(pcxt);
     SolarPositionCalculator solar_position;
     
-    ST_WRAP_CB_TRY_CATCH(set_up_calculator(calc, loc, dt, &solar_position), cxt->p_cb);
+    ST_WRAP_CB_TRY_CATCH(set_up_calculator(method, loc, dt, &solar_position), cxt->p_cb);
     ST_WRAP_CB_TRY_CATCH(solar_position.get_azimuth_zenith(azimuth, zenith), cxt->p_cb);
 
     return st_return_code::SUCCESS;
 }
 STAPI_V2 st_return_t st_get_sun_az_el(st_context_v2_t   pcxt,
-									  spcm				calc,
+									  int				calc,
 									  args_sun_location *loc,
 									  args_sun_datetime *dt,
 									  double 			*azimuth,
 									  double 			*elevation)
 {
+    spcm method;
+    st_return_code code = int_to_calc_method(&calc, &method);
+    if (code != st_return_code::SUCCESS) return code;
+
     CONTEXT(pcxt);
     SolarPositionCalculator solar_position;
     
-    ST_WRAP_CB_TRY_CATCH(set_up_calculator(calc, loc, dt, &solar_position), cxt->p_cb);
+    ST_WRAP_CB_TRY_CATCH(set_up_calculator(method, loc, dt, &solar_position), cxt->p_cb);
     ST_WRAP_CB_TRY_CATCH(solar_position.get_azimuth_elevation(azimuth, elevation), cxt->p_cb);
 
     return st_return_code::SUCCESS;
 }
 STAPI_V2 st_return_t st_get_sun_vector(st_context_v2_t   pcxt,
-									   spcm				 calc,
+									   int				 calc,
 									   args_sun_location *loc,
 									   args_sun_datetime *dt,
 									   double 			 *sun_x,
 									   double 			 *sun_y,
 									   double 			 *sun_z)
 {
+    spcm method;
+    st_return_code code = int_to_calc_method(&calc, &method);
+    if (code != st_return_code::SUCCESS) return code;
+
     CONTEXT(pcxt);
     SolarPositionCalculator solar_position;
     
-    ST_WRAP_CB_TRY_CATCH(set_up_calculator(calc, loc, dt, &solar_position), cxt->p_cb);
+    ST_WRAP_CB_TRY_CATCH(set_up_calculator(method, loc, dt, &solar_position), cxt->p_cb);
     ST_WRAP_CB_TRY_CATCH(solar_position.get_sun_vector(sun_x, sun_y, sun_z), cxt->p_cb);
 
     return st_return_code::SUCCESS;

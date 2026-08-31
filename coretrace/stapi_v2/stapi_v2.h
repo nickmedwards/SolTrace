@@ -40,9 +40,9 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
  st_sun_xyz 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_sun_position 					[T]			 [ ]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
  st_sun_userdata 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
- st_get_sun_az_zen 					[x]			 [x]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
- st_get_sun_az_el 					[x]			 [x]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
- st_get_sun_vector 					[x]			 [x]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_get_sun_az_zen 					[x]			 [x]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_get_sun_az_el 					[x]			 [x]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
+ st_get_sun_vector 					[x]			 [x]		[x]			   [x]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_get_installed_runners 			[x]			 [x]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
  st_is_runner_installed 			[x]			 [x]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
  st_sim_setup 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
@@ -401,29 +401,29 @@ typedef struct args_sun_datetime {
 	int year;
 	int month;
 	int day;
-	int hour   = 0;
+	int hour   = 12;
 	int minute = 0;
 	int second = 0;
 } args_sun_datetime;
 STAPI_V2 st_return_t st_get_sun_az_zen(st_context_v2_t   pcxt,
-									   spcm				 calc,
+									   int				 calc,
 									   args_sun_location *loc,
 									   args_sun_datetime *dt,
-									   double* 			 azimuth,
-									   double* 			 zenith);
+									   double 			 *azimuth,
+									   double 			 *zenith);
 STAPI_V2 st_return_t st_get_sun_az_el(st_context_v2_t   pcxt,
-									  spcm				calc,
+									  int				calc,
 									  args_sun_location *loc,
 									  args_sun_datetime *dt,
-									  double* 			azimuth,
-									  double* 			elevation);
+									  double 			*azimuth,
+									  double 			*elevation);
 STAPI_V2 st_return_t st_get_sun_vector(st_context_v2_t   pcxt,
-									   spcm				 calc,
+									   int				 calc,
 									   args_sun_location *loc,
 									   args_sun_datetime *dt,
-									   double* 			 sun_x,
-									   double* 			 sun_y,
-									   double* 			 sun_z);
+									   double 			 *sun_x,
+									   double 			 *sun_y,
+									   double 			 *sun_z);
 
 // functions for writing input files for SolTrace
 STAPI_V2 st_return_t st_export_json_file(st_context_v2_t pcxt, const char *filename);
@@ -758,6 +758,31 @@ typedef struct args_st_sun_userdata {
 	double*	  angle;
 	double*	  intensity;
 } args_st_sun_userdata;
+
+typedef struct args_st_get_sun_az_zen {
+	int			  	  calc;
+	args_sun_location *loc;
+	args_sun_datetime *dt;
+	double			  *azimuth;
+	double			  *zenith;
+} args_st_get_sun_az_zen;
+
+typedef struct args_st_get_sun_az_el {
+	int			  	  calc;
+	args_sun_location *loc;
+	args_sun_datetime *dt;
+	double			  *azimuth;
+	double			  *elevation;
+} args_st_get_sun_az_el;
+
+typedef struct args_st_get_sun_vector {
+	int			  	  calc;
+	args_sun_location *loc;
+	args_sun_datetime *dt;
+	double			  *sun_x;
+	double			  *sun_y;
+	double			  *sun_z;
+} args_st_get_sun_vector;
 
 // functions for writing input files for SolTrace
 typedef struct args_st_export_json_file {

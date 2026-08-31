@@ -58,6 +58,8 @@ class args_optical_properties_set(dot_h.args_optical_properties_set): pass
 class args_optical_properties_face(dot_h.args_optical_properties_face): pass
 class args_element(dot_h.args_element): pass
 class args_sun(dot_h.args_sun): pass
+class args_sun_location(dot_h.args_sun_location): pass
+class args_sun_datetime(dot_h.args_sun_datetime): pass
 class st_api_call_args(dot_h.st_api_call_args): pass
 
 @dataclass

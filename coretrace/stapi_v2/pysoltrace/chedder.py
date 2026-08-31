@@ -933,9 +933,7 @@ def _append_extras(_parsed: _ParsedHeader, _extra: header_values):
                             _extra.values['defines'])
 
     if len(_extra.values['enums']):
-        print([*_ENUM_RE.finditer(clean)])
         for match in _ENUM_RE.finditer(clean):
-            print(match)
             _append_enums(_parsed.enums,
                           _parsed.enum_underlying,
                           match,

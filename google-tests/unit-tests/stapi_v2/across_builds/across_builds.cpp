@@ -1155,16 +1155,20 @@ st_return_t test_calculator_method(st_context_v2_t pcxt,
                                    expected_solar_values *expected)
 {
     args_sun_location loc = { 40.0, -105.0, -7.0 };
-    args_sun_datetime dt = {2025, 6, 20, 12};
+    args_sun_datetime dt  = { 2025, 6, 20, 12 };
 
     double azimuth, elevation, zenith, sun_x, sun_y, sun_z;
     
     // azimuth/elevation
-    st_get_sun_az_el(pcxt, calc, &loc, &dt, &azimuth, &elevation);
-    st_return_t code = check_near(azimuth, expected->azimuth, 1e-3);
+    st_return_t code = st_get_sun_az_el(pcxt, calc, &loc, &dt, &azimuth, &elevation);
+    
+    // if checking inputs skip the rest
+    if (code > st_return_code::SUCCESS) return code;
+
+    code += check_near(azimuth, expected->azimuth, 1e-3);
     code += check_near(elevation, expected->elevation, 1e-3);
 
-        // azimuth/elevation
+    // azimuth/elevation
     st_get_sun_az_zen(pcxt, calc, &loc, &dt, &azimuth, &zenith);
     
     double expected_zenith = 90.0 - expected->elevation;
@@ -1216,6 +1220,10 @@ st_return_t call_stapi_v2_solar_calculator(st_context_v2_t pcxt)
                                    SolTrace::Data::SolarPositionCalculationMethod::DUFFIE,
                                    &expected_DUFFIE);
     
+    // expect += st_return_code::INVALID_ARGUMENTS
+    code += test_calculator_method(pcxt,
+                                   SolTrace::Data::SolarPositionCalculationMethod::CALCULATOR_COUNT,
+                                   &expected_DUFFIE);
     return code;
 }
 

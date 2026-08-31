@@ -275,6 +275,15 @@ class STAPIv2:
         self.__pdll.st_sun_userdata.restype  = dot_h.st_return_t
         self.__func_map[dot_h.st_api_call.CALL_ST_SUN_USERDATA] = self.__pdll.st_sun_userdata
 
+        self.__pdll.st_get_sun_az_zen.argtypes = self.__get_argtypes(dot_h.args_st_get_sun_az_zen)
+        self.__pdll.st_get_sun_az_zen.restype  = dot_h.st_return_t
+                
+        self.__pdll.st_get_sun_az_el.argtypes = self.__get_argtypes(dot_h.args_st_get_sun_az_el)
+        self.__pdll.st_get_sun_az_el.restype  = dot_h.st_return_t
+                
+        self.__pdll.st_get_sun_vector.argtypes = self.__get_argtypes(dot_h.args_st_get_sun_vector)
+        self.__pdll.st_get_sun_vector.restype  = dot_h.st_return_t
+
         ##################################################
         # functions for writing input files for SolTrace #
         ##################################################
@@ -705,6 +714,56 @@ class STAPIv2:
                                            _angle,
                                            _intensity)
         self.__check_return_code(code)
+
+    def get_sun_az_zen(self,
+                       calc: int,
+                       loc:  _STC.args_sun_location,
+                       dt:   _STC.args_sun_datetime) -> tuple[float, float]:
+        az  = ctypes.c_double()
+        zen = ctypes.c_double()
+        code = self.__pdll.st_get_sun_az_zen(self.__pcxt,
+                                             calc, 
+                                             ctypes.byref(loc),
+                                             ctypes.byref(dt),
+                                             ctypes.byref(az),
+                                             ctypes.byref(zen))
+        self.__check_return_code(code)
+
+        return az.value, zen.value
+        
+    def get_sun_az_el(self,
+                       calc: int,
+                       loc:  _STC.args_sun_location,
+                       dt:   _STC.args_sun_datetime) -> tuple[float, float]:
+        az = ctypes.c_double()
+        el = ctypes.c_double()
+        code = self.__pdll.st_get_sun_az_el(self.__pcxt,
+                                            calc, 
+                                            ctypes.byref(loc),
+                                            ctypes.byref(dt),
+                                            ctypes.byref(az),
+                                            ctypes.byref(el))
+        self.__check_return_code(code)
+
+        return az.value, el.value
+
+    def get_sun_vector(self,
+                       calc: int,
+                       loc:  _STC.args_sun_location,
+                       dt:   _STC.args_sun_datetime) -> Point:
+        sun_x = ctypes.c_double()
+        sun_y = ctypes.c_double()
+        sun_z = ctypes.c_double()
+        code = self.__pdll.st_get_sun_vector(self.__pcxt,
+                                             calc, 
+                                             ctypes.byref(loc),
+                                             ctypes.byref(dt),
+                                             ctypes.byref(sun_x),
+                                             ctypes.byref(sun_y),
+                                             ctypes.byref(sun_z))
+        self.__check_return_code(code)
+
+        return Point(sun_x.value, sun_y.value, sun_z.value)
     
     ##################################################
     # functions for writing input files for SolTrace #
