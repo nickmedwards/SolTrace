@@ -48,9 +48,10 @@ function name | ctrl type: |   range   |   varience
 """
 
 import ctypes, orjson
+from datetime import datetime
 
 try:
-    from timer import timer
+    from timer import timer, benchmark_store # pyright: ignore[reportMissingModuleSource]
     from chedder import dot_h, found_in
     import soltrace_constants as _STC
     import soltrace_json as _stjson
@@ -58,7 +59,7 @@ try:
     from stapi_v2 import STAPIv2, STAPIv2Exception
     from legacy import legacy
 except ImportError:
-    from .timer import timer
+    from .timer import timer, benchmark_store
     from .chedder import dot_h, found_in
     from . import soltrace_constants as _STC
     from . import soltrace_json as _stjson
@@ -472,10 +473,25 @@ skip_embree = 'embree' if stapi.is_runner_installed(dot_h.st_runner_type_t.EMBRE
 skip_optix  = 'optix' if stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX) else '_optix'
 
 simulation_calls = [
-    ('native',    benchmark_simulation(dot_h.st_runner_type_t.NATIVE),  ()), # increase count -> (40, ) # ave ~ 1.51397166, comment out if don't want to wait
+    # ('native',    benchmark_simulation(dot_h.st_runner_type_t.NATIVE),  ()), # increase count -> (40, ) # ave ~ 1.51397166, comment out if don't want to wait
     (skip_embree, benchmark_simulation(dot_h.st_runner_type_t.EMBREE),  ()), # increase count -> (40, )
     (skip_optix,  benchmark_simulation(dot_h.st_runner_type_t.OPTIX),   ()), # increase count -> (40, ) # ave ~ .36015468, comment out if don't want to wait
 ]
+
+def stash(t: timer):
+    timed_keys, stats, _ = t.summary()
+    # store average and standard deviation info
+    stats = stats[:, 1:3]
+    stats_cols = ['average', 'std']
+
+    # store = benchmark_store().create(timed_keys, stats, stats_cols, datetime.now())
+    store = benchmark_store().load('./benchmark_store.pickle')
+
+    print(store.compare(timed_keys, stats, stats_cols))
+
+    if input('store run? (y/other): ')[0].lower() == 'y':
+        store.update(timed_keys, stats, stats_cols, datetime.now())
+        store.dump('./benchmark_store.pickle')
 
 if __name__ == '__main__':
     overall_t = timer()
@@ -497,22 +513,21 @@ if __name__ == '__main__':
                        do_var_ctrl_benchmark(t, f))
     overall_t.oc('stapi function calls')
     
-    for key, f, args in simulation_calls:
-        if key[0] == '_':
-            print(f'skipping {key[1:]}...')
-            continue
-        overall_t.ic(f'running sample {key}')
-        print(f'benchmarking {key}')
-        results.extend(f(t, *args))
-        overall_t.oc(f'running sample {key}')
+    # for key, f, args in simulation_calls:
+    #     if key[0] == '_':
+    #         print(f'skipping {key[1:]}...')
+    #         continue
+    #     overall_t.ic(f'running sample {key}')
+    #     print(f'benchmarking {key}')
+    #     results.extend(f(t, *args))
+    #     overall_t.oc(f'running sample {key}')
 
-    overall_t.ic('generate api calls')
-    for key, f, args in generate_api_func_args:
-        results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
-    overall_t.oc('generate api calls')
+    # overall_t.ic('generate api calls')
+    # for key, f, args in generate_api_func_args:
+    #     results.append(do_var_ctrl_benchmark(t, generic_inner(key, f, args)))
+    # overall_t.oc('generate api calls')
 
     print(f'\n\n{t}')
     print(f'\n\n{overall_t}')
 
-    # TODO: save results, keep track of previous run of benchmark, and historical fastest/slowest runs
-    #       maybe sql db with rows for each call of benchmark? (need to handle null values)
+    stash(t)

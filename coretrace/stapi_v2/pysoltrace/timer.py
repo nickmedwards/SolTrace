@@ -1,8 +1,9 @@
 from datetime import datetime
-import time
-import numpy as np # pyright: ignore[reportMissingImports]
-import orjson # pyright: ignore[reportMissingImports]
-from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
+import time, pickle
+from dataclasses import dataclass
+import numpy as np
+import orjson
+from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
 right_float = lambda fl, buf, p: f"{f'{fl:.{p}f}':>{buf}}"
@@ -14,8 +15,8 @@ def _min_max_n_values(arr, n):
     sort = np.sort(arr)
     return sort[:n], sort[-n:]
 
-def _fmt_header(cols: list[str], key_buf: int, col_buf: int):
-    lines = [f'{"timer summary:":<{key_buf}}    ' + ''.join(f'{c:>{col_buf}}' for c in cols)]
+def _fmt_header(title: str, cols: list[str], key_buf: int, col_buf: int):
+    lines = [f'{title:<{key_buf}}    ' + ''.join(f'{c:>{col_buf}}' for c in cols)]
     lines.append('-'*(len(lines[0])))
     return lines
 
@@ -58,8 +59,7 @@ class timer():
         if not len(self.history) > 1: return 'Timer has no times to report.'
 
         # get info to print
-        timed_keys = [k for k in self.history.keys() if k != 'total']
-        stats = np.array([self.summarize(k) for k in timed_keys])
+        timed_keys, stats, stats_cols = self.summary()
         # toggle at over 12 so fastest/slowest 3 are highlighted
         color_toggle = stats.shape[0] > 11
         colored_values = []
@@ -75,8 +75,7 @@ class timer():
         max_sum_len = max(len(f'{_sum:.{self.precision}f}') for _sum in stats[:, 0]) + 2
 
         # format header
-        stats_cols = ["total", "average", "std", "median", "counts"]
-        formatted_lines = _fmt_header(stats_cols, max_key_len, max_sum_len)
+        formatted_lines = _fmt_header('timer summary:', stats_cols, max_key_len, max_sum_len)
 
         # for each row in the stats array add key name and timing stats
         # if enough events timed highlight values
@@ -143,6 +142,12 @@ class timer():
             median = np.median(diffs)
 
         return value, ave, stddev, median, c
+
+    def summary(self):
+        timed_keys = [k for k in self.history.keys() if k != 'total']
+        stats = np.array([self.summarize(k) for k in timed_keys])
+        stats_cols = ["total", "average", "std", "median", "counts"]
+        return timed_keys, stats, stats_cols
     
     def to_json(self, fname: str):
         f = open(fname, mode='wb')
@@ -153,3 +158,148 @@ class timer():
         f = open(fname, mode='rb')
         self.history = orjson.loads(f.read())
         f.close()
+
+@dataclass
+class benchmark_record:
+    max:    float | int = -np.inf # historical maximum
+    min:    float | int = np.inf  # historical minimum
+    recent: float | int = np.nan  # most recently recorded
+    time:   datetime    = None    # time of recent was recorded
+
+    def __repr__(self):
+        return str(self.recent)
+
+    def __format__(self, format_spec):
+        if not format_spec: format_spec = '.2f'
+        if isinstance(self.recent, int): format_spec = ''
+        fmt = '{:' + format_spec + '}'
+        return fmt.format(self.recent)
+
+    def update(self, val: float | int, t: datetime):
+        self.recent = val
+        self.time = t
+        if val > self.max: self.max = val
+        if val < self.min: self.min = val
+
+    def highlight(self, val: float | int, buf: int, p: int = 7):
+        buf_func = right_float if isinstance(self.recent, float) else right_int
+        _args = (val, buf, p) if isinstance(self.recent, float) else (val, buf)
+
+        if val < self.min:
+            return f'{Fore.LIGHTGREEN_EX}{buf_func(*_args)}{Style.RESET_ALL}'
+        elif val > self.max:
+            return f'{Fore.RED}{buf_func(*_args)}{Style.RESET_ALL}'
+        elif val < self.recent:
+            return f'{Fore.YELLOW}{buf_func(*_args)}{Style.RESET_ALL}'
+        elif val > self.recent:
+            return f'{Fore.MAGENTA}{buf_func(*_args)}{Style.RESET_ALL}'
+        else: return buf_func(*_args)
+
+class benchmark_store:
+    def __init__(self):
+        self.store: dict[str, dict[str, benchmark_record]] = {}
+        self.benchmarks: list[str] = []
+        self.stats_cols: list[str] = []
+
+    def create(self, benchmarks: list[str], stats: np.ndarray, stats_cols: list[str], t: datetime):
+        assert len(benchmarks) == stats.shape[0], f"benckmarks and stats provided are different lengths ({len(benchmarks)} != {stats.shape[0]})"
+        assert len(stats_cols) == stats.shape[1], f"stats and stats names provided are different lengths ({len(stats_cols)} != {stats.shape[1]})"
+
+        self.store: dict[str, dict[str, benchmark_record]] = {}
+        self.benchmarks: list[str] = benchmarks
+        self.stats_cols: list[str] = stats_cols
+
+        for i in range(stats.shape[0]):
+            self.store[benchmarks[i]] = {}
+            for j in range(stats.shape[1]):
+                self.store[benchmarks[i]][stats_cols[j]] = benchmark_record(stats[i, j], stats[i, j], stats[i, j], t)
+        return self
+
+    def dump(self, filename: str):
+        f = open(filename, mode='wb')
+        _dump = {
+            'store':      self.store,
+            'benchmarks': self.benchmarks,
+            'stats_cols': self.stats_cols,
+        }
+        pickle.dump(_dump, f)
+        f.close()
+
+    def load(self, filename: str):
+        f = open(filename, mode='rb')
+        _load = pickle.load(f)
+        f.close()
+
+        assert isinstance(_load, dict), 'expects a dictionary'
+        assert 'store' in _load,        'expect store to be in loaded dictionary'
+        assert 'benchmarks' in _load,   'expect benchmarks to be in loaded dictionary'
+        assert 'stats_cols' in _load,   'expect stats_cols to be in loaded dictionary'
+
+        self.store      = _load['store']
+        self.benchmarks = _load['benchmarks']
+        self.stats_cols = _load['stats_cols']
+
+        return self
+
+    def update(self, benchmarks: list[str], stats: np.ndarray, stats_cols: list[str], t: datetime):
+        assert len(benchmarks) == stats.shape[0], f"benckmarks and stats provided are different lengths ({len(benchmarks)} != {stats.shape[0]})"
+        assert len(stats_cols) == stats.shape[1], f"stats and stats names provided are different lengths ({len(stats_cols)} != {stats.shape[1]})"
+
+        self.__check_append_keys(stats_cols)        
+
+        for i in range(stats.shape[0]):
+            benchmark = benchmarks[i]
+
+            # init inner dictionary in necessary
+            if benchmark not in self.benchmarks:
+                self.store[benchmark] = { c: benchmark_record() for c in self.stats_cols }
+                self.benchmarks.append(benchmark)
+
+            # update benchmarks stats
+            for j in range(stats.shape[1]):
+                self.store[benchmark][self.stats_cols[j]].update(stats[i, j], t)
+
+    def __check_append_keys(self, stats_cols: list[str]):
+        # find any possible new stats to store
+        possible_new_cols = []
+        for col in stats_cols:
+            if col not in self.stats_cols:
+                possible_new_cols.append(col)
+
+        # if no new cols don't do anything else
+        if len(possible_new_cols) == 0: return
+
+        # add new cols to list and add new records to store
+        self.stats_cols.extend(possible_new_cols)
+        for new_col in possible_new_cols:
+            for k in self.store.keys():
+                self.store[k][new_col] = benchmark_record()
+
+    def compare(self, benchmarks: list[str], stats: np.ndarray, stats_cols: list[str], p: int = 7) -> str:
+        common_benchmarks = sorted(list(set(benchmarks) & set(self.benchmarks)))
+        common_stats_cols = sorted(list(set(stats_cols) & set(self.stats_cols)))
+
+        _is = { _b: benchmarks.index(_b) for _b in common_benchmarks }
+        _js = { _c: stats_cols.index(_c) for _c in common_stats_cols }
+
+        # find the buffers for keys and total col to align the values properly
+        max_key_len = max(len(str(_b)) for _b in common_benchmarks)
+        max_sum_len = max(len(f'{_sum:.{p}f}') for _sum in stats[:, _js[common_stats_cols[0]]]) + 2
+        # max_sum_len = max(len(f'{_sum:.{p}f} ({_sum:.{p}f})') for _sum in stats[:, _js[common_stats_cols[0]]]) + 2
+
+        # format header
+        formatted_lines = _fmt_header('store comparison:', common_stats_cols, max_key_len, 2 * max_sum_len + 1)
+
+        for _b in common_benchmarks:
+            # print(_b)
+            report_line = [f"  {_b:<{max_key_len}}  "]
+
+            for _c in common_stats_cols:
+                # print(_c)
+                _rec = self.store[_b][_c]
+                report_line.append(f'{_rec.highlight(stats[_is[_b], _js[_c]], max_sum_len, p)} ({_rec:.{p}f})')
+            formatted_lines.append(''.join(report_line))
+
+        formatted_lines.append(formatted_lines[1])
+        return "\n".join(formatted_lines)
+

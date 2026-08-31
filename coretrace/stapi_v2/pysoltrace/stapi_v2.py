@@ -22,10 +22,10 @@ see luke's code for example.
 import atexit, os, pathlib, sys, warnings
 from dataclasses import dataclass
 from typing import Literal
-import orjson # pyright: ignore[reportMissingImports]
+import orjson
 import ctypes
 c_number = ctypes.c_double
-from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
+from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
 try:
