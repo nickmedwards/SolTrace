@@ -177,11 +177,11 @@ REFLECTION          = 'REFLECTION'
 REFRACTION          = 'REFRACTION'
 INTERACTION_UNKNOWN = 'UNKNOWN'
 
-OPTICAL_INTERATIONS_ENUM = enumify([REFLECTION, REFRACTION, INTERACTION_UNKNOWN])
+OPTICAL_INTERACTIONS_ENUM = enumify([REFLECTION, REFRACTION, INTERACTION_UNKNOWN])
 
 OPTICAL_INTERACTION_ASSERT = [
-    OPTICAL_INTERATIONS_ENUM[REFLECTION],
-    OPTICAL_INTERATIONS_ENUM[REFRACTION],
+    OPTICAL_INTERACTIONS_ENUM[REFLECTION],
+    OPTICAL_INTERACTIONS_ENUM[REFRACTION],
 ]
 
 """optical error types"""
@@ -502,7 +502,7 @@ class OpticalPropertyRegistry:
         assert type(my_name) == str,                                             'my_name must be a string'
         assert type(front_side) == dict,                                         'front_side must be a dictionary'
         assert type(back_side) == dict,                                          'back_side must be a dictionary'
-        assert OPTICAL_INTERATIONS_ENUM[_my_type] in OPTICAL_INTERACTION_ASSERT, f'invalid optical interaction type {_my_type}'
+        assert OPTICAL_INTERACTIONS_ENUM[_my_type] in OPTICAL_INTERACTION_ASSERT, f'invalid optical interaction type {_my_type}'
         assert type(_refraction_index_front) == float,                           'refraction index front must be a float'
         assert type(_refraction_index_back) == float,                            'refraction index back must be a float'
 

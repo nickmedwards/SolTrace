@@ -7,10 +7,48 @@ from dataclasses import dataclass
 # for the Python side of SolTrace, i.e. names of enum values
 # that aren't from IntEnums, error/warning messages, or types
 # defined in stapi_v2.h that are used in type hinting.
+from enum import Enum, IntEnum
 try:
     from chedder import dot_h
 except ImportError:
     from .chedder import dot_h
+
+# byte character / int enums for backwards compatibility
+class optical_error_dist(Enum):
+    GAUSSIAN     = b'g'
+    PILLBOX      = b'p'
+    DIFFUSE      = b'f'
+    USER_DEFINED = b'd'
+
+class sun_shape(Enum):
+    GAUSSIAN     = b'g'
+    PILLBOX      = b'p'
+    BUIE_CSR     = b'b'
+    USER_DEFINED = b'd'
+
+class optical_interaction(IntEnum):
+    REFRACTION = 1
+    REFLECTION = 2
+
+class aperture(Enum):
+    CIRCLE                        = b'c'
+    HEXAGON                       = b'h'
+    EQUILATERAL_TRIANGLE          = b't'
+    RECTANGLE                     = b'r'
+    ANNULUS                       = b'a'
+    SINGLE_AXIS_CURVATURE_SECTION = b'l'
+    IRREGULAR_TRIANGLE            = b'i'
+    IRREGULAR_QUADRILATERAL       = b'q'
+
+class surface(Enum):
+    SPHERE                = b's'
+    PARABOLA              = b'p'
+    HYPER                 = b'o'
+    GENERAL_SPENCER_MURTY = b'g'
+    FLAT                  = b'f'
+    CONE                  = b'c'
+    CYLINDER              = b't'
+    TORUS                 = b'd'
 
 ######################################
 # st_return_code name/message set up #

@@ -753,17 +753,17 @@ class SunTests(STAPIv2TestCase):
         self.stapi.sun_userdata(3, self.good_angles, self.good_intensities)
 
     def test_get_sun_az_zen(self):
-        az, zen = self.stapi.get_sun_az_zen(4, self.loc, self.dt)
+        az, zen = self.stapi.get_sun_az_zen(dot_h.SolarPositionCalculationMethod.SPA, self.loc, self.dt)
         self.assertAlmostEqual(az, self.az, 7)
         self.assertAlmostEqual(zen, self.zen, 7)
 
     def test_get_sun_az_el(self):
-        az, el = self.stapi.get_sun_az_el(4, self.loc, self.dt)
+        az, el = self.stapi.get_sun_az_el(dot_h.SolarPositionCalculationMethod.SPA, self.loc, self.dt)
         self.assertAlmostEqual(az, self.az, 7)
         self.assertAlmostEqual(el, self.el, 7)
 
     def test_get_sun_vector(self):
-        v = self.stapi.get_sun_vector(4, self.loc, self.dt)
+        v = self.stapi.get_sun_vector(dot_h.SolarPositionCalculationMethod.SPA, self.loc, self.dt)
         self.assertAlmostEqual((v - self.sun_vector).radius(), 0, 6)
         
 class RunnerTests(STAPIv2TestCase):

@@ -47,8 +47,9 @@ function name | ctrl type: |   range   |   varience
  get_results_data               [x]           [ ]
 """
 
-import ctypes, orjson
+import ctypes, orjson, random
 from datetime import datetime
+import numpy as np
 
 try:
     from timer import timer, benchmark_store # pyright: ignore[reportMissingModuleSource]
@@ -416,6 +417,43 @@ stapi_func_calls = [
     ('', inner_check_error_code, ()),
 ]
 
+rand_float_range = lambda min, max: random.randrange(min, max) + random.random()
+def gen_random_sun_args():
+    loc = dot_h.args_sun_location(rand_float_range(-90, 89),
+                                  rand_float_range(-180, 179),
+                                  random.randrange(-11, 11))
+    dt = dot_h.args_sun_datetime(2025,
+                                 random.randrange(1, 12),
+                                 random.randrange(1, 28),
+                                 random.randrange(5, 17),
+                                 random.randrange(0, 59),
+                                 random.randrange(0, 59))
+    return loc, dt
+
+def benchmark_solar_calculator(_t: timer, count: int = 10):
+    _stapi = STAPIv2(testing = True, benchmarking = True)
+    keys = set()
+    for _ in range(count):
+        r_loc, r_dt = gen_random_sun_args()
+        for _calc in range(dot_h.SolarPositionCalculationMethod.CALCULATOR_COUNT):
+            calc = dot_h.SolarPositionCalculationMethod(_calc)
+            az_zen_k = f'sun az/zen {calc.name}'
+            az_el_k = f'sun az/el {calc.name}'
+            vector_k = f'sun vector {calc.name}'
+            keys.update([az_zen_k, az_el_k, vector_k])
+
+            _t.ic(az_zen_k)
+            az1, zen = _stapi.get_sun_az_zen(calc.value, r_loc, r_dt)
+            _t.oc(az_zen_k)
+            _t.ic(az_el_k)
+            az2, el = _stapi.get_sun_az_el(calc.value, r_loc, r_dt)
+            _t.oc(az_el_k)
+            _t.ic(vector_k)
+            v = _stapi.get_sun_vector(calc.value, r_loc, r_dt)
+            _t.oc(vector_k)
+
+    return [_t.summarize(k) for k in keys]
+
 def benchmark_simulation(runner_type):
     def inner(_t: timer, count: int = 10):
         keys = [f'set up {runner_type.name.lower()}',
@@ -472,10 +510,11 @@ def benchmark_simulation(runner_type):
 skip_embree = 'embree' if stapi.is_runner_installed(dot_h.st_runner_type_t.EMBREE) else '_embree'
 skip_optix  = 'optix' if stapi.is_runner_installed(dot_h.st_runner_type_t.OPTIX) else '_optix'
 
-simulation_calls = [
+benchmark_funcs = [
     # ('native',    benchmark_simulation(dot_h.st_runner_type_t.NATIVE),  ()), # increase count -> (40, ) # ave ~ 1.51397166, comment out if don't want to wait
     (skip_embree, benchmark_simulation(dot_h.st_runner_type_t.EMBREE),  ()), # increase count -> (40, )
     (skip_optix,  benchmark_simulation(dot_h.st_runner_type_t.OPTIX),   ()), # increase count -> (40, ) # ave ~ .36015468, comment out if don't want to wait
+    ('solar calculators', benchmark_solar_calculator, (100, ))
 ]
 
 def stash(t: timer):
@@ -513,14 +552,14 @@ if __name__ == '__main__':
                        do_var_ctrl_benchmark(t, f))
     overall_t.oc('stapi function calls')
     
-    for key, f, args in simulation_calls:
+    for key, f, args in benchmark_funcs:
         if key[0] == '_':
             print(f'skipping {key[1:]}...')
             continue
-        overall_t.ic(f'running sample {key}')
+        overall_t.ic(key)
         print(f'benchmarking {key}')
         results.extend(f(t, *args))
-        overall_t.oc(f'running sample {key}')
+        overall_t.oc(key)
 
     overall_t.ic('generate api calls')
     for key, f, args in generate_api_func_args:
