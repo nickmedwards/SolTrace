@@ -336,3 +336,37 @@ def zrot_from_azel(vect: Point | list) -> float:
     gsign = (1 if cp.z > 0. else -1.) * (1 if vect_j > 0. else -1.)
 
     return gamma * gsign * 180./math.pi
+
+def get_unstager(pos: Point | list | np.ndarray, aim: Point | list | np.ndarray, zrot: float) -> callable | None:
+    assert isinstance(pos, (Point, list, np.ndarray)), f'pos must be Point, list, or array, not {type(pos)}'
+    assert isinstance(aim, (Point, list, np.ndarray)), f'aim must be Point, list, or array, not {type(aim)}'
+    assert len(pos) == 3, f'pos must have 3 elements, not {len(pos)}'
+    assert len(aim) == 3, f'aim must have 3 elements, not {len(aim)}'
+
+    _pos = pos
+    if type(_pos) == list:
+        _pos = np.array(_pos)
+    elif type(_pos) == Point:
+        _pos = _pos.as_array()
+
+    _aim = aim
+    if type(_aim) == list:
+        _aim = np.array(_aim)
+    elif type(_aim) == Point:
+        _aim = _aim.as_array()
+
+    euler = euler_angles(_pos, _aim, zrot)
+    significant_rotation = np.linalg.norm(euler) > 1e-7
+    significant_translation = np.linalg.norm(_pos) > 1e-7
+
+    if significant_rotation:
+        transform = euler_transforms(euler)['rreftoloc']
+        if significant_translation:
+            unstager = lambda v: transform @ v + _pos
+        else:
+            unstager = lambda v: transform @ v
+    elif significant_translation:
+        unstager = lambda v: v + _pos
+    else:
+        unstager = None
+    return unstager

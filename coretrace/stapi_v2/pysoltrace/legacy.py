@@ -620,21 +620,7 @@ class _Stage:
         else:            return new_stage
 
     def __get_unstager(self) -> callable | None:
-        euler = self.util_calc_euler_angles(self.position, self.aim, 0)
-        significant_rotation = np.linalg.norm(euler) > 1e-7
-        significant_translation = np.linalg.norm(self.position) > 1e-7
-
-        if significant_rotation:
-            transforms = self.util_calc_transforms(euler)
-            if significant_translation:
-                unstager = lambda v: transforms['rreftoloc'] @ v + self.position
-            else:
-                unstager = lambda v: transforms['rreftoloc'] @ v
-        elif significant_translation:
-            unstager = lambda v: v + self.position
-        else:
-            unstager = None
-        return unstager
+        return math_utils.get_unstager(self.position, self.aim, 0)
 
     def Create(self, stapi: STAPIv2, _do: bool = False):
         unstager = self.__get_unstager()

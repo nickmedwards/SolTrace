@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import Literal
+from numpy import array, ndarray
+
 class Point:
     """
     A simple class to manage points in Cartesian coordinates.
@@ -346,7 +349,7 @@ class Point:
     def __matmul__(self, obj: Point | list) -> Point:
         """
         implemented as cross porduct between self and obj
-        
+
         Parameters
         ==========
         obj : Point | list
@@ -364,6 +367,24 @@ class Point:
             return Point(self.y * obj[2] - self.z * obj[1],
                          self.z * obj[0] - self.x * obj[2],
                          self.x * obj[1] - self.y * obj[0])
+        return NotImplemented
+
+    def __rmatmul__(self, obj: ndarray[Literal[3, 3], float]):
+        """
+        right side matmul implemented as matrix multiplication 
+        for transformation matricies
+        
+        Parameters
+        ==========
+        obj : np.ndarray(3, 3)
+            must be 3x3 matrix, calculates matrix multiplication
+
+        Returns
+        =======
+        Point
+        """
+        if isinstance(obj, ndarray) and obj.shape == (3, 3):
+            return Point(*(obj @ self.as_array()))
         return NotImplemented
 
     def __imatmul__(self, obj: Point | list) -> Point:
@@ -464,6 +485,14 @@ class Point:
         coordinates as a python list [x,y,z]
         """
         return [self.x, self.y, self.z]
+
+    def as_array(self) -> ndarray[Literal[3,], float]:
+        """
+        Returns:
+        --------
+        coordinates as a numpy array [x,y,z]
+        """
+        return array([self.x, self.y, self.z])
 
     @staticmethod
     def from_list(l: list) -> Point:
