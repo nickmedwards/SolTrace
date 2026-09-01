@@ -36,21 +36,21 @@ def euler_angles(origin:   Point | list | np.ndarray,
         if _arg_origin_type == np.ndarray:
             _origin = origin
         elif _arg_origin_type == list:
-            _origin = np.ndarray(origin)
+            _origin = np.array(origin)
         elif _arg_origin_type == Point:
-            _origin = np.array(origin.to_list())
+            _origin = np.array(origin.as_list())
         else:
-            ValueError(f'Can\'t convert {_arg_origin_type} to numpy array.')
+            raise ValueError(f'Can\'t convert {_arg_origin_type} to numpy array.')
 
         _arg_aimpoint_type = type(aimpoint)
         if _arg_aimpoint_type == np.ndarray:
             _aimpoint = aimpoint
         elif _arg_aimpoint_type == list:
-            _aimpoint = np.ndarray(aimpoint)
+            _aimpoint = np.array(aimpoint)
         elif _arg_aimpoint_type == Point:
-            _aimpoint = np.array(aimpoint.to_list())
+            _aimpoint = np.array(aimpoint.as_list())
         else:
-            ValueError(f'Can\'t convert {_arg_aimpoint_type} to numpy array.')
+            raise ValueError(f'Can\'t convert {_arg_aimpoint_type} to numpy array.')
 
         # This duplicates the built-in function but uses numpy operators directly
         dv = _aimpoint - _origin
@@ -63,7 +63,6 @@ def euler_angles(origin:   Point | list | np.ndarray,
             math.asin(dv[1]),
             zrot * 0.017453292519943295 # acos(-1)/180.0
         ])
-
 
         if _arg_origin_type == list:
             return euler.tolist()
@@ -200,10 +199,10 @@ def euler_transforms(euler: Point | list):
     rreftoloc = np.array([[CosAlpha * CosGamma + SinAlpha * SinBeta * SinGamma,
                            CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma,
                            SinAlpha * CosBeta],
-                         [-CosBeta * SinGamma, CosBeta * CosGamma, SinBeta],
-                         [-SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma,
-                          -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma,
-                          CosAlpha * CosBeta]])
+                          [-CosBeta * SinGamma, CosBeta * CosGamma, SinBeta],
+                          [-SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma,
+                           -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma,
+                            CosAlpha * CosBeta]])
 
     return {'rreftoloc':rreftoloc, 'rloctoref':rreftoloc.T}
 

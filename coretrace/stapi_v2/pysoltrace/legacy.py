@@ -394,10 +394,10 @@ class _Element:
         if enew != None: enew = new_el
         else:            return new_el
 
-    def Create(self, stapi: STAPIv2, _do: bool = False):
+    def Create(self, stapi: STAPIv2, unstager: callable | None = None, _do: bool = False):
         # TODO: unstage element position/aim
-        el_args = dot_h.args_element(*self.position,
-                                     *self.aim,
+        el_args = dot_h.args_element(*(unstager(self.position) if unstager else self.position),
+                                     *(unstager(self.aim) if unstager else self.aim),
                                      self.zrot,
                                      self.enabled,
                                      self.virtual,
@@ -619,8 +619,26 @@ class _Stage:
         if snew != None: snew = new_stage
         else:            return new_stage
 
+    def __get_unstager(self) -> callable | None:
+        euler = self.util_calc_euler_angles(self.position, self.aim, 0)
+        significant_rotation = np.linalg.norm(euler) > 1e-7
+        significant_translation = np.linalg.norm(self.position) > 1e-7
+
+        if significant_rotation:
+            transforms = self.util_calc_transforms(euler)
+            if significant_translation:
+                unstager = lambda v: transforms['rreftoloc'] @ v + self.position
+            else:
+                unstager = lambda v: transforms['rreftoloc'] @ v
+        elif significant_translation:
+            unstager = lambda v: v + self.position
+        else:
+            unstager = None
+        return unstager
+
     def Create(self, stapi: STAPIv2, _do: bool = False):
-        calls = [el.Create(stapi) for el in self.elements]
+        unstager = self.__get_unstager()
+        calls = [el.Create(stapi, unstager) for el in self.elements]
         if _do: return stapi.batch(calls)
         return calls
 
