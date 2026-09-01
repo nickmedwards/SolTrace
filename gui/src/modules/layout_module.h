@@ -1,7 +1,10 @@
 #pragma once
 
-#include "database/rootelementsmodel.h"
-#include "database/worldgeometrymodel.h"
+#include "database/models/hierarchy_models.h"
+#include "database/models/instance_editor.h"
+#include "database/models/element_models.h"
+#include "database/models/instance_sort_filter.h"
+#include "database/models/world_geometry_model.h"
 #include "module_common.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"

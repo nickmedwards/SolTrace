@@ -15,6 +15,7 @@ set(GUI_UNIT_TEST_SRC
     ../../../gui/src/database/database_notification.cpp
     ../../../gui/src/modules/database_module.cpp
     ../../../gui/src/utilities/asynctask.cpp
+    ../../../gui/src/utilities/euler_angles.cpp
     ../../../gui/src/utilities/notification.h
     ../../../gui/src/utilities/structmodel.h
     conversion_test.cpp

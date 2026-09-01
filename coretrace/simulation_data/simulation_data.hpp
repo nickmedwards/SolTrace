@@ -52,7 +52,7 @@ public:
     //   implying they are unnecessary
     // adds flexibility to users by making SimulationData more freeform
     // before being sent to the runner
-    void SimulationData::enforce_elements_ready();
+    void enforce_elements_ready();
 
     /// @brief Add the given RaySource to the simulation data
     /// @param src RaySource to add

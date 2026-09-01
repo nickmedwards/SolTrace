@@ -83,9 +83,10 @@ void RayGeometry::rebuild_geometry() {
     qDebug() << Q_FUNC_INFO << "Start";
     clear();
 
+    // No db, no geom for you
     if (!m_database) {
         qDebug() << Q_FUNC_INFO << "No database";
-        update();
+        update(); // note that we have cleared
         return;
     }
 
@@ -317,12 +318,17 @@ void RayGeometry::set_results(db::SimulationResultPtr data) {
     if (!percent_changed) rebuild_geometry();
 }
 
-
+/// Classic; give me the closest point on a line segment to a ray
+/// A and B are line points, P is the query ray start, rayDir is the query ray
+/// direction.
+///
+/// Output is the distance, and the closest point is the closestOnSegment out
+/// param
 static float dist_segment_ray_closest_points(glm::vec3  A,
                                              glm::vec3  B,
                                              glm::vec3  P,
-                                             glm::vec3  rayDir,
-                                             glm::vec3& closestOnSegment) {
+                                             glm::vec3  ray_dir,
+                                             glm::vec3& closest_on_segment) {
     glm::vec3 u = B - A;
     glm::vec3 v = ray_dir;
     glm::vec3 w = A - P;

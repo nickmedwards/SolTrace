@@ -161,7 +161,7 @@ def matrix_vector_mult(m: np.ndarray, v: np.ndarray):
     assert type(m) == type(np.array([]))
     assert m.shape == (3,3)
     assert type(v) == type(np.array([]))
-    assert m.shape == (3,)
+    assert v.shape == (3,)
 
     return np.dot(m, v)
 
@@ -185,9 +185,9 @@ def euler_transforms(euler: Point | list):
     if isinstance(euler, list):       assert len(euler) == 3,                 f'Must have 3 Euler angles, not {len(euler)}.'
     if isinstance(euler, np.ndarray): assert euler.shape == (3,),             f'Must have 3 Euler angles, not {euler.shape}.'
 
-    Alpha = euler.x
-    Beta  = euler.y
-    Gamma = euler.z
+    Alpha = euler[0]
+    Beta  = euler[1]
+    Gamma = euler[2]
     CosAlpha = np.cos(Alpha)
     CosBeta  = np.cos(Beta)
     CosGamma = np.cos(Gamma)
