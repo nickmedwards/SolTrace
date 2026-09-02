@@ -35,8 +35,8 @@ if __name__ == '__main__':
     print(helio_euler)
     print(np.linalg.norm(helio_euler))
     print(helio_transforms['rloctoref'])
-    unstaged_pos = target_transforms['rreftoloc'] @ np.array([0, 0, 8]) + target_stage_center
-    unstaged_aim = target_transforms['rreftoloc'] @ np.array([0, 0, 9]) + target_stage_center
+    unstaged_pos = target_transforms['rreftoloc'] @ Point(0, 0, 8) + target_stage_center
+    unstaged_aim = target_transforms['rreftoloc'] @ Point(0, 0, 9) + target_stage_center
     print(unstaged_pos)
     print(unstaged_aim)
     print(CONVERT_GLOBAL @ unstaged_pos)
