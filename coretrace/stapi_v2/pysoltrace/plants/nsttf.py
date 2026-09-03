@@ -29,7 +29,7 @@ CONVERT_COORDS = np.array([[-1., 0., 0.],
 dummy_uint64 = ctypes.c_uint64()
 
 def pretty(struct):
-    s = '{\n'
+    s = type(struct).__name__ + ': {\n'
     for field in struct._fields_:
         s += f'  {field[0]}: {getattr(struct, field[0])}\n'
     s += '}\n'
@@ -40,15 +40,7 @@ def pretty(struct):
 ################################
 
 OPTICS_CALLS = []
-optical_registry = stJSON.OpticalPropertyRegistry()
-_RECEIVER_OPTICAL_REF = optical_registry.add(
-    'receiver',
-    stJSON.optical_side_json(_reflectivity = 0, _specularity_error = .2, _slope_error = .95),
-    stJSON.optical_side_json(_reflectivity = 0, _specularity_error = .2, _slope_error = .95),
-    stJSON.REFLECTION,
-    1.1,
-    1.1,
-)
+
 RECEIVER_OPTICAL_REF = len(OPTICS_CALLS)
 rec_set  = dot_h.args_optical_properties_set(b'receiver', 1.1, 1.1, _STC.optical_interaction.REFLECTION.value)
 rec_face = dot_h.args_optical_properties_face(0, 0, .95, .2, _STC.optical_error_dist.GAUSSIAN.value)
@@ -59,14 +51,6 @@ OPTICS_CALLS.append(
                             ctypes.pointer(rec_face),
                             ctypes.pointer(dummy_uint64)))
 
-_HELIOSTAT_OPTICAL_REF = optical_registry.add(
-    'heliostat',
-    stJSON.optical_side_json(_reflectivity = 0.885, _slope_error = 1.2, _specularity_error = .05),
-    stJSON.optical_side_json(_reflectivity = 0.0, _slope_error = 1.2, _specularity_error = .05),
-    stJSON.REFLECTION,
-    1.1,
-    1.1,
-)
 HELIOSTAT_OPTICAL_REF = len(OPTICS_CALLS)
 helio_set   = dot_h.args_optical_properties_set(b'heliostat', 1.1, 1.1, _STC.optical_interaction.REFLECTION.value)
 helio_front = dot_h.args_optical_properties_face(0, 0.885, 1.2, .05, _STC.optical_error_dist.GAUSSIAN.value)
@@ -78,14 +62,6 @@ OPTICS_CALLS.append(
                             ctypes.pointer(helio_back),
                             ctypes.pointer(dummy_uint64)))
 
-_APERTURE_OPTICAL_REF = optical_registry.add(
-    'aperture',
-    stJSON.optical_side_json(_reflectivity = 0.5, _transmissivity = 1, _slope_error = 523.6, _specularity_error = 0.1),
-    stJSON.optical_side_json(_reflectivity = 0,   _transmissivity = 1, _slope_error = 523.6, _specularity_error = 0.1),
-    stJSON.REFLECTION,
-    1.1,
-    1.1
-)
 APERTURE_OPTICAL_REF = len(OPTICS_CALLS)
 ap_set   = dot_h.args_optical_properties_set(b'aperture', 1.1, 1.1, _STC.optical_interaction.REFLECTION.value)
 ap_front = dot_h.args_optical_properties_face(1, 0.5, 523.6, 0.1, _STC.optical_error_dist.GAUSSIAN.value)
@@ -97,14 +73,6 @@ OPTICS_CALLS.append(
                             ctypes.pointer(ap_back),
                             ctypes.pointer(dummy_uint64)))
 
-_TOWER_OPTICAL_REF = optical_registry.add(
-    'tower',
-    stJSON.optical_side_json(_reflectivity = 0, _transmissivity = 1, _slope_error = 0.95, _specularity_error = 0.2),
-    stJSON.optical_side_json(_reflectivity = 0, _transmissivity = 1, _slope_error = 0.95, _specularity_error = 0.2),
-    stJSON.REFLECTION,
-    1.1,
-    1.1
-)
 TOWER_OPTICAL_REF = len(OPTICS_CALLS)
 tower_set  = dot_h.args_optical_properties_set(b'tower', 1.1, 1.1, _STC.optical_interaction.REFLECTION.value)
 tower_face = dot_h.args_optical_properties_face(1, 0, 0.95, 0.2, _STC.optical_error_dist.GAUSSIAN.value)
@@ -115,14 +83,6 @@ OPTICS_CALLS.append(
                             ctypes.pointer(tower_face),
                             ctypes.pointer(dummy_uint64)))
 
-_SNOUT_OPTICAL_REF = optical_registry.add(
-    'snout',
-    stJSON.optical_side_json(_reflectivity = 0.2, _transmissivity = 0, _slope_error = 0.95, _specularity_error = 0.2),
-    stJSON.optical_side_json(_reflectivity = 0,   _transmissivity = 0, _slope_error = 0.95, _specularity_error = 0.2),
-    stJSON.REFLECTION,
-    1.1,
-    1.1
-)
 SNOUT_OPTICAL_REF = len(OPTICS_CALLS)
 snout_set   = dot_h.args_optical_properties_set(b'snout', 1.1, 1.1, _STC.optical_interaction.REFLECTION.value)
 snout_front = dot_h.args_optical_properties_face(0, 0.2, 0.95, 0.2, _STC.optical_error_dist.GAUSSIAN.value)
@@ -359,30 +319,9 @@ G3P3_CALLS.append(
 # curtain
  
 if __name__ == '__main__':
-    # print(pretty(rec_set))
-    # print(pretty(rec_face))
-    # print(optical_registry[_RECEIVER_OPTICAL_REF])
-
-    # print(pretty(helio_set))
-    # print(pretty(helio_front))
-    # print(pretty(helio_back))
-    # print(optical_registry[_HELIOSTAT_OPTICAL_REF])
-
-    # print(pretty(ap_set))
-    # print(pretty(ap_front))
-    # print(pretty(ap_back))
-    # print(optical_registry[_APERTURE_OPTICAL_REF])
-    
-    # print(pretty(tower_set))
-    # print(pretty(tower_face))
-    # print(optical_registry[_TOWER_OPTICAL_REF])
-
-    # print(pretty(snout_set))
-    # print(pretty(snout_front))
-    # print(pretty(snout_back))
-    # print(optical_registry[_SNOUT_OPTICAL_REF])
-
     print(pretty(ap_el_args))
+    print(type(ap_el_args))
+    print(type(ctypes.pointer(ap_el_args)))
     test_unstager = math_utils.get_unstager(CONVERT_COORDS @ g3p3_stage_pos, CONVERT_COORDS @ g3p3_stage_aim, 0)
 
     print(test_unstager(CONVERT_COORDS @ np.array([0, 0, 0.662347])))
@@ -397,3 +336,8 @@ if __name__ == '__main__':
 
     print(stapi.num_optics())
     print(stapi.num_elements())
+
+    print(pretty(stapi.get_element(1)[0]))
+    print(pretty(stapi.get_element(2)[0]))
+    print(stapi.get_element(2)[1])
+    print(pretty(stapi.get_element(3)[0]))

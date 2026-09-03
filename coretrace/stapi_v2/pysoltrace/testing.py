@@ -1361,6 +1361,7 @@ class BatchTests(STAPIv2TestCase):
         ])
 
         rt_sun_args, *_ = self.stapi.get_sun()
+        print(rt_sun_args)
         # bypassing assertStructEqual because sigma is not set
         self.assertEqual(getattr(rt_sun_args, 'npoints'), 3)
         self.assertEqual(getattr(rt_sun_args, 'x'), 608)

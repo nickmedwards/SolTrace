@@ -85,7 +85,7 @@ class STAPIv2:
             self.__setup_dll(_lib_path)
 
         ppcxt = ctypes.c_void_p()
-        code = self.__pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb if not testing else self.__testing_cb)
+        code = self.__pdll.st_create_context(ctypes.pointer(ppcxt), self.__message_cb if not testing else self.__testing_cb)
         self.__check_return_code(code)
         self.__pcxt = ppcxt.value
         # TODO: self._finalizer = weakref.finalize(self, __free) might be better option
@@ -423,7 +423,7 @@ class STAPIv2:
     #####################################################
 
     def set_simulation_parameters(self, params: _STC.args_simulation_parameters) -> None:
-        code = self.__pdll.st_set_simulation_parameters(self.__pcxt, ctypes.byref(params))
+        code = self.__pdll.st_set_simulation_parameters(self.__pcxt, ctypes.pointer(params))
         self.__check_return_code(code)
 
     def sim_params(self,
@@ -458,7 +458,7 @@ class STAPIv2:
 
     def get_simulation_parameters(self) -> _STC.args_simulation_parameters:
         params = dot_h.args_simulation_parameters()
-        code = self.__pdll.st_get_simulation_parameters(self.__pcxt, ctypes.byref(params))
+        code = self.__pdll.st_get_simulation_parameters(self.__pcxt, ctypes.pointer(params))
         self.__check_return_code(code)
         return params
 
@@ -468,7 +468,7 @@ class STAPIv2:
 
     def num_optics(self) -> int:
         num_optics = ctypes.c_uint64()
-        code = self.__pdll.st_num_optics(self.__pcxt, ctypes.byref(num_optics))
+        code = self.__pdll.st_num_optics(self.__pcxt, ctypes.pointer(num_optics))
         self.__check_return_code(code)
         return num_optics.value
     
@@ -478,10 +478,10 @@ class STAPIv2:
                                    back: _STC.args_optical_properties_face) -> int:
         num_optics = ctypes.c_uint64()
         code = self.__pdll.st_add_optical_properties_set(self.__pcxt,
-                                                         ctypes.byref(opt_set),
-                                                         ctypes.byref(front),
-                                                         ctypes.byref(back),
-                                                         ctypes.byref(num_optics))
+                                                         ctypes.pointer(opt_set),
+                                                         ctypes.pointer(front),
+                                                         ctypes.pointer(back),
+                                                         ctypes.pointer(num_optics))
         self.__check_return_code(code)
         return num_optics.value
 
@@ -493,9 +493,9 @@ class STAPIv2:
         back = dot_h.args_optical_properties_face()
         code = self.__pdll.st_get_optical_properties_set(self.__pcxt,
                                                          optic_id,
-                                                         ctypes.byref(opt_set),
-                                                         ctypes.byref(front),
-                                                         ctypes.byref(back))
+                                                         ctypes.pointer(opt_set),
+                                                         ctypes.pointer(front),
+                                                         ctypes.pointer(back))
         self.__check_return_code(code)
         return opt_set, front, back
 
@@ -513,7 +513,7 @@ class STAPIv2:
 
     def num_elements(self) -> int:
         pcount = ctypes.c_uint64()
-        code = self.__pdll.st_num_elements(self.__pcxt, ctypes.byref(pcount))
+        code = self.__pdll.st_num_elements(self.__pcxt, ctypes.pointer(pcount))
         self.__check_return_code(code)
         return pcount.value
 
@@ -526,11 +526,11 @@ class STAPIv2:
         _s_params = (ctypes.c_double * 8)(*s_params)
         pid = ctypes.c_uint64()
         code = self.__pdll.st_add_element(self.__pcxt,
-                                          ctypes.byref(args),
+                                          ctypes.pointer(args),
                                           opt_id,
                                           _a_params,
                                           _s_params,
-                                          ctypes.byref(pid))
+                                          ctypes.pointer(pid))
         self.__check_return_code(code)
         return pid.value
 
@@ -544,8 +544,8 @@ class STAPIv2:
             s_params = (ctypes.c_double * 8)(*[0 for _ in range(8)])
             code = self.__pdll.st_get_element(self.__pcxt,
                                               id,
-                                              ctypes.byref(args),
-                                              ctypes.byref(optic_id),
+                                              ctypes.pointer(args),
+                                              ctypes.pointer(optic_id),
                                               ctypes.pointer(a_params),
                                               ctypes.pointer(s_params))
             self.__check_return_code(code)
@@ -653,7 +653,7 @@ class STAPIv2:
         _angle     = (ctypes.c_double * len(angle))(*angle)
         _intensity = (ctypes.c_double * len(angle))(*intensity)
         code = self.__pdll.st_add_sun(self.__pcxt,
-                                      ctypes.byref(args),
+                                      ctypes.pointer(args),
                                       _angle,
                                       _intensity)
         self.__check_return_code(code)
@@ -663,7 +663,7 @@ class STAPIv2:
         angle = ctypes.c_double()
         intensity = ctypes.c_double()
         code = self.__pdll.st_get_sun(self.__pcxt,
-                                       ctypes.byref(args),
+                                       ctypes.pointer(args),
                                        ctypes.pointer(angle),
                                        ctypes.pointer(intensity))
         self.__check_return_code(code)
@@ -695,9 +695,9 @@ class STAPIv2:
                                            lat,
                                            day,
                                            hour,
-                                           ctypes.byref(px),
-                                           ctypes.byref(py),
-                                           ctypes.byref(pz))
+                                           ctypes.pointer(px),
+                                           ctypes.pointer(py),
+                                           ctypes.pointer(pz))
         self.__check_return_code(code)
         return Point(px.value,
                      py.value,
@@ -723,10 +723,10 @@ class STAPIv2:
         zen = ctypes.c_double()
         code = self.__pdll.st_get_sun_az_zen(self.__pcxt,
                                              calc, 
-                                             ctypes.byref(loc),
-                                             ctypes.byref(dt),
-                                             ctypes.byref(az),
-                                             ctypes.byref(zen))
+                                             ctypes.pointer(loc),
+                                             ctypes.pointer(dt),
+                                             ctypes.pointer(az),
+                                             ctypes.pointer(zen))
         self.__check_return_code(code)
 
         return az.value, zen.value
@@ -739,10 +739,10 @@ class STAPIv2:
         el = ctypes.c_double()
         code = self.__pdll.st_get_sun_az_el(self.__pcxt,
                                             calc, 
-                                            ctypes.byref(loc),
-                                            ctypes.byref(dt),
-                                            ctypes.byref(az),
-                                            ctypes.byref(el))
+                                            ctypes.pointer(loc),
+                                            ctypes.pointer(dt),
+                                            ctypes.pointer(az),
+                                            ctypes.pointer(el))
         self.__check_return_code(code)
 
         return az.value, el.value
@@ -756,11 +756,11 @@ class STAPIv2:
         sun_z = ctypes.c_double()
         code = self.__pdll.st_get_sun_vector(self.__pcxt,
                                              calc, 
-                                             ctypes.byref(loc),
-                                             ctypes.byref(dt),
-                                             ctypes.byref(sun_x),
-                                             ctypes.byref(sun_y),
-                                             ctypes.byref(sun_z))
+                                             ctypes.pointer(loc),
+                                             ctypes.pointer(dt),
+                                             ctypes.pointer(sun_x),
+                                             ctypes.pointer(sun_y),
+                                             ctypes.pointer(sun_z))
         self.__check_return_code(code)
 
         return Point(sun_x.value, sun_y.value, sun_z.value)
@@ -780,7 +780,7 @@ class STAPIv2:
     def get_installed_runners(self) -> dict[str, bool]:
         installed = ctypes.c_ubyte()
         code = self.__pdll.st_get_installed_runners(self.__pcxt,
-                                                    ctypes.byref(installed))
+                                                    ctypes.pointer(installed))
         self.__check_return_code(code)
         return {
             dot_h.st_runner_type_t.NATIVE.name: installed.value & (1 << dot_h.st_runner_type_t.NATIVE.value),
@@ -792,7 +792,7 @@ class STAPIv2:
         installed = ctypes.c_bool()
         code = self.__pdll.st_is_runner_installed(self.__pcxt,
                                                   runner,
-                                                  ctypes.byref(installed))
+                                                  ctypes.pointer(installed))
         self.__check_return_code(code)
         return installed.value
 
@@ -835,7 +835,7 @@ class STAPIv2:
 
     def num_intersections(self):
         pcount = ctypes.c_uint64()
-        code = self.__pdll.st_num_intersections(self.__pcxt, ctypes.byref(pcount))
+        code = self.__pdll.st_num_intersections(self.__pcxt, ctypes.pointer(pcount))
         self.__check_return_code(code)
         return pcount.value
     
@@ -884,11 +884,16 @@ class STAPIv2:
         height   = ctypes.c_double()
         area     = ctypes.c_double()
         nsunrays = ctypes.c_uint64()
+        self.__batch_toggle(True, self.__pdll.st_sun_stats, dot_h.st_api_call.CALL_ST_SUN_STATS, 
+                            (ctypes.pointer(width),
+                             ctypes.pointer(height),
+                             ctypes.pointer(area),
+                             ctypes.pointer(nsunrays)))
         code = self.__pdll.st_sun_stats(self.__pcxt,
-                                        ctypes.byref(width),
-                                        ctypes.byref(height),
-                                        ctypes.byref(area),
-                                        ctypes.byref(nsunrays))
+                                        ctypes.pointer(width),
+                                        ctypes.pointer(height),
+                                        ctypes.pointer(area),
+                                        ctypes.pointer(nsunrays))
         self.__check_return_code(code)
         return width.value, height.value, area.value, nsunrays.value
     
@@ -911,13 +916,26 @@ class STAPIv2:
                                        element_map,
                                        stage_map,
                                        ray_numbers)
-        code = self.__pdll.st_get_results_data(self.__pcxt, ctypes.byref(args))
+        code = self.__pdll.st_get_results_data(self.__pcxt, ctypes.pointer(args))
         self.__check_return_code(code)
         return args
 
     #####################
     # Batch caller work #
     #####################
+    __default_f_return_func = lambda args: (arg.value if hasattr(arg, 'value') else arg for arg in args)
+    __default_b_return_func = lambda args: args
+    def __batch_toggle(self,
+                       toggle:    bool,
+                       st_func:   callable,
+                       call_type: int,
+                       args:      tuple,
+                       f_return:  callable = __default_f_return_func,
+                       b_return:  callable = __default_b_return_func):
+        print(*f_return(args))
+        print(*b_return(args))
+            
+        pass
 
     def generate_api_call(self, call_type: int, *args):
         if not call_type < dot_h.st_api_call.API_CALL_COUNT: raise ValueError(f'Invalid st_api_v2 batch call ({call_type}).')
@@ -1056,11 +1074,11 @@ class STAPIv2:
         # TODO: don't need to cast as void because all are st_api_call_args
         # p_st_api_call_args = ctypes.POINTER(dot_h.st_api_call_args)
         # args_arr = (p_st_api_call_args * num_calls)(*[
-        #     ctypes.cast(ctypes.byref(c), p_st_api_call_args) for c in api_calls
+        #     ctypes.cast(ctypes.b yref(c), p_st_api_call_args) for c in api_calls
         # ])
         # NOTE: might not actually help that much
         args_arr = (ctypes.c_void_p * num_calls)(*[
-            ctypes.cast(ctypes.byref(c), ctypes.c_void_p) for c in api_calls
+            ctypes.cast(ctypes.pointer(c), ctypes.c_void_p) for c in api_calls
         ])
         fail_iteration = ctypes.c_uint(0)
         _t.oc('c args set up')
@@ -1069,7 +1087,7 @@ class STAPIv2:
         code = self.__pdll.st_batch(self.__pcxt,
                                     args_arr,
                                     num_calls,
-                                    ctypes.byref(fail_iteration),
+                                    ctypes.pointer(fail_iteration),
                                     verbose)
         _t.oc('batch call')
         # print(f'\n{_t}')

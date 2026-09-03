@@ -978,6 +978,14 @@ def _make_struct_init(base: type, defaults: Dict[str, Any], field_order: List[st
         base.__init__(self, *args, **kwargs)
     return __init__
 
+def _make_struct_value(_struct: type):
+    @property
+    def value(self):
+        return { field[0]: _f.value 
+                           if hasattr(_f := getattr(self, field[0]), 'value') else 
+                           _f 
+                 for field in _struct._fields_ }
+    return value
 
 def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
     # Flatten every enum member name -> int value up front (independent of
@@ -1081,6 +1089,7 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
                 nested_cls._fields_ = nested_fields
                 nested_cls._field_defaults_ = nested_applied
                 nested_cls._unresolved_defaults_ = nested_unresolved
+                nested_cls.value = _make_struct_value(nested_cls)
                 if nested_applied:
                     nested_cls.__init__ = _make_struct_init(nested_base,
                                                             nested_applied, 
@@ -1099,6 +1108,7 @@ def _build_namespace(parsed: _ParsedHeader, class_name: str = "dot_h") -> type:
         cls._fields_ = fields
         cls._field_defaults_ = applied
         cls._unresolved_defaults_ = unresolved
+        cls.value = _make_struct_value(cls)
         if applied:
             base = ctypes.Union if kind == "union" else ctypes.Structure
             cls.__init__ = _make_struct_init(base,

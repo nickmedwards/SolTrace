@@ -52,6 +52,10 @@ def euler_angles(origin:   Point | list | np.ndarray,
         else:
             raise ValueError(f'Can\'t convert {_arg_aimpoint_type} to numpy array.')
 
+        # cast to float64 to avoid issues with numpy division
+        _origin = _origin.astype(np.float64)
+        _aimpoint = _aimpoint.astype(np.float64)
+
         # This duplicates the built-in function but uses numpy operators directly
         dv = _aimpoint - _origin
         d = math.sqrt(sum(dv**2))
