@@ -6,10 +6,11 @@ from functools import partial
 from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
-from pysoltrace.api.dll import setup_dll as _setup_dll
+from pysoltrace.api.dll import context, setup_dll as _setup_dll
 from pysoltrace import soltrace_constants as _STC
-from pysoltrace.api.utils import check_return_code, STAPIv2Exception, STAPIv2Warning
+from pysoltrace.api.utils import check_return_code, st_function, STAPIv2Exception, STAPIv2Warning
 from pysoltrace.api.runner import runner
+from pysoltrace.api.data import data
 
 def free(dll, pcxt, testing: bool = False):
     code = dll.st_free_context(pcxt)
@@ -21,27 +22,11 @@ def free(dll, pcxt, testing: bool = False):
 #############################################################################
 class STAPIv2:
     def __init__(self, override_path: str = '', testing: bool = False, benchmarking: bool = False):
-        if len(override_path): self.__pdll = _setup_dll(override_path)
-        else:
-            _here = pathlib.Path(__file__).parent.parent.resolve()
-            
-            # 2. Determine the shared library filename based on the OS
-            if sys.platform == "win32":
-                _lib_name = "stapi_v2.dll"
-            elif sys.platform == "darwin":
-                _lib_name = "stapi_v2.dylib"
-            else:
-                _lib_name = "stapi_v2.so" # Note: CMake typically prepends "lib" on Linux/macOS
-    
-            _lib_path = _here / _lib_name
-            self.__pdll = _setup_dll(_lib_path)
+        self.__pdll, self.__pcxt = self.__create(override_path, testing)
 
-        ppcxt = ctypes.c_void_p()
-        code = self.__pdll.st_create_context(ctypes.pointer(ppcxt), self.__message_cb if not testing else self.__testing_cb)
-        check_return_code(code)
-        self.__pcxt = ppcxt.value        
-        self._finalizer = weakref.finalize(self, free, self.__pdll, self.__pcxt, testing)
+        atexit.register(free, self.__pdll, self.__pcxt, testing)
 
+        self.data = data(self.__pdll, self.__pcxt)
         self.runner = runner(self.__pdll, self.__pcxt)
 
         # keep the struct instances alive — ctypes.cast() does NOT keep a
@@ -64,6 +49,27 @@ class STAPIv2:
                 rt += f'\n{" " * max_key_len}: {[_STC._CTYPES_RE.search(str(arg)).group() for arg in v.argtypes]}'
         return rt
 
+    @st_function
+    def __create(self, override_path: str = '', testing: bool = False):
+        if len(override_path): pdll = _setup_dll(override_path)
+        else:
+            _here = pathlib.Path(__file__).parent.parent.resolve()
+            
+            # 2. Determine the shared library filename based on the OS
+            if sys.platform == "win32":
+                _lib_name = "stapi_v2.dll"
+            elif sys.platform == "darwin":
+                _lib_name = "stapi_v2.dylib"
+            else:
+                _lib_name = "stapi_v2.so" # Note: CMake typically prepends "lib" on Linux/macOS
+    
+            _lib_path = _here / _lib_name
+            pdll = _setup_dll(_lib_path)
+
+        ppcxt = ctypes.c_void_p()
+        code = pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb if not testing else self.__testing_cb)
+        return code, pdll, ppcxt.value
+
     def reset(self):
         code = self.__pdll.st_reset_context(self.__pcxt)
         check_return_code(code)
@@ -76,8 +82,6 @@ class STAPIv2:
         return 0
 
     @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
-    def __testing_cb(loc, msg):
-        # sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
-        return 0
+    def __testing_cb(loc, msg): return 0
     
     def sneak(self): return self.__pdll, self.__pcxt, check_return_code

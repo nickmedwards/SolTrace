@@ -3,17 +3,17 @@ from typing import Literal
 
 from pysoltrace import dot_h
 from pysoltrace.api.utils import st_function
+from pysoltrace.api.dll import context
 
-class runner:
-    def __init__(self, pdll, pcxt):
-        self.__pdll = pdll
-        self.__pcxt = pcxt
-
+############################################
+# functions for SolTrace runner management #
+############################################
+class runner(context):
     @st_function
     def get_installed(self) -> dict[str, bool]:
         installed = ctypes.c_ubyte()
-        code = self.__pdll.st_get_installed_runners(self.__pcxt,
-                                                    ctypes.pointer(installed))
+        code = self._pdll.st_get_installed_runners(self._pcxt,
+                                                  ctypes.byref(installed))
         return code, {
             dot_h.st_runner_type_t.NATIVE.name: bool(installed.value & (1 << dot_h.st_runner_type_t.NATIVE.value)),
             dot_h.st_runner_type_t.EMBREE.name: bool(installed.value & (1 << dot_h.st_runner_type_t.EMBREE.value)),
@@ -23,9 +23,9 @@ class runner:
     @st_function
     def is_installed(self, runner: int) -> bool:
         installed = ctypes.c_bool()
-        code = self.__pdll.st_is_runner_installed(self.__pcxt,
-                                                    runner,
-                                                    ctypes.pointer(installed))
+        code = self._pdll.st_is_runner_installed(self._pcxt,
+                                                runner,
+                                                ctypes.byref(installed))
         return code, installed.value
 
     @st_function
@@ -39,16 +39,16 @@ class runner:
         if seeds and len(seeds):
             num_seeds = len(seeds)
             _seeds = (ctypes.c_uint * num_seeds)(*seeds)
-        return self.__pdll.st_sim_setup(self.__pcxt,
-                                        runner_type,
-                                        num_threads,
-                                        _seeds,
-                                        num_seeds)
+        return self._pdll.st_sim_setup(self._pcxt,
+                                      runner_type,
+                                      num_threads,
+                                      _seeds,
+                                      num_seeds)
 
     @st_function
     def run(self) -> None:
-        return self.__pdll.st_sim_run_v2(self.__pcxt)
+        return self._pdll.st_sim_run_v2(self._pcxt)
 
     @st_function
     def report(self, level: int = 0) -> None:
-        return self.__pdll.st_sim_report(self.__pcxt, level)
+        return self._pdll.st_sim_report(self._pcxt, level)

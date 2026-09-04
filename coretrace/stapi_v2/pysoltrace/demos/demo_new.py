@@ -8,3 +8,7 @@ stapi = api()
 print(stapi)
 
 print(stapi.runner.get_installed())
+
+# print(len(stapi.data.optic))
+# print(len(stapi.data.element))
+# print(stapi.data.sun.)

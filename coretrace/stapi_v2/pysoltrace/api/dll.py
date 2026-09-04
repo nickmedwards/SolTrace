@@ -69,3 +69,8 @@ def setup_dll(path: str = ''):
                               ctypes.c_bool]
     pdll.st_batch.restype  = dot_h.st_return_t
     return pdll
+
+class context:
+    def __init__(self, pdll, pcxt):
+        self._pdll = pdll
+        self._pcxt = pcxt

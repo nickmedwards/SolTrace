@@ -1,4 +1,4 @@
-import warnings
+import ctypes, warnings
 from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
@@ -38,5 +38,13 @@ def st_function(func):
     def wrapper(*args, **kwargs):
         code, *rt = func(*args, **kwargs)
         check_return_code(code)
+        # if need to return a function to produce return args
+        # assert len(rt) <= 1, f'Expected at most one return value, got {len(rt)}'
+        # return rt[0]() if len(rt) == 1 else None
+
         return rt[0] if len(rt) == 1 else tuple(rt) if len(rt) > 1 else None
     return wrapper
+
+def make_c_double_8(params: list[float]) -> ctypes.Array:
+    assert isinstance(params, list), f'Expected a list of 8 parameters, got {type(params)}'
+    return (ctypes.c_double * 8)(*params)
