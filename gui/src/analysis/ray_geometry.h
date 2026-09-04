@@ -39,16 +39,11 @@ public:
     Q_ENUM(TextureMode)
 
 private:
-    /// Which events to include in our geometry?
     Q_WRITABLE_PROPERTY(QStringList, event_include, {});
 
     /// How many rays to show?
     Q_WRITABLE_PROPERTY(float, show_percent, 100);
-
-    /// How to set the UVs of the geometry?
     Q_WRITABLE_PROPERTY(TextureMode, texture_mode, TextureMode::Length);
-
-    /// How many rays are there?
     Q_READONLY_PROPERTY(quint64, available_rays);
 
     /// What is/is there a selected ray?

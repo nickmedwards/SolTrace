@@ -14,7 +14,7 @@ namespace SolTrace::NativeRunner
         TSystem* System,
         MTRand& myrng,
         const bool IncludeSunShape,
-        const SolTrace::Data::OpticalPropertySet* optics,
+        SolTrace::Data::optical_set_ptr optics,
         const bool LastHitBackSide,
         const bool IncludeErrors,
         // stage info
@@ -116,7 +116,7 @@ namespace SolTrace::NativeRunner
                      const glm::dvec3 &PosXYZ,
                      const glm::dvec3 &CosKLM,
                      const glm::dvec3 &DFXYZ,
-                     const SolTrace::Data::OpticalPropertySet *Opticl,
+                     optical_set_ptr Opticl,
                      const bool LastHitBackSide,
                      double Wavelength,
                      glm::dvec3 &PosOut,

@@ -401,7 +401,7 @@ namespace SolTrace::NativeRunner
             SolTrace::Result::RayEvent rev;
             if (Query(i, pos, cos, &elm, &stage, &ray, &rev))
             {
-                printf("   [%llu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %llu %s\(%d) }\n",
+                printf("   [%llu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %llu %s(%d) }\n",
                        static_cast<long long unsigned>(i),
                        pos[0], pos[1], pos[2],
                        cos[0], cos[1], cos[2],
@@ -466,7 +466,7 @@ namespace SolTrace::NativeRunner
     telement_ptr make_telement(element_ptr el,
                                tstage_ptr my_stage,
                                const ElementParameters &eparams,
-                               const SolTrace::Data::OpticalPropertySet& optics)
+                               const SolTrace::Data::optical_set_ptr optics)
     {
         // std::cout << "Name: " << el->get_name()
         //           << "\nSDID: " << el->get_id()

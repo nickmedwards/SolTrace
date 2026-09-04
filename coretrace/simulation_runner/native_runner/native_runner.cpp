@@ -28,7 +28,9 @@ namespace SolTrace::NativeRunner
 
     NativeRunner::NativeRunner() : SimulationRunner(),
                                    as_power_tower(false),
-                                   number_of_threads(1)
+                                   number_of_threads(1),
+                                   ready_to_run(false),
+                                   ready_to_report(false)
     {
         this->my_logger = make_trace_logger();
         this->my_manager = make_thread_manager(this->my_logger);
@@ -62,6 +64,8 @@ namespace SolTrace::NativeRunner
 
         if (sts == RunnerStatus::SUCCESS)
             sts = this->setup_elements(data);
+        
+        if (sts == RunnerStatus::SUCCESS) this->set_ready_to_run(true);
 
         return sts;
     }
@@ -75,6 +79,7 @@ namespace SolTrace::NativeRunner
         this->tsys.sim_raycount = sim_params.number_of_rays;
         this->tsys.sim_raymax = sim_params.max_number_of_rays;
         this->tsys.seed = sim_params.seed;
+        this->as_power_tower = sim_params.as_power_tower;
         return RunnerStatus::SUCCESS;
     }
 
@@ -221,7 +226,7 @@ namespace SolTrace::NativeRunner
                     telement_ptr elem = make_telement(iter->second,
                                                       current_stage,
                                                       this->eparams,
-                                                      *optics);
+                                                      optics);
                     // ++element_number;
                     // current_stage->ElementList.push_back(elem);
                     current_stage->add_element(elem);
@@ -258,7 +263,7 @@ namespace SolTrace::NativeRunner
                     telement_ptr tel = make_telement(el,
                                                      stage,
                                                      this->eparams,
-                                                     *optics);
+                                                     optics);
                     // stage->ElementList.push_back(tel);
                     // ++element_number;
                     this->check_supported_options(tel);
@@ -318,6 +323,8 @@ namespace SolTrace::NativeRunner
             this->tsys.sim_errors_sunshape,
             this->tsys.sim_errors_optical,
             this->as_power_tower);
+        
+        if (sts == RunnerStatus::SUCCESS) this->set_ready_to_report(true);
 
         return sts;
     }
@@ -537,9 +544,9 @@ namespace SolTrace::NativeRunner
     void NativeRunner::check_supported_options(telement_ptr telem)
     {
         check_supported_optical_distribution(
-            telem->Optics.get_error_distribution(OpticalSide::Front));
+            telem->Optics->get_error_distribution(OpticalSide::Front));
         check_supported_optical_distribution(
-            telem->Optics.get_error_distribution(OpticalSide::Back));
+            telem->Optics->get_error_distribution(OpticalSide::Back));
 
         // TODO: Put other checks here
 

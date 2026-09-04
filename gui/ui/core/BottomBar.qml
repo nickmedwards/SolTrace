@@ -342,7 +342,6 @@ RowLayout {
                             from: 0
                             to: 10
                             stepSize: 0.01
-                            decimals: 2
                             value: App.view.sim.geometry_thickness
                             onValueModified: App.view.sim.geometry_thickness = value
                         }
