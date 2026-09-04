@@ -128,6 +128,32 @@ STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
+STAPI_V2 st_return_t st_sim_rays(st_context_v2_t pcxt,
+								 uint_fast64_t   raycount,
+								 uint_fast64_t   maxcount)
+{
+	CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+    
+    data->set_number_of_rays(raycount);
+    data->set_max_rays_traced(maxcount);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_sim_power_tower(st_context_v2_t pcxt,
+								        bool 		    is_power_tower)
+{
+	CONTEXT(pcxt);
+    DATA(cxt);
+
+    SimulationParameters &sim_params = data->get_simulation_parameters();
+
+    data->set_as_power_tower(is_power_tower);
+    return st_return_code::SUCCESS;
+}
+
 STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
 								   bool			   include_sun_shape,
 								   bool			   include_optics)

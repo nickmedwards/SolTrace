@@ -22,6 +22,26 @@ TEST(data_tests, data_params)
     CLEANUP_TEST_CXT();
 }
 
+TEST(data_tests, data_rays)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_sim_rays(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
+TEST(data_tests, data_power_tower)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_sim_power_tower(pcxt);
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
+    CLEANUP_TEST_CXT();
+}
+
 TEST(data_tests, data_errors)
 {
     SETUP_TEST_CXT();

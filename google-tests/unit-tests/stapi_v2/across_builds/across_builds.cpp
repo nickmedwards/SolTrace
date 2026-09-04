@@ -123,6 +123,36 @@ st_return_t call_stapi_v2_sim_params(st_context_v2_t pcxt)
     return code;
 }
 
+st_return_t call_stapi_v2_sim_rays(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
+
+    // test that initialized with defaults
+    st_return_t code = check(params.number_of_rays, 10000);
+    code += check(params.max_number_of_rays, 1000000);
+    
+    st_sim_rays(pcxt, 1, 100);
+
+    code += check(params.number_of_rays, 1);
+    code += check(params.max_number_of_rays, 100);
+    return code;
+}
+
+st_return_t call_stapi_v2_sim_power_tower(st_context_v2_t pcxt)
+{
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationParameters &params = cxt->p_data->get_simulation_parameters();
+
+    // test that initialized with defaults
+    st_return_t code = check(params.as_power_tower, false);
+
+    st_sim_power_tower(pcxt, true);
+
+    code += check(params.as_power_tower, true);
+    return code;
+}
+
 st_return_t call_stapi_v2_sim_errors(st_context_v2_t pcxt)
 {
     st_context *cxt = reinterpret_cast<st_context*>(pcxt);

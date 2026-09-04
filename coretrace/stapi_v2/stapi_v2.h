@@ -258,6 +258,11 @@ STAPI_V2 st_return_t st_sim_params(st_context_v2_t pcxt,
 								   uint_fast64_t   raycount,
 								   uint_fast64_t   maxcount,
 								   bool			   include_dynamic_group);
+STAPI_V2 st_return_t st_sim_rays(st_context_v2_t pcxt,
+								 uint_fast64_t   raycount,
+								 uint_fast64_t   maxcount);
+STAPI_V2 st_return_t st_sim_power_tower(st_context_v2_t pcxt,
+								        bool 		    is_power_tower);
 STAPI_V2 st_return_t st_sim_errors(st_context_v2_t pcxt,
 								   bool			   include_sun_shape,
 								   bool			   include_optics);

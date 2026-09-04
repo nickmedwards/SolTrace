@@ -17,10 +17,11 @@ def setup_dll(path: str = ''):
     # functions for SolTrace context management #
     #############################################
 
-    # warning that: "The function "POINTER" is deprecated ctypes.POINTER with string"
-    # dot_h.st_context_v2_t is <class 'ctypes.c_void_p'> which is not deprecated
-    # see ctypes entry for more information on the following Python docs page
-    # here: https://docs.python.org/3/whatsnew/3.14.html#new-deprecations 
+    # warning that: "The function "POINTER" is deprecated ctypes.POINTER
+    # with string" dot_h.st_context_v2_t is <class 'ctypes.c_void_p'>
+    # which is not deprecated see ctypes entry for more information on
+    # the following Python docs page here:
+    # https://docs.python.org/3/whatsnew/3.14.html#new-deprecations 
     pdll.st_create_context.argtypes = [ctypes.POINTER(dot_h.st_context_v2_t),
                                        ctypes.CFUNCTYPE(ctypes.c_int,
                                                         ctypes.c_char_p,

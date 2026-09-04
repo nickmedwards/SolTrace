@@ -38,5 +38,6 @@ class json:
 
         return loader(self.__pcxt, _json)
 
+    @st_function
     def dump(self, filename: str):
         return self.__pdll.st_export_json_file(self.__pcxt, filename.encode())
