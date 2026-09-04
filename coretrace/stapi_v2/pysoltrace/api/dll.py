@@ -39,8 +39,9 @@ def setup_dll(path: str = ''):
     for k, v in vars(dot_h).items():
         if k.startswith("args_st_"):
             func_name = k.replace("args_", "")
-            setattr(pdll, f'{func_name}.argtypes', __get_argtypes(v))
-            setattr(pdll, f'{func_name}.restype', dot_h.st_return_t)
+            func = getattr(pdll, func_name)
+            func.argtypes = __get_argtypes(v)
+            func.restype  = dot_h.st_return_t
         
     print(callable_funcx)
     return pdll
