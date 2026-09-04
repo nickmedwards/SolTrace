@@ -33,9 +33,23 @@ def setup_dll(path: str = ''):
     pdll.st_free_context.argtypes = [ctypes.c_void_p]
     pdll.st_free_context.restype  = dot_h.st_return_t
 
-    print(dot_h.__dir__)
-    callable_funcx = members = {k: v for k, v in vars(dot_h).items() if k.startswith("args_st_")}
-
+    #########################################################
+    # creates ctypes function pointers for each of the      #
+    # structs defined in stapi_v2.h starting with "args_st" #
+    # these functions do:                                   #
+    # - SolTrace data management                            #
+    #   - thru json strings                                 #
+    #   - directly                                          #
+    #     - set simulation parameters                       #
+    #     - add/remove/set optical properties               #
+    #     - add/remove/modify elements                      #
+    #     - add/modify the sun                              #
+    # - input files for SolTrace writing                    #
+    # - SolTrace runner management                          #
+    # - SolTrace results management                         #
+    #   - thru writing files                                #
+    #   - directly                                          #
+    #########################################################
     for k, v in vars(dot_h).items():
         if k.startswith("args_st_"):
             func_name = k.replace("args_", "")
@@ -43,5 +57,14 @@ def setup_dll(path: str = ''):
             func.argtypes = __get_argtypes(v)
             func.restype  = dot_h.st_return_t
         
-    print(callable_funcx)
+    ############################################
+    # function for batching SolTrace API calls #
+    ############################################
+    
+    pdll.st_batch.argtypes = [ctypes.c_void_p,
+                              ctypes.POINTER(ctypes.c_void_p),
+                              ctypes.c_uint,
+                              ctypes.POINTER(ctypes.c_uint),
+                              ctypes.c_bool]
+    pdll.st_batch.restype  = dot_h.st_return_t
     return pdll
