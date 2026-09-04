@@ -537,6 +537,8 @@ typedef enum st_api_call : st_uint_t {
 	// functions for simulation data management directly
 	CALL_ST_SET_SIMULATION_PARAMETERS,
 	CALL_ST_SIM_PARAMS,
+	CALL_ST_SIM_RAYS,
+	CALL_ST_SIM_POWER_TOWER,
 	CALL_ST_SIM_ERRORS,
 	CALL_ST_SIM_LOCATION,
 	CALL_ST_SIM_TOLERANCE,
@@ -607,6 +609,15 @@ typedef struct args_st_sim_params {
 	uint_fast64_t maxcount;
 	bool 		  include_dynamic_group;
 } args_st_sim_params;
+
+typedef struct args_st_sim_rays {
+	uint_fast64_t raycount;
+	uint_fast64_t maxcount;
+} args_st_sim_rays;
+
+typedef struct args_st_sim_power_tower {
+	bool is_power_tower;
+} args_st_sim_power_tower;
 
 typedef struct args_st_sim_errors {
 	bool include_sun_shape;
@@ -876,6 +887,8 @@ typedef struct st_api_call_args {
 		// functions for simulation data management directly
 		args_st_set_simulation_parameters set_simulation_parameters_args;
 		args_st_sim_params 	  			  sim_params_args;
+		args_st_sim_rays 	  			  sim_rays_args;
+		args_st_sim_power_tower  		  sim_power_tower_args;
 		args_st_sim_errors 	  			  sim_errors_args;
 		args_st_sim_location  			  sim_location_args;
 		args_st_sim_tolerance 			  sim_tolerance_args;

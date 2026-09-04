@@ -1610,6 +1610,19 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                                          call_args->payload.sim_params_args.include_dynamic_group);
                     break;
                 }
+	            case st_api_call::CALL_ST_SIM_RAYS:
+                {
+                    code = st_sim_rays(pcxt,
+                                       call_args->payload.sim_rays_args.raycount,
+                                       call_args->payload.sim_rays_args.maxcount);
+                    break;
+                }
+	            case st_api_call::CALL_ST_SIM_POWER_TOWER:
+                {
+                    code = st_sim_power_tower(pcxt,
+                                              call_args->payload.sim_power_tower_args.is_power_tower);
+                    break;
+                }
 	            case st_api_call::CALL_ST_SIM_ERRORS:
                 {
                     code = st_sim_errors(pcxt,
