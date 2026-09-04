@@ -6,6 +6,10 @@ from . import soltrace_json
 from .point import Point
 from .legacy import legacy as PySolTrace
 
+from pysoltrace.api import api
+
+# _api = api.STAPIv2()
+
 __all__ = [
     'dot_h',
     'found_in',
@@ -15,4 +19,5 @@ __all__ = [
     'soltrace_constants',
     'soltrace_json',
     'STAPIv2',
+    'api'
 ]
