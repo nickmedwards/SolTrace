@@ -11,11 +11,22 @@ from pysoltrace import soltrace_constants as _STC
 from pysoltrace.api.utils import check_return_code, st_function, STAPIv2Exception, STAPIv2Warning
 from pysoltrace.api.runner import runner
 from pysoltrace.api.data import data
+from pysoltrace.api.parameters import parameters
+from pysoltrace.api.legacy import legacy
 
 def free(dll, pcxt, testing: bool = False):
     code = dll.st_free_context(pcxt)
     if not testing:
         sys.stdout.write(f'Freed context ({pcxt:#x}) with code ({code}) from SolTrace DLL ({dll})\n')
+
+
+@ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
+def message_cb(loc, msg):
+    sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
+    return 0
+
+@ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
+def testing_cb(loc, msg): return 0
 
 #############################################################################
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
@@ -26,8 +37,10 @@ class STAPIv2:
 
         atexit.register(free, self.__pdll, self.__pcxt, testing)
 
+        self.parameters = parameters(self.__pdll, self.__pcxt)
         self.data = data(self.__pdll, self.__pcxt)
         self.runner = runner(self.__pdll, self.__pcxt)
+        self.legacy = legacy(self.__pdll, self.__pcxt)
 
         # keep the struct instances alive — ctypes.cast() does NOT keep a
         # reference, so if these get garbage collected the void* becomes dangling
@@ -67,7 +80,7 @@ class STAPIv2:
             pdll = _setup_dll(_lib_path)
 
         ppcxt = ctypes.c_void_p()
-        code = pdll.st_create_context(ctypes.byref(ppcxt), self.__message_cb if not testing else self.__testing_cb)
+        code = pdll.st_create_context(ctypes.byref(ppcxt), message_cb if not testing else testing_cb)
         return code, pdll, ppcxt.value
 
     def reset(self):
@@ -75,13 +88,5 @@ class STAPIv2:
         check_return_code(code)
         if not self.__benchmarking:
             sys.stdout.write(f'Reset context ({self.__pcxt:#x})\n')
-
-    @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
-    def __message_cb(loc, msg):
-        sys.stdout.write(f"{Fore.MAGENTA}[stapi_v2] - Message callback triggered by ({loc.decode('utf-8')}){Style.RESET_ALL}: {msg.decode('utf-8')}\n")
-        return 0
-
-    @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p)
-    def __testing_cb(loc, msg): return 0
     
     def sneak(self): return self.__pdll, self.__pcxt, check_return_code
