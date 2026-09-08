@@ -1,12 +1,14 @@
-from . import math_utils
-from . import soltrace_constants
-from .chedder import dot_h, found_in 
-from .stapi_v2 import STAPIv2
-from . import soltrace_json
-from .point import Point
-from .legacy import legacy as PySolTrace
+# no outside of pysoltrace dependencies
+from pysoltrace.chedder import dot_h, found_in 
+from pysoltrace.point import Point
+from pysoltrace import soltrace_json
+# depend on other pysoltrace modules
+from pysoltrace import math_utils # Point
+from pysoltrace import soltrace_constants # dot_h
+from pysoltrace.stapi_v2 import STAPIv2 # soltrace_constants
+from pysoltrace.api import api, STAPIv2Exception # soltrace_constants
 
-from pysoltrace.api import api
+from pysoltrace.legacy import legacy as PySolTrace # api, dot_h, soltrace_json, math_utils, Point
 
 # _api = api.STAPIv2()
 
@@ -19,5 +21,6 @@ __all__ = [
     'soltrace_constants',
     'soltrace_json',
     'STAPIv2',
-    'api'
+    'api',
+    'STAPIv2Exception',
 ]

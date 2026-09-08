@@ -1,17 +1,34 @@
-import ctypes, os, sys
+import ctypes, os, pathlib, sys
 from pysoltrace import dot_h
+
+STATIC_FUNC_ARGS = ['args_st_get_installed_runners', 'args_st_is_runner_installed']
 
 def __get_argtypes(args_struct: ctypes.Structure) -> list:
     return [dot_h.st_context_v2_t, *[args[1] for args in args_struct._fields_]]
 
-def setup_dll(path: str = ''):
+def __get_dll(path: str = '') -> ctypes.CDLL:
     if not os.path.exists(path):
         raise FileNotFoundError(f'Could not find DLL at {path}')
 
     if sys.platform == "win32":
         os.add_dll_directory(str(path).rsplit(os.sep, maxsplit=1)[0])
-        pdll = ctypes.WinDLL(path, winmode=0)
-    else: pdll = ctypes.CDLL(path)
+        return ctypes.WinDLL(path, winmode=0)
+    else: return ctypes.CDLL(path)
+
+def find_dll() -> pathlib.Path:
+    _here = pathlib.Path(__file__).parent.parent.resolve()
+                
+    if sys.platform == "win32":
+        _lib_name = "stapi_v2.dll"
+    elif sys.platform == "darwin":
+        _lib_name = "stapi_v2.dylib"
+    else:
+        _lib_name = "stapi_v2.so" # Note: CMake typically prepends "lib" on Linux/macOS
+
+    return _here / _lib_name
+
+def setup_dll(path: str = ''):
+    pdll = __get_dll(path)
 
     #############################################
     # functions for SolTrace context management #
@@ -34,23 +51,23 @@ def setup_dll(path: str = ''):
     pdll.st_free_context.argtypes = [ctypes.c_void_p]
     pdll.st_free_context.restype  = dot_h.st_return_t
 
-    #########################################################
-    # creates ctypes function pointers for each of the      #
-    # structs defined in stapi_v2.h starting with "args_st" #
-    # these functions do:                                   #
-    # - SolTrace data management                            #
-    #   - thru json strings                                 #
-    #   - directly                                          #
-    #     - set simulation parameters                       #
-    #     - add/remove/set optical properties               #
-    #     - add/remove/modify elements                      #
-    #     - add/modify the sun                              #
-    # - input files for SolTrace writing                    #
-    # - SolTrace runner management                          #
-    # - SolTrace results management                         #
-    #   - thru writing files                                #
-    #   - directly                                          #
-    #########################################################
+    ###############################################
+    # creates ctypes function pointers for each   #
+    # of the structs defined in stapi_v2.h        #
+    # starting with "args_st" these functions do: #
+    # - SolTrace data management                  #
+    #   - thru json strings                       #
+    #   - directly                                #
+    #     - set simulation parameters             #
+    #     - add/remove/set optical properties     #
+    #     - add/remove/modify elements            #
+    #     - add/modify the sun                    #
+    # - input files for SolTrace writing          #
+    # - SolTrace runner management                #
+    # - SolTrace results management               #
+    #   - thru writing files                      #
+    #   - directly                                #
+    ###############################################
     for k, v in vars(dot_h).items():
         if k.startswith("args_st_"):
             func_name = k.replace("args_", "")
@@ -69,6 +86,20 @@ def setup_dll(path: str = ''):
                               ctypes.c_bool]
     pdll.st_batch.restype  = dot_h.st_return_t
     return pdll
+
+def setup_static_dll(path: str = ''):
+    pdll = __get_dll(path)
+
+    for f_args in STATIC_FUNC_ARGS:
+        func_name = f_args.replace('args_', '')
+        args_struct = getattr(dot_h, f_args)
+        func = getattr(pdll, func_name)
+        func.argtypes = [args[1] for args in args_struct._fields_]
+        func.restype  = dot_h.st_return_t
+
+    return pdll
+
+STATIC_DLL = setup_static_dll(find_dll())
 
 class context:
     def __init__(self, pdll, pcxt):

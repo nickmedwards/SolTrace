@@ -1,5 +1,4 @@
 import ctypes
-from typing import Literal
 
 from pysoltrace import dot_h, soltrace_constants as _STC
 from pysoltrace.api.utils import st_function

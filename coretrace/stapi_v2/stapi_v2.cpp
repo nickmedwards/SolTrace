@@ -55,9 +55,11 @@ STAPI_V2 st_return_t st_reset_context(st_context_v2_t pcxt)
     delete cxt->p_runner;
     delete cxt->p_results;
 
-    cxt->p_data    = new SimulationData();
-    cxt->p_runner  = nullptr;
-    cxt->p_results = nullptr;
+    cxt->p_data       = new SimulationData();
+    cxt->runner_type  = st_runner_type_t::RUNNER_COUNT;
+    cxt->p_runner     = nullptr;
+    cxt->report_level = RunnerStatistics::STATISTICS_COUNT;
+    cxt->p_results    = nullptr;
 
 	return st_return_code::SUCCESS;
 }
@@ -470,7 +472,7 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
         return st_return_code::INVALID_ARGUMENTS;
     }
 
-    element_ptr el = make_element<SingleElement>();
+    single_element_ptr el = make_element<SingleElement>();
     
     el->set_origin(args->x, args->y, args->z);
     el->set_aim_vector(args->ax, args->ay, args->az);
@@ -483,11 +485,16 @@ STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
     el->set_optical_property_set(existing_set);
     el->set_aperture(ap);
     el->set_surface(surf);
+
+    st_return_t code = st_return_code::SUCCESS;
+    if (args->group < -1) code = st_return_code::WARNING_GROUP_IGNORED;
+    else                  el->set_group(args->group);
+    
     // TODO in simulation_data.cpp saying add_element will be throwable in the future
     ST_WRAP_CB_TRY_CATCH(data->add_element(el), cxt->p_cb);
 
     *element_id = el->get_id();
-    return st_return_code::SUCCESS;
+    return code;
 }
 
 STAPI_V2 st_return_t st_get_element(st_context_v2_t pcxt,
@@ -520,7 +527,8 @@ STAPI_V2 st_return_t st_get_element(st_context_v2_t pcxt,
     surface_ptr surf_ptr = el->get_surface();
     SurfaceType surf_type = surf_ptr->get_type();
     args->surf = surface_to_char(surf_type);
-
+    
+    args->group = el->get_group();
     *opt_id = el->get_optical_property_set_id();
 
     // reset params
@@ -812,7 +820,26 @@ STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt,
         return st_return_code::DATA_VALUE_NOT_FOUND;
 
     element_ptr el = data->get_element(idx);
+    if (!el) return st_return_code::WARNING_NOT_FOUND;
+
     el->set_optical_property_set(existing_set);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_element_group(st_context_v2_t pcxt,
+									  st_uint_t 	  idx,
+									  int32_t   	  group)
+{
+    CONTEXT(pcxt);
+    DATA(cxt);
+    
+    if (group < -1) return st_return_code::WARNING_GROUP_IGNORED;
+
+    element_ptr el = data->get_element(idx);
+    if (!el) return st_return_code::WARNING_NOT_FOUND;
+
+    auto sel = std::dynamic_pointer_cast<SingleElement>(el);
+    sel->set_group(group);
     return st_return_code::SUCCESS;
 }
 
@@ -1189,7 +1216,7 @@ STAPI_V2 st_return_t st_export_json_file(st_context_v2_t pcxt, const char *filen
 //////////////////////////////////
 
 // functions for SolTrace runner management
-STAPI_V2 st_return_t st_get_installed_runners(st_context_v2_t pcxt, uint8_t *installed)
+STAPI_V2 st_return_t st_get_installed_runners(uint8_t *installed)
 {
     *installed = 1 << st_runner_type_t::NATIVE;
 #ifdef STAPI_V2_EMBREE_SUPPORT
@@ -1201,12 +1228,11 @@ STAPI_V2 st_return_t st_get_installed_runners(st_context_v2_t pcxt, uint8_t *ins
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_t st_is_runner_installed(st_context_v2_t  pcxt,
-                                            st_runner_type_t type,
+STAPI_V2 st_return_t st_is_runner_installed(st_runner_type_t type,
                                             bool             *installed)
 {
     uint8_t runners;
-    st_get_installed_runners(pcxt, &runners);
+    st_get_installed_runners(&runners);
     *installed = runners & (1 << type);
     return st_return_code::SUCCESS;
 }
@@ -1320,7 +1346,7 @@ STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt)
     CONTEXT(pcxt);
     RUNNER(cxt);
 
-    if (!runner->is_ready_to_run()) return st_return_code::RUNNER_NOT_READY;
+    if (!runner->is_ready_to_run()) return st_return_code::RUNNER_NOT_READY_TO_RUN;
 
     RunnerStatus sts = runner->run_simulation();
 
@@ -1331,11 +1357,16 @@ STAPI_V2 st_return_t st_sim_run_v2(st_context_v2_t pcxt)
 
 STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level)
 {
+    if (level < RunnerStatistics::RAY_RECORDS ||
+        level >= RunnerStatistics::STATISTICS_COUNT)
+        return st_return_code::INVALID_ARGUMENTS;
+        
     CONTEXT(pcxt);
     RUNNER(cxt);
 
-    if (!runner->is_ready_to_report()) return st_return_code::RUNNER_NOT_READY;
+    if (!runner->is_ready_to_report()) return st_return_code::RUNNER_NOT_READY_TO_REPORT;
 
+    cxt->report_level = (RunnerStatistics)level;
     delete cxt->p_results;
     cxt->p_results = new SimulationResult();
     RunnerStatus sts = runner->report_simulation(cxt->p_results, level);
@@ -1355,7 +1386,25 @@ STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt,
     CONTEXT(pcxt);
     RESULT(cxt);
 
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
+
     ST_WRAP_CB_TRY_CATCH(result->write_csv_file(filename, precision), cxt->p_cb);
+    return st_return_code::SUCCESS;
+}
+
+STAPI_V2 st_return_t st_write_group_results_json(st_context_v2_t pcxt, 
+										         const char 	 *filename, 
+										         int 			 precision,
+                                                 int             indent)
+{
+    CONTEXT(pcxt);
+    RESULT(cxt);
+
+    if (cxt->report_level == RunnerStatistics::RAY_RECORDS)
+        return st_return_code::RESULT_NOT_REPORTED;
+
+    ST_WRAP_CB_TRY_CATCH(result->write_group_json_file(filename, precision, indent), cxt->p_cb);
     return st_return_code::SUCCESS;
 }
 
@@ -1370,24 +1419,30 @@ uint_fast64_t number_of_interactions(SimulationResult *result)
     return num;
 }
 
-STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections)
+STAPI_V2 st_return_t st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections)
 {
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     *num_intersections = number_of_interactions(result);
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
-									 double 		 *loc_x,
-									 double 		 *loc_y,
-									 double 		 *loc_z)
+STAPI_V2 st_return_t st_locations(st_context_v2_t pcxt,
+								  double 		  *loc_x,
+								  double 		  *loc_y,
+								  double 		  *loc_z)
 {
     /* *loc_x, *loc_y, *loc_z must be allocated by 
        caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     uint_fast64_t n = 0;
     glm::dvec3 loc;
@@ -1407,15 +1462,18 @@ STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
-							 	   double 		   *cos_x,
-							 	   double 		   *cos_y,
-							 	   double 		   *cos_z)
+STAPI_V2 st_return_t st_cosines(st_context_v2_t pcxt,
+							 	double 		    *cos_x,
+							 	double 		    *cos_y,
+							 	double 		    *cos_z)
 {
     /* *cos_x, *cos_y, *cos_z must be allocated by 
        caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     uint_fast64_t n = 0;
     glm::dvec3 cosine;
@@ -1435,11 +1493,14 @@ STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, uint_fast64_t *element_map)
+STAPI_V2 st_return_t st_elementmap(st_context_v2_t pcxt, uint_fast64_t *element_map)
 {
     /* *element_map must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     uint_fast64_t n = 0;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
@@ -1455,11 +1516,14 @@ STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, uint_fast64_t *eleme
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map)
+STAPI_V2 st_return_t st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map)
 {
     /* *stage_map must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     uint_fast64_t n = number_of_interactions(result);
     // deprecating stages return array of 0s
@@ -1469,11 +1533,14 @@ STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_m
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers)
+STAPI_V2 st_return_t st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers)
 {
     /* *ray_numbers must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     uint_fast64_t n = 0;
     for (auto it = result->get_ray_record_iterator(); !result->is_at_end(it); ++it)
@@ -1489,11 +1556,11 @@ STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_n
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
-                                     double 		 *width,
-									 double 		 *height,
-									 double 		 *area,
-									 uint_fast64_t	 *nsunrays)
+STAPI_V2 st_return_t st_sun_stats(st_context_v2_t pcxt,
+                                  double 		  *width,
+								  double 		  *height,
+								  double 		  *area,
+								  uint_fast64_t	  *nsunrays)
 {
     CONTEXT(pcxt);
     RESULT(cxt);
@@ -1514,11 +1581,14 @@ STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
     return st_return_code::SUCCESS;
 }
 
-STAPI_V2 st_return_code st_get_results_data(st_context_v2_t pcxt, args_results_data *data)
+STAPI_V2 st_return_t st_get_results_data(st_context_v2_t pcxt, args_results_data *data)
 {
     /* all arrays in data must be allocated by caller using st_num_intersections */
     CONTEXT(pcxt);
     RESULT(cxt);
+    
+    if (cxt->report_level == RunnerStatistics::GROUPED_COUNTS)
+        return st_return_code::RESULT_NOT_REPORTED;
 
     uint_fast64_t n = 0;
     glm::dvec3 loc;
@@ -1546,6 +1616,9 @@ STAPI_V2 st_return_code st_get_results_data(st_context_v2_t pcxt, args_results_d
 
     return st_return_code::SUCCESS;
 }
+
+// TODO: make a way to get group results (number too)
+//       make checks positive
 
 /////////////////////////
 // Batch api call work //
@@ -1755,6 +1828,13 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                     code = st_element_optic(pcxt,
                                             call_args->payload.element_optic_args.idx,
                                             call_args->payload.element_optic_args.opt_id);
+                    break;
+                }
+	            case st_api_call::CALL_ST_ELEMENT_GROUP:
+                {
+                    code = st_element_group(pcxt,
+                                            call_args->payload.element_group_args.idx,
+                                            call_args->payload.element_group_args.group);
                     break;
                 }
                 // sun functions

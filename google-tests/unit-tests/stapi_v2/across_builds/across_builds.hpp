@@ -59,9 +59,7 @@ st_return_t call_stapi_v2_element_zrot(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_element_aperture(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_element_surface(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_element_optic(st_context_v2_t pcxt);
-
-// TODO: turn into individual tests
-st_return_t call_stapi_v2_all_elements(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_element_group(st_context_v2_t pcxt);
 
 // sun functions
 st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt);
@@ -78,6 +76,8 @@ st_return_t call_stapi_v2_solar_calculator(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sim_setup(st_context_v2_t pcxt);
 st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t  pcxt,
                                      st_runner_type_t runner_type);
+st_return_t call_stapi_v2_sim_report(st_context_v2_t  pcxt, 
+                                     st_runner_type_t runner_type);
 
 ///////////////////////////////////
 // Simlulation Results Functions //
@@ -87,6 +87,9 @@ st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t  pcxt,
 st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt, 
                                             st_runner_type_t runner_type, 
                                             const char       *filename);
+st_return_t call_stapi_v2_write_group_results_json(st_context_v2_t  pcxt, 
+                                                   st_runner_type_t runner_type, 
+                                                   const char       *filename);
 // functions to get results directly
 st_return_t call_stapi_v2_locations(st_context_v2_t  pcxt,
                                     st_runner_type_t runner_type);

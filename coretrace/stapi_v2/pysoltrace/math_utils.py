@@ -1,10 +1,7 @@
 import math
 import numpy as np
 
-try:
-    from point import Point
-except ImportError:
-    from .point import Point
+from pysoltrace import Point
 
 # Freedman–Diaconis rule
 def freedman_diaconis_np(arr, fudge: float = 1.0):

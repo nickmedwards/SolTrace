@@ -423,7 +423,7 @@ class STAPIv2:
     #####################################################
 
     def set_simulation_parameters(self, params: _STC.args_simulation_parameters) -> None:
-        code = self.__pdll.st_set_simulation_parameters(self.__pcxt, ctypes.pointer(params))
+        code = self.__pdll.st_set_simulation_parameters(self.__pcxt, ctypes.byref(params))
         self.__check_return_code(code)
 
     def sim_params(self,

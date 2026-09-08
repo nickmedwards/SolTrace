@@ -3,29 +3,28 @@ from typing import Literal
 
 from pysoltrace import dot_h
 from pysoltrace.api.utils import st_function
-from pysoltrace.api.dll import context
+from pysoltrace.api.dll import context, STATIC_DLL
 
 ############################################
 # functions for SolTrace runner management #
 ############################################
 class runner(context):
+    @staticmethod
     @st_function
-    def get_installed(self) -> dict[str, bool]:
+    def get_installed() -> dict[str, bool]:
         installed = ctypes.c_ubyte()
-        code = self._pdll.st_get_installed_runners(self._pcxt,
-                                                  ctypes.byref(installed))
+        code = STATIC_DLL.st_get_installed_runners(ctypes.byref(installed))
         return code, {
             dot_h.st_runner_type_t.NATIVE.name: bool(installed.value & (1 << dot_h.st_runner_type_t.NATIVE.value)),
             dot_h.st_runner_type_t.EMBREE.name: bool(installed.value & (1 << dot_h.st_runner_type_t.EMBREE.value)),
             dot_h.st_runner_type_t.OPTIX.name:  bool(installed.value & (1 << dot_h.st_runner_type_t.OPTIX.value)),
         }
     
+    @staticmethod
     @st_function
-    def is_installed(self, runner: int) -> bool:
+    def is_installed(runner: int) -> bool:
         installed = ctypes.c_bool()
-        code = self._pdll.st_is_runner_installed(self._pcxt,
-                                                runner,
-                                                ctypes.byref(installed))
+        code = STATIC_DLL.st_is_runner_installed(runner, ctypes.byref(installed))
         return code, installed.value
 
     @st_function

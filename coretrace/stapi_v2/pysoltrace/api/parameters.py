@@ -5,9 +5,9 @@ from pysoltrace import dot_h, soltrace_constants as _STC
 from pysoltrace.api.utils import st_function
 from pysoltrace.api.dll import context
 
-#####################################################
-# functions for simulation data management directly #
-#####################################################
+##################################################
+# functions for simulation parameters management #
+##################################################
 class parameters(context):
     @st_function
     def set(self, params: _STC.args_simulation_parameters) -> None:
@@ -37,7 +37,7 @@ class parameters(context):
 
     @st_function
     def get(self) -> _STC.args_simulation_parameters:
-        params = _STC.args_simulation_parameters()
+        params = dot_h.args_simulation_parameters()
         code = self._pdll.st_get_simulation_parameters(self._pcxt,
                                                         ctypes.byref(params))
         return code, params.value

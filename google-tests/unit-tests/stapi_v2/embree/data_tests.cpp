@@ -173,6 +173,16 @@ TEST(data_tests, data_element_zrot)
     CLEANUP_TEST_CXT();
 }
 
+TEST(data_tests, data_element_group)
+{
+    SETUP_TEST_CXT();
+
+    code = call_stapi_v2_element_group(pcxt);
+    EXPECT_EQ(code, 2 * st_return_code::WARNING_GROUP_IGNORED);
+
+    CLEANUP_TEST_CXT();
+}
+
 TEST(data_tests, data_element_aperture)
 {
     SETUP_TEST_CXT();

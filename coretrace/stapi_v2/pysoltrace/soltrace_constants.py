@@ -8,10 +8,7 @@ from dataclasses import dataclass
 # that aren't from IntEnums, error/warning messages, or types
 # defined in stapi_v2.h that are used in type hinting.
 from enum import Enum, IntEnum
-try:
-    from chedder import dot_h
-except ImportError:
-    from .chedder import dot_h
+from pysoltrace import dot_h
 
 # byte character / int enums for backwards compatibility
 class optical_error_dist(Enum):
@@ -71,8 +68,9 @@ ST_RETURN_CODE_ERROR_MSG = {
     dot_h.st_return_code.RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE: 'Number of threads requested and length of seeds list are not'
                                                                        'equal. Include the same number of seeds as threads requested.',
     dot_h.st_return_code.RUNNER_SETUP_FAILURE:                         'SimulationRunner could not be set up based on SimulationData provided.',
-    dot_h.st_return_code.RUNNER_NOT_READY:                             'SimulationRunner is not ready for operation. Set up the'
-                                                                       'SimulationRunner or run the simulation.',
+    dot_h.st_return_code.RUNNER_NOT_READY_TO_RUN:                      'SimulationRunner is not ready to run. Set up the SimulationRunner.',
+    dot_h.st_return_code.RUNNER_NOT_READY_TO_REPORT:                   'SimulationRunner is not ready to report. Run the simulation.',
+    dot_h.st_return_code.RESULT_NOT_REPORTED:                          'Reporting level does not include this information. Change to appropriate level.',
     dot_h.st_return_code.EXCEPTION:                                    'Exception raised. Check validity of the arguments passed to the'
                                                                        'function called or of the JSON against SolTrace schema version used.',
     dot_h.st_return_code.UKNOWN_BATCH_API_CALL_FAILURE:                'Unknown batch call received.'
@@ -84,6 +82,7 @@ ST_RETURN_CODE_WARNING_MSG = {
                                                              'to this runner type and was ignored.',
     dot_h.st_return_code.WARNING_SUN_SHAPE_IGNORED:          'Requested invalid sun shape. Default sun created with a Gaussian'
                                                              'distribution with sigma = 4.65.',
+    dot_h.st_return_code.WARNING_GROUP_IGNORED:              'Requested invalid group number. Setting element to ungrouped.',
     dot_h.st_return_code.WARNING_NOT_FOUND:                  'Requested an item that was not found.',
 }
 

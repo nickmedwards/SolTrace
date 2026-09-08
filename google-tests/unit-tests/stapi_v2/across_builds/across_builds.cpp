@@ -20,6 +20,8 @@ json load_json()
     // Build paths
     const fs::path project_root(PROJECT_DIR);
     const fs::path sample_path = project_root / "sample_ver_20251112.json";
+    // const fs::path project_root(PROJECT_DIR);
+    // const std::string input_str = project_root.string() + "/good_test.json";
 
     std::ifstream ifs(sample_path);
     if (!ifs.is_open()) throw std::runtime_error("Failure opening json");
@@ -874,6 +876,50 @@ st_return_t call_stapi_v2_element_optic(st_context_v2_t pcxt)
     return code;
 }
 
+st_return_t call_stapi_v2_element_group(st_context_v2_t pcxt)
+{
+    uint_fast64_t num = -1;
+    uint_fast64_t id = -1;
+
+    // set up dummy optical properties
+    OpticalPropertySet opt1(InteractionType::REFLECTION, std::string("dummy"));
+    st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+    SimulationData *data = cxt->p_data;
+    OpticalPropertySetReference res1 = data->add_optical_property_set(opt1);
+    // set up dummy element arguments
+    args_element el_args = {2, 2, 2, 2, 2, 2, 2, false, true, 'c', 'p', -2};
+    double a_params[1] = { 2 };
+    double s_params[2] = { 2, 2 };
+
+    // expect += st_return_code::WARNING_GROUP_IGNORED
+    st_return_t code = st_add_element(pcxt, &el_args, res1.id, a_params, s_params, &id);
+    code += check(id, 1);
+    st_num_elements(pcxt, &num);
+    code += check(num, 1);
+
+    args_element rt_el_args;
+    int_fast64_t opt_id;
+    double rt_a_params[8] = { 0 };
+    double rt_s_params[8] = { 0 };
+    
+    // expect += st_return_code::SUCCESS
+    code += st_get_element(pcxt, id, &rt_el_args, &opt_id, rt_a_params, rt_s_params);
+    code += check(rt_el_args.group, -1);
+    
+    // expect += st_return_code::WARNING_GROUP_IGNORED
+    code += st_element_group(pcxt, id, -2);
+    code += st_get_element(pcxt, id, &rt_el_args, &opt_id, rt_a_params, rt_s_params);
+    code += check(rt_el_args.group, -1);
+    
+    // expect += st_return_code::SUCCESS
+    code += st_element_group(pcxt, id, 1);
+    code += st_get_element(pcxt, id, &rt_el_args, &opt_id, rt_a_params, rt_s_params);
+    code += check(rt_el_args.group, 1);
+    
+    // expect == 2 * st_return_code::WARNING_GROUP_IGNORED
+    return code;
+}
+
 // sun functions
 st_return_t call_stapi_v2_add_sun(st_context_v2_t pcxt)
 {
@@ -1292,6 +1338,30 @@ st_return_t call_stapi_v2_sim_run_v2(st_context_v2_t pcxt, st_runner_type_t runn
     return st_sim_setup(pcxt, runner_type) + st_sim_run_v2(pcxt);
 }
 
+st_return_t call_stapi_v2_sim_report(st_context_v2_t pcxt, st_runner_type_t runner_type)
+{
+    if (runner_type != st_runner_type_t::OPTIX)
+    {
+        st_context *cxt = reinterpret_cast<st_context*>(pcxt);
+        cxt->p_data->set_number_of_rays(1000);
+    }
+
+    st_return_t code = st_sim_setup(pcxt, runner_type);
+    // expect += st_return_code::RUNNER_NOT_READY_TO_REPORT
+    code += st_sim_report(pcxt, RunnerStatistics::RAY_RECORDS);
+
+    code += st_sim_run_v2(pcxt);
+
+    // expect += 2 * st_return_code::INVALID_ARGUMENTS
+    code += st_sim_report(pcxt, RunnerStatistics::RAY_RECORDS - 1);
+    code += st_sim_report(pcxt, RunnerStatistics::STATISTICS_COUNT);
+
+    // expect += st_return_code::SUCCESS
+    code += st_sim_report(pcxt, RunnerStatistics::GROUPED_COUNTS);
+
+    return code;
+}
+
 ///////////////////////////////////
 // Simlulation Results Functions //
 ///////////////////////////////////
@@ -1310,6 +1380,27 @@ st_return_t call_stapi_v2_write_results_csv(st_context_v2_t  pcxt,
     code += st_sim_run_v2(pcxt);
     code += st_sim_report(pcxt, 0);
     code += st_write_results_csv(pcxt, filename);
+
+    std::error_code ec;
+    std::filesystem::remove(filename, ec);
+
+    return code;
+}
+
+st_return_t call_stapi_v2_write_group_results_json(st_context_v2_t  pcxt, 
+                                                   st_runner_type_t runner_type, 
+                                                   const char       *filename)
+{
+    if (runner_type != st_runner_type_t::OPTIX)
+    {
+        st_context* cxt = reinterpret_cast<st_context*>(pcxt);
+        cxt->p_data->set_number_of_rays(1000);
+    }
+
+    st_return_t code = st_sim_setup(pcxt, runner_type); 
+    code += st_sim_run_v2(pcxt);
+    code += st_sim_report(pcxt, 1);
+    code += st_write_group_results_json(pcxt, filename);
 
     std::error_code ec;
     std::filesystem::remove(filename, ec);

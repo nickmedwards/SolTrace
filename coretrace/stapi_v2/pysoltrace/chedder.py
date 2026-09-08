@@ -113,7 +113,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from dataclasses import dataclass, field
 
-from colorama import just_fix_windows_console, Fore, Back, Style # pyright: ignore[reportMissingModuleSource]
+from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
 __all__ = ["dot_h", "found_in", "locate_header", "reload_header_defs"]

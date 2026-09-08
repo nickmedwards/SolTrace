@@ -3,7 +3,7 @@
 #include "across_builds.hpp"
 
 
-TEST(results_tests, results_write)
+TEST(results_tests, results_write_csv)
 {
     SETUP_TEST_CXT();
 
@@ -14,6 +14,20 @@ TEST(results_tests, results_write)
     code = call_stapi_v2_write_results_csv(pcxt, st_runner_type_t::EMBREE, "temp_char.csv");
     EXPECT_EQ(code, st_return_code::SUCCESS);
     
+    CLEANUP_TEST_CXT();
+}
+
+TEST(results_tests, results_write_group_json)
+{
+    SETUP_TEST_CXT();
+
+    LOAD_TEST_JSON();
+
+    code = call_stapi_v2_write_group_results_json(pcxt, st_runner_type_t::NATIVE, "temp_char.csv");
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+    code = call_stapi_v2_write_group_results_json(pcxt, st_runner_type_t::EMBREE, "temp_char.csv");
+    EXPECT_EQ(code, st_return_code::SUCCESS);
+
     CLEANUP_TEST_CXT();
 }
 

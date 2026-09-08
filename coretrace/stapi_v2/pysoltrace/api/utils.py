@@ -36,13 +36,15 @@ def check_return_code(code):
 
 def st_function(func):
     def wrapper(*args, **kwargs):
-        code, *rt = func(*args, **kwargs)
-        check_return_code(code)
-        # if need to return a function to produce return args
-        # assert len(rt) <= 1, f'Expected at most one return value, got {len(rt)}'
-        # return rt[0]() if len(rt) == 1 else None
+        code_rt = func(*args, **kwargs)
+        if isinstance(code_rt, tuple):
+            check_return_code(code_rt[0])
+            # if need to return a function to produce return args
+            # assert len(rt) <= 1, f'Expected at most one return value, got {len(rt)}'
+            # return rt[0]() if len(rt) == 1 else None
 
-        return rt[0] if len(rt) == 1 else tuple(rt) if len(rt) > 1 else None
+            return code_rt[1] if len(code_rt) == 2 else code_rt[1:] if len(code_rt) > 2 else None
+        else: check_return_code(code_rt)
     return wrapper
 
 def make_c_double_8(params: list[float]) -> ctypes.Array:

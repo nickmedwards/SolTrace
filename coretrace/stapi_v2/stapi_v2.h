@@ -34,6 +34,7 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
  st_element_aperture 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_element_surface 				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_element_optic 					[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_element_group 					[x]			 [x]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_add_sun 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [x]
  st_get_sun 						[T]			 [x]		[x]			   [x]			[-]			[ ]			[-]			[ ]			  [ ]
  st_sun_shape 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
@@ -47,8 +48,9 @@ function name			    | stapi_v2.h/cpp | gtested | stapi_v2.py | unittested | h/cp
  st_is_runner_installed 			[x]			 [x]		[x]			   [ ]			[-]			[ ]			[-]			[ ]			  [ ]
  st_sim_setup 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
  st_sim_run_v2 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[x]			  [ ]
- st_sim_report 						[x]			 [ ]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_sim_report 						[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_write_results_csv 				[x]			 [x]		[x]			   [ ]			[x]			[ ]			[x]			[ ]			  [ ]
+ st_write_group_results_json		[x]			 [x]		[ ]			   [ ]			[ ]			[ ]			[ ]			[ ]			  [ ]
  st_num_intersections				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[ ]			  [ ]
  st_locations 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
  st_cosines 	     				[x]			 [x]		[x]			   [x]			[x]			[ ]			[x]			[-]			  [ ]
@@ -164,8 +166,10 @@ extern "C" {
 
 using SolTrace::Runner::SimulationRunner;
 using SolTrace::Runner::RunnerStatus;
+using SolTrace::Runner::RunnerStatistics;
 using SolTrace::NativeRunner::NativeRunner;
 using SolTrace::Data::Aperture;
+using SolTrace::Data::single_element_ptr;
 using spcm = SolTrace::Data::SolarPositionCalculationMethod;
 
 typedef uint32_t st_uint_t;
@@ -189,7 +193,9 @@ typedef enum st_return_code : st_return_t {
 	RUNNER_INILIALIZE_FAILURE,
 	RUNNER_NUMBER_THREADS_SEEDS_MISMATCH_FAILURE,
 	RUNNER_SETUP_FAILURE,
-	RUNNER_NOT_READY,
+	RUNNER_NOT_READY_TO_RUN,
+	RUNNER_NOT_READY_TO_REPORT,
+	RESULT_NOT_REPORTED,
 	EXCEPTION,
 	UKNOWN_BATCH_API_CALL_FAILURE,
 
@@ -197,6 +203,7 @@ typedef enum st_return_code : st_return_t {
 	WARNING_FELLBACK_FROM_OPTIX,
 	WARNING_ARGUMENT_IGNORED_BY_RUNNER,
 	WARNING_SUN_SHAPE_IGNORED,
+	WARNING_GROUP_IGNORED,
 	WARNING_NOT_FOUND,
 
 	RETURN_COUNT /* sentinel (not a valid return type) */
@@ -217,8 +224,9 @@ typedef int (*p_callback)(char* loc, const char* msg);
 
 typedef struct st_context {
 	SimulationData*   p_data;
-	st_runner_type_t  runner_type;
+	st_runner_type_t  runner_type = st_runner_type_t::RUNNER_COUNT;
 	SimulationRunner* p_runner;
+	RunnerStatistics  report_level = RunnerStatistics::STATISTICS_COUNT;
 	SimulationResult* p_results;
 	p_callback		  p_cb;
 } st_context;
@@ -303,17 +311,18 @@ STAPI_V2 st_return_t st_clear_optics(st_context_v2_t pcxt);
 // functions to add/remove elements
 STAPI_V2 st_return_t st_num_elements(st_context_v2_t pcxt, uint_fast64_t *num_elements);
 typedef struct args_element {
-	double x;
-	double y;
-	double z;
-	double ax;
-	double ay;
-	double az;
-	double zrot;
-	bool   enabled_flag;
-	bool   virtual_flag;
-	char   ap;
-	char   surf;
+	double  x;
+	double  y;
+	double  z;
+	double  ax;
+	double  ay;
+	double  az;
+	double  zrot;
+	bool    enabled_flag;
+	bool    virtual_flag;
+	char    ap;
+	char    surf;
+	int32_t group = -1;
 } args_element;
 STAPI_V2 st_return_t st_add_element(st_context_v2_t pcxt,
 									args_element    *args,
@@ -360,6 +369,9 @@ STAPI_V2 st_return_t st_element_surface(st_context_v2_t pcxt,
 STAPI_V2 st_return_t st_element_optic(st_context_v2_t pcxt,
 									  st_uint_t 	  idx,
 									  int_fast64_t 	  opt_id);
+STAPI_V2 st_return_t st_element_group(st_context_v2_t pcxt,
+									  st_uint_t 	  idx,
+									  int32_t   	  group);
 
 // sun functions
 typedef struct args_sun {
@@ -438,9 +450,9 @@ STAPI_V2 st_return_t st_export_json_file(st_context_v2_t pcxt, const char *filen
 //////////////////////////////////
 
 // functions for SolTrace runner management
-STAPI_V2 st_return_t st_get_installed_runners(st_context_v2_t pcxt, uint8_t *installed);
-STAPI_V2 st_return_t st_is_runner_installed(st_context_v2_t  pcxt,
-                                            st_runner_type_t type,
+// NOTE: following two functions are static ie don't require pcxt
+STAPI_V2 st_return_t st_get_installed_runners(uint8_t *installed);
+STAPI_V2 st_return_t st_is_runner_installed(st_runner_type_t type,
                                             bool             *installed);
 STAPI_V2 st_return_t st_sim_setup(st_context_v2_t  pcxt, 
 								  st_runner_type_t runner_type, 
@@ -459,25 +471,29 @@ STAPI_V2 st_return_t st_sim_report(st_context_v2_t pcxt, int level);
 STAPI_V2 st_return_t st_write_results_csv(st_context_v2_t pcxt, 
 										  const char 	  *filename, 
 										  int 			  precision = 12);
+STAPI_V2 st_return_t st_write_group_results_json(st_context_v2_t pcxt, 
+										         const char 	 *filename, 
+										         int 			 precision = 12,
+                                                 int             indent = 4);
 
 // functions to get results directly
-STAPI_V2 st_return_code st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections);
-STAPI_V2 st_return_code st_locations(st_context_v2_t pcxt,
+STAPI_V2 st_return_t st_num_intersections(st_context_v2_t pcxt, uint_fast64_t *num_intersections);
+STAPI_V2 st_return_t st_locations(st_context_v2_t pcxt,
 									 double 		 *loc_x,
 									 double 		 *loc_y,
 									 double 		 *loc_z);
-STAPI_V2 st_return_code st_cosines(st_context_v2_t pcxt,
+STAPI_V2 st_return_t st_cosines(st_context_v2_t pcxt,
 							 	   double 		   *cos_x,
 							 	   double 		   *cos_y,
 							 	   double 		   *cos_z);
-STAPI_V2 st_return_code st_elementmap(st_context_v2_t pcxt, uint_fast64_t *element_map);
-STAPI_V2 st_return_code st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map);
-STAPI_V2 st_return_code st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers);
-STAPI_V2 st_return_code st_sun_stats(st_context_v2_t pcxt,
-									 double 		 *width,
-									 double 		 *height,
-									 double 		 *area,
-									 uint_fast64_t	 *nsunrays);
+STAPI_V2 st_return_t st_elementmap(st_context_v2_t pcxt, uint_fast64_t *element_map);
+STAPI_V2 st_return_t st_stagemap(st_context_v2_t pcxt, uint_fast64_t *stage_map);
+STAPI_V2 st_return_t st_raynumbers(st_context_v2_t pcxt, uint_fast64_t *ray_numbers);
+STAPI_V2 st_return_t st_sun_stats(st_context_v2_t pcxt,
+								  double 		  *width,
+								  double 		  *height,
+								  double 		  *area,
+								  uint_fast64_t	  *nsunrays);
 typedef struct args_results_data {
 	double 		  *loc_x;
 	double 		  *loc_y;
@@ -489,7 +505,7 @@ typedef struct args_results_data {
 	uint_fast64_t *stage_map;
 	uint_fast64_t *ray_numbers;
 } args_results_data;
-STAPI_V2 st_return_code st_get_results_data(st_context_v2_t pcxt, args_results_data *data);
+STAPI_V2 st_return_t st_get_results_data(st_context_v2_t pcxt, args_results_data *data);
 
 /*
 create simualtion information -> st_context_v2_t st_create_context_v2();
@@ -561,6 +577,7 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_ELEMENT_APERTURE,
 	CALL_ST_ELEMENT_SURFACE,
 	CALL_ST_ELEMENT_OPTIC,
+	CALL_ST_ELEMENT_GROUP,
 	// sun functions
 	CALL_ST_ADD_SUN,
 	CALL_ST_SUN_SHAPE,
@@ -735,6 +752,11 @@ typedef struct args_st_element_optic {
 	st_uint_t 	 idx;
 	int_fast64_t opt_id;
 } args_st_element_optic;
+
+typedef struct args_st_element_group {
+	st_uint_t idx;
+	int32_t   group;
+} args_st_element_group;
 
 // sun functions
 typedef struct args_st_add_sun {
@@ -911,6 +933,7 @@ typedef struct st_api_call_args {
 		args_st_element_aperture element_aperture_args;
 		args_st_element_surface  element_surface_args;
 		args_st_element_optic    element_optic_args;
+		args_st_element_group    element_group_args;
 		// sun functions
 		args_st_add_sun 	 add_sun_args;
 		args_st_sun_shape 	 sun_shape_args;
