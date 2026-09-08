@@ -10,6 +10,8 @@ from pysoltrace.api.result.csv import csv
 # functions for SolTrace results management #
 #############################################
 class result(context):
+    __slots__ = ('csv')
+    
     def __init__(self, pdll, pcxt):
         super().__init__(pdll, pcxt)
         self.csv = csv(pdll, pcxt)

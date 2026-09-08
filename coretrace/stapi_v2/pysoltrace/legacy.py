@@ -47,15 +47,15 @@ try:
     # from chedder import dot_h
     # import soltrace_constants as _STC
     # import soltrace_json as st_json
-    from point import Point
-    import math_utils
+    # from point import Point
+    # import math_utils
     from stapi_v2 import STAPIv2
 except ImportError:
     # from .chedder import dot_h
     # from . import soltrace_constants as _STC
     # from . import soltrace_json as st_json
-    from .point import Point
-    from . import math_utils
+    # from .point import Point
+    # from . import math_utils
     from .stapi_v2 import STAPIv2
 
 from pysoltrace import api, dot_h, soltrace_json as st_json, math_utils, Point

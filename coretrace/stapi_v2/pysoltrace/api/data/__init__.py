@@ -4,6 +4,8 @@ from pysoltrace.api.data.sun import sun
 from pysoltrace.api.data.json import json
 
 class data:
+    __slots__ = ('element', 'optic', 'sun', 'json')
+    
     def __init__(self, pdll, pcxt):
         self.element = element(pdll, pcxt)
         self.optic   = optic(pdll, pcxt)

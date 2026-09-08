@@ -102,6 +102,8 @@ def setup_static_dll(path: str = ''):
 STATIC_DLL = setup_static_dll(find_dll())
 
 class context:
+    __slots__ = ('_pdll', '_pcxt')
+    
     def __init__(self, pdll, pcxt):
         self._pdll = pdll
         self._pcxt = pcxt
