@@ -207,7 +207,7 @@ ColumnLayout {
             Layout.fillWidth: true
             currentIndex: -1
             model: ["Spring (March 20)", "Summer (June 21)", "Fall (September 22)", "Winter (December 21)"]
-            onActivated: function(index) {
+            onCurrentIndexChanged: {
                 if (currentIndex >= 0) {
                     [
                         App.sun.calc_data.set_spring,

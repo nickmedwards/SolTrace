@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <sstream>
+#include <iostream>
 
 #include "composite_element.hpp"
 #include "simdata_io.hpp"
@@ -21,6 +22,36 @@ SimulationData::~SimulationData()
 {
     this->clear(true);
     return;
+}
+
+void SimulationData::enforce_elements_ready()
+{
+    if (this->get_number_of_elements() <= 0)
+    {
+        throw std::invalid_argument("SimulationData has no elements.");
+    }
+
+    element_ptr el;
+    for (auto it = this->get_iterator(); !this->is_at_end(it); ++it)
+    {
+        el = it->second;
+        // Check that all fields required from the user have been specified
+        el->enforce_user_fields_set();
+        // Make sure coordinate stuff has been computed
+        el->compute_coordinate_rotations();
+        if (el->is_composite())
+        {
+            composite_element_ptr cptr =
+                std::dynamic_pointer_cast<CompositeElement>(el);
+            element_ptr sub_el;
+            for (auto cit = cptr->get_iterator(); !cptr->is_at_end(cit); ++cit)
+            {
+                sub_el = it->second;
+                sub_el->enforce_user_fields_set();
+                sub_el->compute_coordinate_rotations();
+            }
+        }
+    }
 }
 
 element_id SimulationData::add_element(element_ptr el)
@@ -183,7 +214,10 @@ uint_fast64_t SimulationData::remove_element(element_id id)
 
     if (el != nullptr)
     {
-        this->my_elements.remove_item(id);
+        uint_fast64_t removed = this->my_elements.remove_item(id);
+
+        if (removed == 0) return 0;
+
         el->set_id(ELEMENT_ID_UNASSIGNED);
         if (el->is_composite())
         {
@@ -256,7 +290,7 @@ uint_fast64_t SimulationData::remove_subelements(element_ptr el)
 
 OpticalPropertySetReference SimulationData::add_optical_property_set(const OpticalPropertySet& opt_set)
 {
-    std::shared_ptr<OpticalPropertySet> ptr = std::make_shared<OpticalPropertySet>(opt_set);
+    mut_optical_set_ptr ptr = std::make_shared<OpticalPropertySet>(opt_set);
     const optics_id id = this->my_optical_property_sets.add_item(ptr);
     return { id, ptr };
 }
@@ -280,26 +314,26 @@ OpticalPropertySetReference SimulationData::find_or_add_optical_property_set(con
     return add_optical_property_set(opt_set);
 }
 
-const OpticalPropertySet* SimulationData::get_optical_property_set(const Element& el) const
+optical_set_ptr SimulationData::get_optical_property_set(const Element& el) const
 {
     return get_optical_property_set(el.get_optical_property_set_id());
 }
 
-OpticalPropertySet* SimulationData::get_mutable_optical_property_set(const Element& el)
+mut_optical_set_ptr SimulationData::get_mutable_optical_property_set(const Element& el)
 {
     return this->get_optical_property_set(el.get_optical_property_set_id());
 }
 
-const OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id) const
+optical_set_ptr SimulationData::get_optical_property_set(optics_id id) const
 {
     auto ptr = this->my_optical_property_sets.get_item(id);
-    return ptr == nullptr ? nullptr : ptr.get();
+    return ptr == nullptr ? nullptr : static_cast<optical_set_ptr>(ptr.get());
 }
 
-OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id)
+mut_optical_set_ptr SimulationData::get_optical_property_set(optics_id id)
 {
     auto ptr = this->my_optical_property_sets.get_item(id);
-    return ptr == nullptr ? nullptr : ptr.get();
+    return ptr == nullptr ? nullptr : static_cast<mut_optical_set_ptr>(ptr.get());
 }
 
 int SimulationData::update_simulation_positions()
@@ -340,6 +374,18 @@ bool SimulationData::import_from_file(const std::string file_name)
 void SimulationData::import_json_file(const std::string file_name, std::string* upgrade_log)
 {
     load_json_file(*this, file_name, upgrade_log);
+}
+
+void SimulationData::import_json_string(const std::string json_str, std::string* upgrade_log)
+{
+    this->import_json_string(json_str.c_str(), upgrade_log);
+}
+
+void SimulationData::import_json_string(const char* json_str, std::string* upgrade_log)
+{
+    //std::cout << json_str << std::endl;
+    
+    load_json_cstr(*this, json_str, upgrade_log);
 }
 
 void SimulationData::export_json_file(const std::string file_name)

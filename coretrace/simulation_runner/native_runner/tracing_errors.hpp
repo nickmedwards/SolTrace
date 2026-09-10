@@ -14,14 +14,14 @@ void Errors(MTRand& myrng,
             TSun* Sun,
             // TElement *Element,
             // TOpticalProperties *OptProperties,
-            const SolTrace::Data::OpticalPropertySet* OptProperties,
+            SolTrace::Data::optical_set_ptr OptProperties,
             const bool LastHitBackSide,
             glm::dvec3& CosOut,
             glm::dvec3& DFXYZ);
 
 void SurfaceNormalErrors(MTRand& myrng,
                          glm::dvec3& CosIn,
-                         const SolTrace::Data::OpticalPropertySet* OptProperties,
+                         SolTrace::Data::optical_set_ptr OptProperties,
                          const bool LastHitBackSide,
                          glm::dvec3& CosOut) noexcept(false); // throw(nanexcept);
 
