@@ -105,5 +105,5 @@ class context:
     __slots__ = ('_pdll', '_pcxt')
     
     def __init__(self, pdll, pcxt):
-        self._pdll = pdll
-        self._pcxt = pcxt
+        self._pdll: ctypes.CDLL = pdll
+        self._pcxt: int = pcxt
