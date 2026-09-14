@@ -26,11 +26,11 @@ def check_return_code(code):
     elif code > dot_h.st_return_code.SUCCESS and code < dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:
         raise STAPIv2Exception(code, 
                                 _STC.ST_RETURN_CODE_NAME[code],
-                                _STC.ST_RETURN_CODE_ERROR_MSG[code] if code in _STC.ST_RETURN_CODE_ERROR_MSG else '')
+                                _STC.ST_RETURN_CODE_ERROR_MSG[code])
     elif code >= dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE and code < dot_h.st_return_code.RETURN_COUNT:
         STAPIv2Warning(code,
                         _STC.ST_RETURN_CODE_NAME[code],
-                        _STC.ST_RETURN_CODE_WARNING_MSG[code] if code in _STC.ST_RETURN_CODE_WARNING_MSG else '')
+                        _STC.ST_RETURN_CODE_WARNING_MSG[code])
     elif code >= dot_h.st_return_code.RETURN_COUNT:
         raise STAPIv2Exception(code,  'UNKNOWN', 'Unknown return code received.')
 
@@ -48,5 +48,5 @@ def st_function(func):
     return wrapper
 
 def make_c_double_8(params: list[float]) -> ctypes.Array:
-    assert isinstance(params, list), f'Expected a list of 8 parameters, got {type(params)}'
+    assert isinstance(params, list), f'Expected a list, got {type(params)}'
     return (ctypes.c_double * 8)(*params)

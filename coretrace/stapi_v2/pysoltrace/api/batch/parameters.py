@@ -1,43 +1,41 @@
 import ctypes
-from typing import Literal
 
 from pysoltrace import dot_h, soltrace_constants as _STC
-from pysoltrace.api.utils import st_function
-from pysoltrace.api.dll import context
+from pysoltrace.api.batch.utils import batcher, generate_api_call
+
+# short names
+_SET  = dot_h.st_api_call.CALL_ST_SET_SIMULATION_PARAMETERS
+_RAYS = dot_h.st_api_call.CALL_ST_SIM_RAYS
+_PT   = dot_h.st_api_call.CALL_ST_SIM_POWER_TOWER
+_ERR  = dot_h.st_api_call.CALL_ST_SIM_ERRORS
+_LOC  = dot_h.st_api_call.CALL_ST_SIM_LOCATION
+_TOL  = dot_h.st_api_call.CALL_ST_SIM_TOLERANCE
 
 ##################################################
 # functions for simulation parameters management #
 ##################################################
-class parameters(context):
-    @st_function
+class parameters(batcher):
     def set(self, params: _STC.args_simulation_parameters) -> None:
-        return self._pdll.st_set_simulation_parameters(self._pcxt,
-                                                       ctypes.byref(params))
+        return self.adder(generate_api_call(_SET, ctypes.pointer(params)))
 
-    @st_function
     def rays(self, raycount: int, maxcount: int) -> None:
-        return self._pdll.st_sim_rays(self._pcxt, raycount, maxcount)
+        return self.adder(generate_api_call(_RAYS, raycount, maxcount))
 
-    @st_function
-    def power_tower(self,
-                    is_power_tower: bool) -> None:
-        return self._pdll.st_sim_power_tower(self._pcxt, is_power_tower)
+    def power_tower(self, is_power_tower: bool) -> None:
+        return self.adder(generate_api_call(_PT, is_power_tower))
 
-    @st_function
     def errors(self, sun_shape: bool, optical: bool) -> None:
-        return self._pdll.st_sim_errors(self._pcxt, sun_shape, optical)
+        return self.adder(generate_api_call(_ERR, sun_shape, optical))
 
-    @st_function
     def location(self, latitude: float, longitude: float) -> None:
-        return self._pdll.st_sim_location(self._pcxt, latitude, longitude)
+        return self.adder(generate_api_call(_LOC, latitude, longitude))
 
-    @st_function
     def tolerance(self, tolerance: float) -> None:
-        return self._pdll.st_sim_tolerance(self._pcxt, tolerance)
+        return self.adder(generate_api_call(_TOL, tolerance))
 
-    @st_function
-    def get(self) -> _STC.args_simulation_parameters:
-        params = dot_h.args_simulation_parameters()
-        code = self._pdll.st_get_simulation_parameters(self._pcxt,
-                                                        ctypes.byref(params))
-        return code, params.value
+    # TODO:
+    # def get(self) -> _STC.args_simulation_parameters:
+    #     params = dot_h.args_simulation_parameters()
+    #     code = self._pdll.st_get_simulation_parameters(self._pcxt,
+    #                                                     ctypes.byref(params))
+    #     return code, params.value

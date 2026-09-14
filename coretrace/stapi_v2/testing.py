@@ -878,15 +878,8 @@ class Results:
 
     def test_get_results_data(self):
         res = self.stapi.result.get(self.n_intersections)
-        self.assertEqual(len(res['loc_x'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['loc_y'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['loc_z'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['cos_x'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['cos_y'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['cos_z'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['element_map'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['stage_map'][:self.n_intersections]), self.n_intersections)
-        self.assertEqual(len(res['ray_numbers'][:self.n_intersections]), self.n_intersections)
+        for k in res.keys():
+            self.assertEqual(len(res[k][:self.n_intersections]), self.n_intersections)
 
 class ResultsNativeTests(STAPIv2TestCase, Results):
     def setUp(self):
@@ -924,6 +917,166 @@ class ResultsOptixTests(STAPIv2TestCase, Results):
         self.stapi.runner.run()
         self.stapi.runner.report()
         self.n_intersections = self.stapi.result.num()
+
+class BatchTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+        # set up dummy values
+        self.sim_params = dot_h.args_simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
+
+        self.args_sun_buie = dot_h.args_sun(0, 2, 2, 2, .5, b'b')
+        self.args_sun_user = dot_h.args_sun(3, 608, 303, 1000, 5, b' ')
+        self.good_angles      = [0, 1, 2]
+        self.good_intensities = [0, 1, 2]
+        
+        self.opt_set = dot_h.args_optical_properties_set(b'dummy', 1.1, 1.1, 2)
+        self.front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, b'g')
+        self.back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, b'g')
+        
+        self.el_args  = dot_h.args_element(2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
+        self.opt_id   = 0
+        self.a_params = [2]
+        self.s_params = [2, 2]
+
+    def test_simple(self): pass
+    # functions for simulation data management thru json strings
+    def test_call_st_read_input_json(self): pass
+    # functions for simulation data management directly
+    def test_call_st_set_simulation_parameters(self): pass
+    def test_call_st_sim_params(self): pass
+    def test_call_st_sim_errors(self): pass
+    def test_call_st_sim_location(self): pass
+    def test_call_st_sim_tolerance(self): pass
+    # functions to add/remove/set optical properties
+    def test_call_st_num_optics(self): pass
+    def test_call_st_add_optical_properies_set(self): pass
+    def test_call_st_delete_optic(self): pass
+    def test_call_st_clear_optics(self): pass
+    # functions to add/remove elements
+    def test_call_st_num_elements(self): pass
+    def test_call_st_add_element(self): pass
+    def test_call_st_delete_element(self): pass
+    def test_call_st_clear_elements(self): pass
+    # functions to modify elements
+    def test_call_st_element_enabled(self): pass
+    def test_call_st_element_virtual(self): pass
+    def test_call_st_element_zyx(self): pass
+    def test_call_st_element_aim(self): pass
+    def test_call_st_element_zrot(self): pass
+    def test_call_st_element_aperture(self): pass
+    def test_call_st_element_surface(self): pass
+    def test_call_st_element_optic(self): pass
+    # sun functions
+    def test_call_st_add_sun(self): pass
+    def test_call_st_sun_xyz(self): pass
+    def test_call_st_sun_userdata(self): pass
+    # functions for SolTrace runner management
+    def test_call_st_sim_setup(self): pass
+    def test_call_st_sim_run_v2(self): pass
+    def test_call_st_sim_report(self): pass
+    # functions for SolTrace results management
+    def test_call_st_write_results_csv(self): pass
+
+    # functions to get results directly
+    def set_up_run_report(self):
+        self.stapi.data.json.load('./pysoltrace/sample.json')
+        self.stapi.parameters.rays(1000, 10000)
+        self.stapi.runner.setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.runner.run()
+        self.stapi.runner.report()
+        return self.stapi.result.num()
+
+    def test_call_st_locations(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.locations(n)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        loc_x, loc_y, loc_z = rec.value
+        self.assertEqual(len(loc_x), n)
+        self.assertEqual(len(loc_y), n)
+        self.assertEqual(len(loc_z), n)
+
+    def test_call_st_cosines(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.cosines(n)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        cos_x, cos_y, cos_z = rec.value
+        self.assertEqual(len(cos_x), n)
+        self.assertEqual(len(cos_y), n)
+        self.assertEqual(len(cos_z), n)
+
+    def test_call_st_elementmap(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.elementmap(n)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        el = rec.value
+        self.assertEqual(len(el), n)
+        
+    def test_call_st_stagemap(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.stagemap(n)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        stage = rec.value
+        self.assertEqual(len(stage), n)
+
+    def test_call_st_raynumbers(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.raynumbers(n)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        rays = rec.value
+        self.assertEqual(len(rays), n)
+
+    def test_call_st_sun_stats(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.sun_stats()
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        width, height, area, nsunrays = rec.value
+        self.assertGreater(width, 0.)
+        self.assertGreater(height, 0.)
+        self.assertGreater(area, 0.)
+        self.assertGreater(nsunrays, 0)
+
+    def test_call_st_get_results_data(self):
+        n = self.set_up_run_report()
+        rec = self.stapi.batch.result.get(n)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        results = rec.value
+        for k in results.keys():
+            self.assertEqual(len(results[k][:n]), n)
 
 if __name__ == '__main__':
     # print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')

@@ -31,11 +31,11 @@ class element(context):
         _s_params = make_c_double_8(s_params)
         pid = ctypes.c_uint64()
         code = self._pdll.st_add_element(self._pcxt,
-                                                  ctypes.byref(args),
-                                                  opt_id,
-                                                  _a_params,
-                                                  _s_params,
-                                                  ctypes.byref(pid))
+                                         ctypes.byref(args),
+                                         opt_id,
+                                         _a_params,
+                                         _s_params,
+                                         ctypes.byref(pid))
         return code, pid.value
 
     @st_function
@@ -48,11 +48,11 @@ class element(context):
         a_params = make_c_double_8([0 for _ in range(8)])
         s_params = make_c_double_8([0 for _ in range(8)])
         code = self._pdll.st_get_element(self._pcxt,
-                                        id,
-                                        ctypes.byref(args),
-                                        ctypes.byref(optic_id),
-                                        ctypes.byref(a_params),
-                                        ctypes.byref(s_params))
+                                         id,
+                                         ctypes.byref(args),
+                                         ctypes.byref(optic_id),
+                                         ctypes.byref(a_params),
+                                         ctypes.byref(s_params))
         return code, args.value, optic_id.value, a_params[:8], s_params[:8]
 
     @st_function

@@ -13,6 +13,7 @@ from pysoltrace.api.runner import runner
 from pysoltrace.api.data import data
 from pysoltrace.api.parameters import parameters
 from pysoltrace.api.legacy import legacy
+from pysoltrace.api.batch import batch
 from pysoltrace.api.result import result
 
 def free(dll, pcxt, testing: bool = False):
@@ -32,7 +33,15 @@ def testing_cb(loc, msg): return 0
 # STAPIv2 Class: wraps stapi_v2.{dll, so, dylib} with more Python-ish calls #
 #############################################################################
 class STAPIv2:
-    __slots__ = ('parameters', 'data', 'runner', 'result', 'legacy', '__pcxt', '__pdll', '__benchmarking')
+    __slots__ = ('parameters',
+                 'data',
+                 'runner',
+                 'result',
+                 'batch',
+                 'legacy',
+                 '__pcxt',
+                 '__pdll',
+                 '__benchmarking')
     
     def __init__(self, override_path: str = '', testing: bool = False, benchmarking: bool = False):
         self.__pdll, self.__pcxt = self.__create(override_path, testing)
@@ -40,10 +49,11 @@ class STAPIv2:
         atexit.register(free, self.__pdll, self.__pcxt, testing)
 
         self.parameters = parameters(self.__pdll, self.__pcxt)
-        self.data = data(self.__pdll, self.__pcxt)
-        self.runner = runner(self.__pdll, self.__pcxt)
-        self.result = result(self.__pdll, self.__pcxt)
-        self.legacy = legacy(self.__pdll, self.__pcxt)
+        self.data       = data(self.__pdll, self.__pcxt)
+        self.runner     = runner(self.__pdll, self.__pcxt)
+        self.result     = result(self.__pdll, self.__pcxt)
+        self.batch      = batch(self.__pdll, self.__pcxt)
+        self.legacy     = legacy(self.__pdll, self.__pcxt)
 
         self.__benchmarking = benchmarking
 

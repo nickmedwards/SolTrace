@@ -33,9 +33,14 @@ import ctypes
 
 from pysoltrace.api.dll import context
 from pysoltrace.api.utils import check_return_code, st_function
+from pysoltrace.api.batch.parameters import parameters
+from pysoltrace.api.batch.data import data
+from pysoltrace.api.batch.runner import runner
+from pysoltrace.api.batch.result import result
+from pysoltrace.api.batch.legacy import legacy
 
 class batch_record:
-    __slots__ = ('ready', 'batch_call', 'value', '__get_res')
+    __slots__ = ('ready', 'batch_call', '__get_res')
 
     def __init__(self, batch_call, get_res = None):
         self.ready = False
@@ -49,6 +54,11 @@ class batch(context):
     def __init__(self, pdll, pcxt):
         super().__init__(pdll, pcxt)
 
+        self.parameters = parameters(self.add)
+        self.data       = data(self.add)
+        self.runner     = runner(self.add)
+        self.result     = result(self.add)
+        self.legacy     = legacy(self.add)
 
         # keep the struct instances alive — ctypes.cast() does NOT keep a
         # reference, so if these get garbage collected the void* becomes dangling
@@ -74,6 +84,7 @@ class batch(context):
         assert num_calls > 0, "No batch calls recorded to call"
 
         callable_brs = self.__calls[self.__called:]
+        # TODO: might be able to byref if lambda crating the array?
         void_cast = lambda c: ctypes.cast(ctypes.pointer(c), ctypes.c_void_p)
 
         args_arr = (ctypes.c_void_p * num_calls)(*[
@@ -88,3 +99,4 @@ class batch(context):
                                    ctypes.pointer(fail_iteration),
                                    verbose)
 
+__all__ = ['batch', 'batch_record']

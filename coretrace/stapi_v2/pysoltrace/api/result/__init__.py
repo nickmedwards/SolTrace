@@ -30,21 +30,19 @@ class result(context):
 
     @st_function    
     def locations(self, n: int):
-        loc_x = (ctypes.c_double * n)()
-        loc_y = (ctypes.c_double * n)()
-        loc_z = (ctypes.c_double * n)()
+        loc_x, loc_y, loc_z = \
+            ((ctypes.c_double * n)() for _ in range(3))
         code = self._pdll.st_locations(self._pcxt,
                                        loc_x, loc_y, loc_z)
         return code, loc_x[:n], loc_y[:n], loc_z[:n]
 
     @st_function
     def cosines(self, n: int):
-        coz_x = (ctypes.c_double * n)()
-        coz_y = (ctypes.c_double * n)()
-        coz_z = (ctypes.c_double * n)()
+        cos_x, cos_y, cos_z = \
+            ((ctypes.c_double * n)() for _ in range(3))
         code = self._pdll.st_cosines(self._pcxt,
-                                     coz_x, coz_y, coz_z)
-        return code, coz_x[:n], coz_y[:n], coz_z[:n]
+                                     cos_x, cos_y, cos_z)
+        return code, cos_x[:n], cos_y[:n], cos_z[:n]
     
     @st_function
     def elementmap(self, n: int):
@@ -66,9 +64,8 @@ class result(context):
 
     @st_function
     def sun_stats(self):
-        width    = ctypes.c_double()
-        height   = ctypes.c_double()
-        area     = ctypes.c_double()
+        width, height, area = \
+            (ctypes.c_double() for _ in range(3)) 
         nsunrays = ctypes.c_uint64()
         code = self._pdll.st_sun_stats(self._pcxt,
                                        ctypes.byref(width),
@@ -79,15 +76,10 @@ class result(context):
 
     @st_function
     def get(self, n: int):
-        loc_x = (ctypes.c_double * n)()
-        loc_y = (ctypes.c_double * n)()
-        loc_z = (ctypes.c_double * n)()
-        coz_x = (ctypes.c_double * n)()
-        coz_y = (ctypes.c_double * n)()
-        coz_z = (ctypes.c_double * n)()
-        element_map = (ctypes.c_uint64 * n)()
-        stage_map   = (ctypes.c_uint64 * n)()
-        ray_numbers = (ctypes.c_uint64 * n)()
+        loc_x, loc_y, loc_z, coz_x, coz_y, coz_z = \
+            ((ctypes.c_double * n)() for _ in range(6))
+        element_map, stage_map, ray_numbers= \
+            ((ctypes.c_uint64 * n)() for _ in range(3))
         args = dot_h.args_results_data(loc_x, loc_y, loc_z,
                                        coz_x, coz_y, coz_z,
                                        element_map,
