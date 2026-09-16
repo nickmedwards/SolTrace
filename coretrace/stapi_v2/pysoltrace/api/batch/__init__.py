@@ -1,38 +1,7 @@
-# class is_ready:
-#     def __init__(self):
-#         self.ready = False
-
-# class holder:
-#     _slots_ = ('readys')
-
-#     def __init__(self):
-#         self.readys = []
-
-#     def add(self):
-#         n = is_ready()
-#         self.readys.append(n)
-#         return n
-
-#     def test(self):
-#         self.readys[0].ready = True
-
-# h = holder()
-
-# one = h.add()
-# two = h.add()
-
-# print(one.ready)
-# print(two.ready)
-
-# h.test()
-
-# print(one.ready)
-# print(two.ready)
-
 import ctypes
 
 from pysoltrace.api.dll import context
-from pysoltrace.api.utils import check_return_code, st_function
+from pysoltrace.api.utils import st_function
 from pysoltrace.api.batch.parameters import parameters
 from pysoltrace.api.batch.data import data
 from pysoltrace.api.batch.runner import runner
@@ -60,14 +29,8 @@ class batch(context):
         self.result     = result(self.add)
         self.legacy     = legacy(self.add)
 
-        # keep the struct instances alive — ctypes.cast() does NOT keep a
-        # reference, so if these get garbage collected the void* becomes dangling
-        self.__stash_batch_args = []
         self.__called = 0
         self.__calls: list[batch_record] = []
-
-    # def dump_batch_args(self):
-    #     for args in self.__stash_batch_args: print(args)
 
     def add(self, api_call, get_res = None):
         br = batch_record(api_call, get_res)
@@ -84,19 +47,17 @@ class batch(context):
         assert num_calls > 0, "No batch calls recorded to call"
 
         callable_brs = self.__calls[self.__called:]
-        # TODO: might be able to byref if lambda crating the array?
-        void_cast = lambda c: ctypes.cast(ctypes.pointer(c), ctypes.c_void_p)
-
-        args_arr = (ctypes.c_void_p * num_calls)(*[
-            void_cast(br.batch_call) for br in callable_brs
+        void_cast = lambda c: ctypes.cast(ctypes.byref(c), ctypes.c_void_p)
+        arr = lambda calls, num: (ctypes.c_void_p * num)(*[
+            void_cast(br.batch_call) for br in calls
         ])
         fail_iteration = ctypes.c_uint(0)
 
         for br in callable_brs: br.ready = True
         return self._pdll.st_batch(self._pcxt,
-                                   args_arr,
+                                   arr(callable_brs, num_calls),
                                    num_calls,
-                                   ctypes.pointer(fail_iteration),
+                                   ctypes.byref(fail_iteration),
                                    verbose)
 
 __all__ = ['batch', 'batch_record']

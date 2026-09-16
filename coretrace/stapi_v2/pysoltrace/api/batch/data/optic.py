@@ -22,13 +22,13 @@ class optic(batcher):
             opt_set: _STC.args_optical_properties_set,
             front:   _STC.args_optical_properties_face,
             back:    _STC.args_optical_properties_face) -> int:
-        num_optics = ctypes.c_uint64()
+        opt_id = ctypes.c_uint64()
         call = generate_api_call(_ADD,
                                  ctypes.pointer(opt_set),
                                  ctypes.pointer(front),
                                  ctypes.pointer(back),
-                                 ctypes.pointer(num_optics))
-        return self.adder(call, lambda: num_optics.value)
+                                 ctypes.pointer(opt_id))
+        return self.adder(call, lambda: opt_id.value)
 
     # TODO:
     # def get(self, optic_id: int) -> tuple[_STC.args_optical_properties_set, 

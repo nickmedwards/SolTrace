@@ -12,5 +12,5 @@ from pysoltrace.api.dll import context
 ##############################################################
 class csv(context):
     @st_function
-    def write_results_csv(self, filename: str, precision: int = 12) -> None:
+    def dump(self, filename: str, precision: int = 12) -> None:
         return self._pdll.st_write_results_csv(self._pcxt, filename.encode(), precision)

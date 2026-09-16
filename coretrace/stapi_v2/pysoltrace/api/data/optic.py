@@ -25,13 +25,13 @@ class optic(context):
             opt_set: _STC.args_optical_properties_set,
             front:   _STC.args_optical_properties_face,
             back:    _STC.args_optical_properties_face) -> int:
-        num_optics = ctypes.c_uint64()
+        opt_id = ctypes.c_uint64()
         code = self._pdll.st_add_optical_properties_set(self._pcxt,
                                                        ctypes.byref(opt_set),
                                                        ctypes.byref(front),
                                                        ctypes.byref(back),
-                                                       ctypes.byref(num_optics))
-        return code, num_optics.value
+                                                       ctypes.byref(opt_id))
+        return code, opt_id.value
 
     @st_function
     def get(self, optic_id: int) -> tuple[_STC.args_optical_properties_set, 

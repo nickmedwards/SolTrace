@@ -3,7 +3,7 @@ from math import sin, cos, pi, sqrt
 import orjson
 import numpy as np
 
-from pysoltrace import dot_h, \
+from pysoltrace import dot_h, found_in, \
                        api, \
                        Point, \
                        STAPIv2Exception, \
@@ -407,6 +407,14 @@ class ParametersTests(STAPIv2TestCase):
 
         rt_params = self.stapi.parameters.get()
         self.assertEqual(rt_params['tolerance'], .1)
+
+    def test_legacy_params(self):
+        self.stapi.legacy.sim_params(10, 1000, True)
+
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['number_of_rays'], 10)
+        self.assertEqual(rt_params['max_number_of_rays'], 1000)
+        self.assertEqual(rt_params['as_power_tower'], True)
 
 class DataJSONTests(STAPIv2TestCase):
     def test_load_json_str(self):
@@ -938,46 +946,339 @@ class BatchTests(STAPIv2TestCase):
         self.a_params = [2]
         self.s_params = [2, 2]
 
-    def test_simple(self): pass
-    # functions for simulation data management thru json strings
-    def test_call_st_read_input_json(self): pass
-    # functions for simulation data management directly
-    def test_call_st_set_simulation_parameters(self): pass
-    def test_call_st_sim_params(self): pass
-    def test_call_st_sim_errors(self): pass
-    def test_call_st_sim_location(self): pass
-    def test_call_st_sim_tolerance(self): pass
-    # functions to add/remove/set optical properties
-    def test_call_st_num_optics(self): pass
-    def test_call_st_add_optical_properies_set(self): pass
-    def test_call_st_delete_optic(self): pass
-    def test_call_st_clear_optics(self): pass
-    # functions to add/remove elements
-    def test_call_st_num_elements(self): pass
-    def test_call_st_add_element(self): pass
-    def test_call_st_delete_element(self): pass
-    def test_call_st_clear_elements(self): pass
-    # functions to modify elements
-    def test_call_st_element_enabled(self): pass
-    def test_call_st_element_virtual(self): pass
-    def test_call_st_element_zyx(self): pass
-    def test_call_st_element_aim(self): pass
-    def test_call_st_element_zrot(self): pass
-    def test_call_st_element_aperture(self): pass
-    def test_call_st_element_surface(self): pass
-    def test_call_st_element_optic(self): pass
-    # sun functions
-    def test_call_st_add_sun(self): pass
-    def test_call_st_sun_xyz(self): pass
-    def test_call_st_sun_userdata(self): pass
-    # functions for SolTrace runner management
-    def test_call_st_sim_setup(self): pass
-    def test_call_st_sim_run_v2(self): pass
-    def test_call_st_sim_report(self): pass
-    # functions for SolTrace results management
-    def test_call_st_write_results_csv(self): pass
+    def test_simple(self):
+        self.stapi.batch.data.json.load('./pysoltrace/sample.json')
+        el_rec = self.stapi.batch.data.element.num()
+        self.stapi.batch.runner.setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.batch.runner.run()
+        self.stapi.batch.runner.report()
+        inter_rec = self.stapi.batch.result.num()
 
-    # functions to get results directly
+        # test value is None before batching
+        self.assertEqual(el_rec.value, None)
+        self.assertEqual(inter_rec.value, None)
+
+        self.stapi.batch()
+        self.assertEqual(el_rec.value, 126)
+        self.assertEqual(inter_rec.value, self.stapi.result.num())
+
+    # functions for simulation data management thru json strings
+    def test_call_st_read_input_json(self):
+        self.stapi.batch.data.json.load('./pysoltrace/sample.json')
+        self.stapi.batch()
+        self.assertEqual(self.stapi.data.element.num(), 126)
+    
+    # functions for simulation data management directly
+    def test_call_st_set_simulation_parameters(self):
+        self.stapi.batch.parameters.set(self.sim_params)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertDictEqual(rt_params, self.sim_params.value)
+
+    def test_call_st_sim_rays(self):
+        self.stapi.batch.parameters.rays(10, 1000)
+
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['number_of_rays'], 10)
+        self.assertEqual(rt_params['max_number_of_rays'], 1000)
+
+    def test_call_st_sim_power_tower(self):
+        self.stapi.batch.parameters.power_tower(True)
+
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['as_power_tower'], True)
+
+    def test_call_st_sim_errors(self):
+        self.stapi.batch.parameters.errors(True, True)
+
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['include_sun_shape_errors'], True)
+        self.assertEqual(rt_params['include_optical_errors'], True)
+
+    def test_call_st_sim_location(self): 
+        self.stapi.batch.parameters.location(35.962278, -106.5122622)
+
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['latitude'], 35.962278)
+        self.assertEqual(rt_params['longitude'], -106.5122622)
+
+    def test_call_st_sim_tolerance(self):
+        self.stapi.batch.parameters.tolerance(.1)
+        
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['tolerance'], .1)
+
+    def test_call_st_sim_params(self):
+        self.stapi.batch.legacy.sim_params(10, 1000, True)
+        
+        self.stapi.batch()
+        rt_params = self.stapi.parameters.get()
+        self.assertEqual(rt_params['number_of_rays'], 10)
+        self.assertEqual(rt_params['max_number_of_rays'], 1000)
+        self.assertEqual(rt_params['as_power_tower'], True)
+        
+    # functions to add/remove/set optical properties
+    def test_call_st_num_optics(self):
+        rec = self.stapi.batch.data.optic.num()
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        self.assertEqual(rec.value, 0)
+
+        self.stapi.batch.data.optic.add(self.opt_set, self.front, self.back)
+        rec = self.stapi.batch.data.optic.num()
+        self.stapi.batch()
+        self.assertEqual(rec.value, 1)
+
+    def test_call_st_add_optical_properies_set(self):
+        rec = self.stapi.batch.data.optic.add(self.opt_set, self.front, self.back)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        self.assertEqual(rec.value, 0)
+
+    def test_call_st_delete_optic(self):
+        id = self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        self.stapi.batch.data.optic.delete(id)
+
+        self.stapi.batch()
+        self.assertEqual(self.stapi.data.optic.num(), 0)
+        
+    def test_call_st_clear_optics(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        self.stapi.batch.data.optic.clear()
+
+        self.stapi.batch()
+        self.assertEqual(self.stapi.data.optic.num(), 0)
+
+    # functions to add/remove elements
+    def test_call_st_num_elements(self):
+        rec = self.stapi.batch.data.element.num()
+        
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        self.assertEqual(rec.value, 0)
+
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+        rec = self.stapi.batch.data.element.num()
+        self.stapi.batch()
+        self.assertEqual(rec.value, 1)
+
+    def test_call_st_add_element(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        rec = self.stapi.batch.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        # batch call and get/test record value 
+        self.stapi.batch()
+        self.assertEqual(rec.value, 1)
+
+    def test_call_st_delete_element(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.delete(id)
+        
+        self.stapi.batch()
+        self.assertEqual(self.stapi.data.element.num(), 0)
+
+    def test_call_st_clear_elements(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.clear()
+        
+        self.stapi.batch()
+        self.assertEqual(self.stapi.data.element.num(), 0)
+    
+    # functions to modify elements
+    def test_call_st_element_enabled(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.enabled(id, True)
+
+        self.stapi.batch()
+        el, *_ = self.stapi.data.element.get(id)
+        self.assertEqual(el['enabled_flag'], True)
+        
+    def test_call_st_element_virtual(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.virtual(id, False)
+
+        self.stapi.batch()
+        el, *_ = self.stapi.data.element.get(id)
+        self.assertEqual(el['virtual_flag'], False)
+
+    def test_call_st_element_zyx(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.xyz(id, 4, 4, 4)
+        
+        self.stapi.batch()
+        el, *_ = self.stapi.data.element.get(id)
+        self.assertEqual(el['x'], 4)
+        self.assertEqual(el['y'], 4)
+        self.assertEqual(el['z'], 4)
+
+    def test_call_st_element_aim(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.aim(id, 4, 4, 4)
+        
+        self.stapi.batch()
+        el, *_ = self.stapi.data.element.get(id)
+        self.assertEqual(el['ax'], 4)
+        self.assertEqual(el['ay'], 4)
+        self.assertEqual(el['az'], 4)
+
+    def test_call_st_element_zrot(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.zrot(id, 4)
+        
+        self.stapi.batch()
+        el, *_ = self.stapi.data.element.get(id)
+        self.assertEqual(el['zrot'], 4)
+
+    def test_call_st_element_aperture(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        new_ap = b'r'
+        new_params = [3, 3]
+
+        self.stapi.batch.data.element.aperture(id, new_ap, new_params)
+
+        self.stapi.batch()
+        el, _, a_params, _ = self.stapi.data.element.get(id)
+        self.assertEqual(el['ap'], new_ap)
+        self.assertEqual(a_params[0], new_params[0])
+        self.assertEqual(a_params[1], new_params[1])
+
+    def test_call_st_element_surface(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        new_surf = b's'
+        new_params = [3]
+
+        self.stapi.batch.data.element.surface(id, new_surf, new_params)
+
+        self.stapi.batch()
+        el, _, _, s_params = self.stapi.data.element.get(id)
+        self.assertEqual(el['surf'], new_surf)
+        self.assertEqual(s_params[0], new_params[0])
+
+    def test_call_st_element_optic(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        other_opt = dot_h.args_optical_properties_set(b'other', 1.1, 1.1, 0)
+        other_id = self.stapi.data.optic.add(other_opt, self.front, self.back)
+
+        self.stapi.batch.data.element.optic(id, other_id)
+
+        self.stapi.batch()
+        _, test_id, _, _ = self.stapi.data.element.get(id)
+        self.assertEqual(test_id, other_id)
+
+    def test_call_st_element_group(self):
+        self.stapi.data.optic.add(self.opt_set, self.front, self.back)
+        id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
+
+        self.stapi.batch.data.element.group(id, 1)
+
+        self.stapi.batch()
+        el, *_ = self.stapi.data.element.get(id)
+        self.assertEqual(el['group'], 1)
+
+    # sun functions
+    def test_call_st_add_sun(self):
+        self.stapi.batch.data.sun.add(self.args_sun_user, self.good_angles, self.good_intensities)
+
+        self.stapi.batch()
+        sun, *_ = self.stapi.data.sun.get()
+        self.assertEqual(sun['npoints'], 3)
+        self.assertEqual(sun['x'], 608)
+        self.assertEqual(sun['y'], 303)
+        self.assertEqual(sun['z'], 1000)
+        self.assertEqual(sun['shape'], b'd')
+
+        self.stapi.batch.data.sun.add(self.args_sun_buie)
+
+        self.stapi.batch()
+        sun, *_ = self.stapi.data.sun.get()
+        self.assertDictEqual(sun, self.args_sun_buie.value)
+
+    def test_call_st_sun_xyz(self):
+        self.stapi.data.sun.add(self.args_sun_buie)
+        
+        self.stapi.batch.data.sun.xyz(608, 303, 1000)
+
+        self.stapi.batch()
+        sun, *_ = self.stapi.data.sun.get()
+        self.assertEqual(sun['x'], 608)
+        self.assertEqual(sun['y'], 303)
+        self.assertEqual(sun['z'], 1000)
+
+    def test_call_st_sun_userdata(self):
+        self.stapi.data.sun.add(self.args_sun_buie)
+
+        self.stapi.batch.data.sun.userdata(3, self.good_angles, self.good_intensities)
+
+        self.stapi.batch()
+        sun, *_ = self.stapi.data.sun.get()
+        self.assertEqual(sun['npoints'], 3)
+        self.assertEqual(sun['shape'], b'd')
+
+    # functions for SolTrace runner management
+    def test_call_st_sim_setup(self):
+        self.stapi.data.json.load('./pysoltrace/sample.json')
+        self.stapi.parameters.rays(1000, 10000)
+        self.stapi.batch.runner.setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.batch()
+
+    def test_call_st_sim_run_v2(self):
+        self.stapi.data.json.load('./pysoltrace/sample.json')
+        self.stapi.parameters.rays(1000, 10000)
+        self.stapi.runner.setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.batch.runner.run()
+        self.stapi.batch()
+
+    def test_call_st_sim_report(self):
+        self.stapi.data.json.load('./pysoltrace/sample.json')
+        self.stapi.parameters.rays(1000, 10000)
+        self.stapi.runner.setup(dot_h.st_runner_type_t.NATIVE)
+        self.stapi.runner.run()
+        self.stapi.batch.runner.report()
+        self.stapi.batch()
+        
+    # functions for SolTrace results management
     def set_up_run_report(self):
         self.stapi.data.json.load('./pysoltrace/sample.json')
         self.stapi.parameters.rays(1000, 10000)
@@ -985,7 +1286,13 @@ class BatchTests(STAPIv2TestCase):
         self.stapi.runner.run()
         self.stapi.runner.report()
         return self.stapi.result.num()
+    
+    def test_call_st_write_results_csv(self):
+        self.set_up_run_report()
+        self.stapi.batch.result.csv.dump('./pysoltrace/batch_sample.csv')
+        self.stapi.batch()
 
+    # functions to get results directly
     def test_call_st_locations(self):
         n = self.set_up_run_report()
         rec = self.stapi.batch.result.locations(n)
