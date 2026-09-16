@@ -1,6 +1,4 @@
-import ctypes
 from pathlib import Path
-from typing import Literal
 import orjson
 
 from pysoltrace import dot_h
@@ -12,16 +10,7 @@ from pysoltrace.api.dll import context
 ##############################################################
 class json(context):
     @st_function
-    def load(self, input_json: str | dict) -> None:
-        # TODO: add Path arg for filename
-        # if isinstance(input_json, str):
-        #     f = open(input_json, mode='rb')
-        #     code = self.__pdll.st_read_input_json(self.__pcxt, f.read())
-        #     f.close()
-        # else:
-        #     code = self.__pdll.st_read_input_json(self.__pcxt, orjson.dumps(input_json))
-        # self.__check_return_code(code)
-
+    def load(self, input_json: str | dict | Path) -> None:
         assert isinstance(input_json, (str, dict, Path)), f'input_json must be a str, dict, or Path, got {type(input_json)}'
 
         loader = self._pdll.st_read_input_json
@@ -31,10 +20,9 @@ class json(context):
             f.close()
         elif isinstance(input_json, dict):
             _json = orjson.dumps(input_json)
-        # TODO: implement below
-        # else:
-        #     _json = input_json.name.encode('utf-8')
-        #     loader = self._pdll.st_read_input_json_by_name
+        else:
+            _json = str(input_json.resolve()).encode('utf-8')
+            loader = self._pdll.st_read_input_json_file
 
         return loader(self._pcxt, _json)
 

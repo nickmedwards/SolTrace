@@ -1,4 +1,5 @@
 import ctypes, unittest
+from pathlib import Path
 from math import sin, cos, pi, sqrt
 import orjson
 import numpy as np
@@ -438,6 +439,16 @@ class DataJSONTests(STAPIv2TestCase):
             _json = orjson.loads(f.read())
             f.close()
             self.stapi.data.json.load(_json)
+        self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
+
+    def test_load_json_file(self):
+        good_path = Path('./pysoltrace/sample.json')
+        self.stapi.data.json.load(good_path)
+        self.assertEqual(self.stapi.data.element.num(), 126)
+
+        bad_path = Path('./pysoltrace/errors.json')
+        with self.assertRaises(STAPIv2Exception) as ex:
+            self.stapi.data.json.load(bad_path)
         self.assertEqual(ex.exception.code, dot_h.st_return_code.EXCEPTION)
 
 class OpticalPropertiesTests(STAPIv2TestCase):
@@ -969,6 +980,11 @@ class BatchTests(STAPIv2TestCase):
     # functions for simulation data management thru json strings
     def test_call_st_read_input_json(self):
         self.stapi.batch.data.json.load('./pysoltrace/sample.json')
+        self.stapi.batch()
+        self.assertEqual(self.stapi.data.element.num(), 126)
+    
+    def test_call_st_read_input_json_file(self):
+        self.stapi.batch.data.json.load(Path('./pysoltrace/sample.json'))
         self.stapi.batch()
         self.assertEqual(self.stapi.data.element.num(), 126)
     

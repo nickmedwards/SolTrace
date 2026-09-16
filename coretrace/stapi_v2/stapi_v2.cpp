@@ -91,6 +91,15 @@ STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json)
     return st_return_code::SUCCESS;
 }
 
+STAPI_V2 st_return_t st_read_input_json_file(st_context_v2_t pcxt, const char *filename)
+{
+	CONTEXT(pcxt);
+    DATA(cxt);
+    
+    ST_WRAP_CB_TRY_CATCH(data->import_json_file(std::string(filename)), cxt->p_cb);
+    return st_return_code::SUCCESS;
+}
+
 // functions for simulation data management directly
 STAPI_V2 st_return_t st_set_simulation_parameters(st_context_v2_t pcxt, args_simulation_parameters *params)
 {
@@ -1666,6 +1675,11 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                 case st_api_call::CALL_ST_READ_INPUT_JSON:
                 {
                     code = st_read_input_json(pcxt, call_args->payload.read_input_json_args.json);
+                    break;
+                }
+                case st_api_call::CALL_ST_READ_INPUT_JSON_FILE:
+                {
+                    code = st_read_input_json_file(pcxt, call_args->payload.read_input_json_file_args.filename);
                     break;
                 }
                 // functions for simulation data management directly

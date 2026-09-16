@@ -249,6 +249,7 @@ STAPI_V2 st_return_t st_free_context(st_context_v2_t pcxt);
 // functions for SolTrace data management
 // functions for simulation data management thru json strings
 STAPI_V2 st_return_t st_read_input_json(st_context_v2_t pcxt, const char *json);
+STAPI_V2 st_return_t st_read_input_json_file(st_context_v2_t pcxt, const char *filename);
 
 // functions for simulation data management directly
 typedef struct args_simulation_parameters {
@@ -550,6 +551,7 @@ typedef enum st_api_call : st_uint_t {
 	// Simlulation Data Functions
 	// functions for simulation data management thru json strings
     CALL_ST_READ_INPUT_JSON = 0,
+    CALL_ST_READ_INPUT_JSON_FILE,
 	// functions for simulation data management directly
 	CALL_ST_SET_SIMULATION_PARAMETERS,
 	CALL_ST_SIM_PARAMS,
@@ -615,6 +617,10 @@ typedef struct empty_args {} empty_args;
 typedef struct args_st_read_input_json {
 	const char *json;
 } args_st_read_input_json;
+
+typedef struct args_st_read_input_json_file {
+	const char *filename;
+} args_st_read_input_json_file;
 
 // functions for simulation data management directly
 typedef struct args_st_set_simulation_parameters {
@@ -905,7 +911,8 @@ typedef struct st_api_call_args {
     union {
 		// Simlulation Data Functions
 		// functions for simulation data management thru json strings
-        args_st_read_input_json read_input_json_args;
+        args_st_read_input_json 	 read_input_json_args;
+        args_st_read_input_json_file read_input_json_file_args;
 		// functions for simulation data management directly
 		args_st_set_simulation_parameters set_simulation_parameters_args;
 		args_st_sim_params 	  			  sim_params_args;

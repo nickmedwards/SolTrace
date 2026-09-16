@@ -85,6 +85,16 @@ st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt)
     return st_read_input_json(pcxt, root.dump().c_str());
 }
 
+st_return_t call_stapi_v2_read_input_json_file(st_context_v2_t pcxt)
+{
+    namespace fs = std::filesystem;
+
+    // Build paths
+    const fs::path project_root(PROJECT_DIR);
+    const fs::path sample_path = project_root / "sample_ver_20251112.json";
+    return st_read_input_json_file(pcxt, sample_path.string().c_str());
+}
+
 // functions for simulation data management directly
 st_return_t call_stapi_v2_set_simulation_parameters(st_context_v2_t pcxt)
 {

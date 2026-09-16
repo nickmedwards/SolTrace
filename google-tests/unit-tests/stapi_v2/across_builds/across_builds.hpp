@@ -32,6 +32,7 @@ json load_json();
 
 // functions for simulation data management thru json strings
 st_return_t call_stapi_v2_read_input_json(st_context_v2_t pcxt);
+st_return_t call_stapi_v2_read_input_json_file(st_context_v2_t pcxt);
 
 // functions for simulation data management directly
 st_return_t call_stapi_v2_set_simulation_parameters(st_context_v2_t pcxt);
