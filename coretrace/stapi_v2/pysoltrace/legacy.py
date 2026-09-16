@@ -43,21 +43,6 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-try:
-    # from chedder import dot_h
-    # import soltrace_constants as _STC
-    # import soltrace_json as st_json
-    # from point import Point
-    # import math_utils
-    from stapi_v2 import STAPIv2
-except ImportError:
-    # from .chedder import dot_h
-    # from . import soltrace_constants as _STC
-    # from . import soltrace_json as st_json
-    # from .point import Point
-    # from . import math_utils
-    from .stapi_v2 import STAPIv2
-
 from pysoltrace import api, dot_h, soltrace_json as st_json, math_utils, Point
 
 _default_cls_arg = lambda arg, default_cls, *args: arg if arg != None else default_cls(*args)
@@ -193,7 +178,7 @@ class _Optics:
         if onew != None: onew = new_optics
         else:            return new_optics
 
-    def Create(self, stapi: STAPIv2, _do: bool = False):
+    def Create(self, stapi: api, _do: bool = False):
         opt_set = dot_h.args_optical_properties_set(self.name.encode(), 
                                                     self.front.refraction_real,
                                                     self.back.refraction_real,
@@ -208,13 +193,16 @@ class _Optics:
                                                      self.back.slope_error,
                                                      self.back.spec_error,
                                                      self.back.dist_type[0].encode())
-        call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_OPTICAL_PROPERIES_SET,
-                                       ctypes.pointer(opt_set),
-                                       ctypes.pointer(front),
-                                       ctypes.pointer(back),
-                                       ctypes.pointer(ctypes.c_uint64()))
-        if _do: return stapi.batch([call])
-        return call
+        if _do: return stapi.data.optic.add(opt_set, front, back)
+        return stapi.batch.data.optic.add(opt_set, front, back)
+    
+        # call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_OPTICAL_PROPERIES_SET,
+        #                                ctypes.pointer(opt_set),
+        #                                ctypes.pointer(front),
+        #                                ctypes.pointer(back),
+        #                                ctypes.pointer(ctypes.c_uint64()))
+        # if _do: return stapi.batch([call])
+        # return call
 
 #############
 # Sun class #
@@ -266,7 +254,7 @@ class _Sun:
         if snew != None: snew = new_sun
         else:            return new_sun
 
-    def Create(self, stapi: STAPIv2, _do: bool = False):
+    def Create(self, stapi: api, _do: bool = False):
         npoints = len(self.user_intensity_table)
         args = dot_h.args_sun(npoints,
                               self.position.x,
@@ -275,18 +263,22 @@ class _Sun:
                               self.sigma,
                               self.shape[0].encode())
 
-        _angle     = ctypes.pointer(ctypes.c_double())
-        _intensity = ctypes.pointer(ctypes.c_double())
+        _angle     = []
+        _intensity = []
         if npoints > 2 and self.shape.lower()[0] == 'd':
-            _angle     = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[0]))
-            _intensity = (ctypes.c_double * npoints)(list(list(zip(*self.user_intensity_table))[1]))
+            cleaned = list(zip(*self.user_intensity_table))
+            _angle     = list(cleaned[0])
+            _intensity = list(cleaned[1])
 
-        call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_SUN,
-                                       ctypes.pointer(args),
-                                       _angle,
-                                       _intensity)
-        if _do: return stapi.batch([call])
-        return call
+        if _do: return stapi.data.sun.add(args, _angle, _intensity)
+        return stapi.batch.data.sun.add(args, _angle, _intensity)
+
+        # call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_SUN,
+        #                                ctypes.pointer(args),
+        #                                _angle,
+        #                                _intensity)
+        # if _do: return stapi.batch([call])
+        # return call
 
     def calc_sun_vector(self): pass # TODO: expose SolTrace::Data::SolarPositionCalculator
 
@@ -396,7 +388,7 @@ class _Element:
         if enew != None: enew = new_el
         else:            return new_el
 
-    def Create(self, stapi: STAPIv2, unstager: callable | None = None, _do: bool = False):
+    def Create(self, stapi: api, unstager: callable | None = None, _do: bool = False):
         # TODO: unstage element position/aim
         el_args = dot_h.args_element(*(unstager(self.position) if unstager else self.position),
                                      *(unstager(self.aim) if unstager else self.aim),
@@ -405,16 +397,19 @@ class _Element:
                                      self.virtual,
                                      self.aperture.encode(),
                                      self.surface.encode())
-        _a_params = (ctypes.c_double * 8)(*self.aperture_params)
-        _s_params = (ctypes.c_double * 8)(*self.surface_params)
-        call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_ELEMENT,
-                                       ctypes.pointer(el_args),
-                                       self.optic.id,
-                                       _a_params,
-                                       _s_params,
-                                       ctypes.pointer(ctypes.c_uint64()))
-        if _do: return stapi.batch([call])
-        return call
+
+        if _do: return stapi.data.element.add(el_args, self.optic.id, self.aperture_params, self.surface_params)
+        return stapi.batch.data.element.add(el_args, self.optic.id, self.aperture_params, self.surface_params)
+        # _a_params = (ctypes.c_double * 8)(*self.aperture_params)
+        # _s_params = (ctypes.c_double * 8)(*self.surface_params)
+        # call = stapi.generate_api_call(dot_h.st_api_call.CALL_ST_ADD_ELEMENT,
+        #                                ctypes.pointer(el_args),
+        #                                self.optic.id,
+        #                                _a_params,
+        #                                _s_params,
+        #                                ctypes.pointer(ctypes.c_uint64()))
+        # if _do: return stapi.batch([call])
+        # return call
 
     #####################
     # Surface Functions #
@@ -624,11 +619,12 @@ class _Stage:
     def __get_unstager(self) -> callable | None:
         return math_utils.get_unstager(self.position, self.aim, 0)
 
-    def Create(self, stapi: STAPIv2, _do: bool = False):
+    def Create(self, stapi: api, _do: bool = False):
         unstager = self.__get_unstager()
-        calls = [el.Create(stapi, unstager) for el in self.elements]
-        if _do: return stapi.batch(calls)
-        return calls
+        # calls = [el.Create(stapi, unstager) for el in self.elements]
+        # if _do: return stapi.batch(calls)
+        # return calls
+        return [el.Create(stapi, unstager, _do) for el in self.elements]
 
     def add_element(self, enew: _Element = None) -> _Element:
         enew    = _default_cls_arg(enew, _Element, self, None)
@@ -684,22 +680,18 @@ class legacy:
         else:             return new_st
 
     def Create(self, as_power_tower: bool, _do: bool = False):
-        el_calls = []
-        for s in self.stages: el_calls.extend(s.Create(self.stapi))
-
         calls = [
-            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_PARAMS,
-                                         int(self.num_ray_hits),
-                                         int(self.max_rays_traced),
-                                         as_power_tower),
-            self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_ERRORS,
-                                         self.is_sunshape,
-                                         self.is_surface_errors),
+            self.stapi.batch.legacy.sim_params(int(self.num_ray_hits),
+                                               int(self.max_rays_traced),
+                                               as_power_tower),
+            self.stapi.batch.parameters.errors(self.is_sunshape,
+                                               self.is_surface_errors),
             self.sun.Create(self.stapi),
-            *[op.Create(self.stapi) for op in self.optics],
-            *el_calls
+            *[op.Create(self.stapi) for op in self.optics]
         ]
-        if _do: return self.stapi.batch(calls)
+        for s in self.stages: calls.extend(s.Create(self.stapi))
+
+        if _do: self.stapi.batch()
         return calls
     
     def add_optic(self, 
@@ -754,19 +746,19 @@ class legacy:
 
         if self.raydata: return self.raydata
 
-        n_intersections = self.stapi.num_intersections()
-        results_data = self.stapi.get_results_data(n_intersections)
+        n = self.stapi.result.num()
+        results_data = self.stapi.result.get(n)
 
         self.raydata = pd.DataFrame({
-            "loc_x":   results_data.loc_x[:n_intersections],
-            "loc_y":   results_data.loc_y[:n_intersections],
-            "loc_z":   results_data.loc_z[:n_intersections],
-            "cos_x":   results_data.cos_x[:n_intersections],
-            "cos_y":   results_data.cos_y[:n_intersections],
-            "cos_z":   results_data.cos_z[:n_intersections],
-            "element": results_data.element_map[:n_intersections],
-            "stage":   results_data.stage_map[:n_intersections],
-            "number":  results_data.ray_numbers[:n_intersections]
+            "loc_x":   results_data['loc_x'][:n],
+            "loc_y":   results_data['loc_y'][:n],
+            "loc_z":   results_data['loc_z'][:n],
+            "cos_x":   results_data['cos_x'][:n],
+            "cos_y":   results_data['cos_y'][:n],
+            "cos_z":   results_data['cos_z'][:n],
+            "element": results_data['element_map'][:n],
+            "stage":   results_data['stage_map'][:n],
+            "number":  results_data['ray_numbers'][:n]
         })
 
         return self.raydata
@@ -792,7 +784,7 @@ class legacy:
             item[0]: item[1] 
             for item in 
             zip(['width', 'height', 'area', 'nsunrays'],
-                self.stapi.sun_stats())
+                self.stapi.result.sun_stats())
         }
         self.sunstats['position'] = self.sun.position
 
@@ -831,7 +823,7 @@ class legacy:
         #     Argument used by the multi-threading call. Do not manually specify this value.
 
         # pdll = self.__load_dll()
-        self.stapi = STAPIv2(testing = self.testing)
+        self.stapi = api(testing = self.testing)
 
         if seed<0:
             runseed = random.randint(1,int(1e9))
@@ -840,17 +832,15 @@ class legacy:
 
         if nthread in [0,1]:
             sim_data_calls = self.Create(as_power_tower)
-            _seeds = (ctypes.c_uint * 1)(*[runseed])
-            set_up_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, runner_type, 1, _seeds, 1)
-            run_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2)
-            report_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)
+            self.stapi.batch.runner.setup(runner_type, 1, [runseed])
+            self.stapi.batch.runner.run()
+            self.stapi.batch.runner.report()
+            # _seeds = (ctypes.c_uint * 1)(*[runseed])
+            # set_up_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_SETUP, runner_type, 1, _seeds, 1)
+            # run_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_RUN_V2)
+            # report_call = self.stapi.generate_api_call(dot_h.st_api_call.CALL_ST_SIM_REPORT, 0)
 
-            self.stapi.batch([
-                *sim_data_calls,
-                set_up_call,
-                run_call,
-                report_call
-            ], True)
+            self.stapi.batch(True)
 
             self.get_ray_dataframe()
             self.get_sun_stats()

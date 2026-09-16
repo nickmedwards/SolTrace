@@ -1,7 +1,8 @@
 import ctypes
 
+from pysoltrace import dot_h
 from pysoltrace.api.dll import context
-from pysoltrace.api.utils import st_function
+from pysoltrace.api.utils import check_return_code, st_function
 from pysoltrace.api.batch.parameters import parameters
 from pysoltrace.api.batch.data import data
 from pysoltrace.api.batch.runner import runner
@@ -18,6 +19,10 @@ class batch_record:
 
     @property
     def value(self): return self.__get_res() if self.ready else None
+
+    def __repr__(self):
+        call = dot_h.st_api_call(self.batch_call.type)
+        return f'{call.name} ({call.value}): {self.ready}'
 
 class batch(context):
     def __init__(self, pdll, pcxt):
@@ -41,7 +46,6 @@ class batch(context):
         self.__called = 0
         self.__calls: list[batch_record] = []
 
-    @st_function
     def __call__(self, verbose = False):
         num_calls = len(self.__calls) - self.__called
         assert num_calls > 0, "No batch calls recorded to call"
@@ -54,10 +58,11 @@ class batch(context):
         fail_iteration = ctypes.c_uint(0)
 
         for br in callable_brs: br.ready = True
-        return self._pdll.st_batch(self._pcxt,
+        code = self._pdll.st_batch(self._pcxt,
                                    arr(callable_brs, num_calls),
                                    num_calls,
                                    ctypes.byref(fail_iteration),
                                    verbose)
+        check_return_code(code, fail_iteration.value)
 
 __all__ = ['batch', 'batch_record']

@@ -21,18 +21,21 @@ STAPIv2Warning = lambda code, name, msg: warnings.warn(
     stacklevel=4
 )
 
-def check_return_code(code):
+def _get_msg(code, msgs, batch_i = None):
+    name = _STC.ST_RETURN_CODE_NAME[code]
+    if batch_i == None: return name, msgs[code]
+    else:
+        batch_i_str = f'{Fore.RED}Batch call failed on call number {batch_i}.{Style.RESET_ALL}\n'
+        return name, batch_i_str + msgs[code]
+
+def check_return_code(code, batch_i = None):
     if code == dot_h.st_return_code.SUCCESS: return
     elif code > dot_h.st_return_code.SUCCESS and code < dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE:
-        raise STAPIv2Exception(code, 
-                                _STC.ST_RETURN_CODE_NAME[code],
-                                _STC.ST_RETURN_CODE_ERROR_MSG[code])
+        raise STAPIv2Exception(code, *_get_msg(code, _STC.ST_RETURN_CODE_ERROR_MSG, batch_i))
     elif code >= dot_h.st_return_code.WARNING_FELLBACK_FROM_EMBREE and code < dot_h.st_return_code.RETURN_COUNT:
-        STAPIv2Warning(code,
-                        _STC.ST_RETURN_CODE_NAME[code],
-                        _STC.ST_RETURN_CODE_WARNING_MSG[code])
+        STAPIv2Warning(code, *_get_msg(code, _STC.ST_RETURN_CODE_WARNING_MSG, batch_i))
     elif code >= dot_h.st_return_code.RETURN_COUNT:
-        raise STAPIv2Exception(code,  'UNKNOWN', 'Unknown return code received.')
+        raise STAPIv2Exception(code, 'UNKNOWN', 'Unknown return code received.')
 
 def st_function(func):
     def wrapper(*args, **kwargs):

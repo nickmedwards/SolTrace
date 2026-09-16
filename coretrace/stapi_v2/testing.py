@@ -5,6 +5,7 @@ import numpy as np
 
 from pysoltrace import dot_h, found_in, \
                        api, \
+                       PySolTrace, \
                        Point, \
                        STAPIv2Exception, \
                        soltrace_constants as _STC
@@ -849,6 +850,9 @@ class RunnerTests(STAPIv2TestCase):
     def test_report_optix(self):  self.runner_report(dot_h.st_runner_type_t.OPTIX)
 
 class Results:
+    def test_csv_dump(self):
+        self.stapi.result.csv.dump('./pysoltrace/sample.csv')
+
     def test_locations(self):
         loc_x, loc_y, loc_z = self.stapi.result.locations(self.n_intersections)
         self.assertEqual(len(loc_x), self.n_intersections)
@@ -1384,6 +1388,151 @@ class BatchTests(STAPIv2TestCase):
         results = rec.value
         for k in results.keys():
             self.assertEqual(len(results[k][:n]), n)
+
+class LegacyTests(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.legacy = PySolTrace(testing = True)
+        # set up dummy values
+        # sun
+        self.sun = self.legacy.add_sun()
+        self.sun.position = Point(608, 303, 1000)
+        self.sun.shape = 'b'
+        self.sun.sigma = .5
+        self.sun_args = dot_h.args_sun(0, 608, 303, 1000, .5, 'b'.encode())
+
+        # optical property set
+        self.opt = self.legacy.add_optic('dummy')
+
+        # front face object (f is 6th letter)
+        self.opt.front.dist_type       = 'f'
+        self.opt.front.refraction_real = 1.6
+        self.opt.front.reflectivity    = .6
+        self.opt.front.transmissivity  = .6
+        self.opt.front.slope_error     = 6
+        self.opt.front.spec_error      = 6
+
+        # back face object (b is 2nd letter)
+        self.opt.back.dist_type       = 'p'
+        self.opt.back.refraction_real = 1.2
+        self.opt.back.reflectivity    = .2
+        self.opt.back.transmissivity  = .2
+        self.opt.back.slope_error     = 2
+        self.opt.back.spec_error      = 2
+
+        self.opt_args   = dot_h.args_optical_properties_set("dummy".encode(), 1.6, 1.2, 2)
+        self.front_args = dot_h.args_optical_properties_face(.6, .6, 6, 6, 'f'.encode())
+        self.back_args  = dot_h.args_optical_properties_face(.2, .2, 2, 2, 'p'.encode())
+
+        # dummy element (e is 5th letter)
+        self.stage = self.legacy.add_stage()
+        self.el = self.stage.add_element()
+
+        self.el.optic    = self.opt
+        self.el.position = Point(5, 5, 5)
+        self.el.aim      = Point(5, 5, 5)
+        self.el.zrot     = 5
+        self.el.aperture_circle(5)
+        self.el.surface_parabolic(5, 5)
+
+        self.el_args = dot_h.args_element(5, 5, 5, 5, 5, 5, 5, True, False, 'c'.encode(), 'p'.encode())
+        self.opt_id = 0
+        self.a_params = [5]
+        self.s_params = [5, 5]
+
+    def test_legacy_sun(self):
+        self.sun.Create(self.stapi, _do = True)
+
+        rt_sun_args, *_ = self.stapi.data.sun.get()
+        self.assertDictEqual(rt_sun_args, self.sun_args.value)
+
+    def test_legacy_optic(self):
+        self.opt.Create(self.stapi, _do = True)
+
+        _opt_set, _front, _back = self.stapi.data.optic.get(0)
+        self.assertDictEqual(_opt_set, self.opt_args.value)
+        self.assertDictEqual(_front, self.front_args.value)
+        self.assertDictEqual(_back, self.back_args.value)
+
+    def test_legacy_element(self):
+        self.opt.Create(self.stapi, _do = True)
+        self.el.Create(self.stapi, _do = True)
+
+        args, optic_id, a_params, s_params = self.stapi.data.element.get(1)
+        
+        self.assertDictEqual(args, self.el_args.value)
+        self.assertEqual(optic_id, self.opt_id)
+        self.assertEqual(a_params[0], self.a_params[0])
+        self.assertEqual(s_params[0], 1 / (2 * self.s_params[0]))
+        self.assertEqual(s_params[1], 1 / (2 * self.s_params[1]))
+
+class TowerDemoTest(STAPIv2TestCase):
+    def setUp(self):
+        super().setUp()
+
+    def test(self):
+        PT = PySolTrace(testing = True)
+        # this object has data from previous legacy tests?
+        PT.clear_optics()
+        PT.clear_stages()
+        # Create two optics types - one for reflector, and one for absorber.
+        opt_ref = PT.add_optic("Reflector")
+        opt_ref.front.reflectivity = 1.
+        opt_abs = PT.add_optic("Absorber")
+        opt_abs.front.reflectivity = 0.
+
+        # Sun
+        sun = PT.add_sun()
+        # Give sun an arbitrary position
+        sun.position.x = 1.
+        sun.position.y = -1.
+        sun.position.z = 99.
+
+        # Reflector stage
+        st = PT.add_stage()
+
+        #absorber element height
+        abs_pos = Point(0., 0., 10.)
+
+        # Create a heliostat at some random x,y position, reflecting to the receiver
+        for i in range(-1,2):
+            hpos = [sin(i*pi/2)*5, cos(i*pi/2)*5]
+            # hpos = [random.uniform(-10,10), random.uniform(-10,10)]
+            el = st.add_element()
+            el.optic = opt_ref
+            el.position.x = hpos[0]
+            el.position.y = hpos[1]
+            # calculate the vectors - receiver, sun, and aim
+            rvec = (abs_pos - el.position).unitize()
+            svec = sun.position.unitize()
+            avec = (rvec + svec)/2.
+            # assign the aim vector. scale by a large number
+            el.aim = el.position + avec*100.
+            # compute surface z rotation to align with plane of the ground
+            el.zrot = PT.util_calc_zrot_azel(avec)
+            # Set surface and aperture characteristics
+            el.surface_flat()
+            el.aperture_rectangle(1.0,1.95)
+
+        sta = PT.add_stage()
+        # flat absorber element
+        ela = sta.add_element()
+        ela.position = abs_pos
+        ela.aim.z = 0.
+        ela.aim.x = 0.
+        ela.aim.y = 5.
+        ela.optic = opt_abs
+        ela.surface_flat()
+        ela.aperture_rectangle(2,2)  
+
+        # set simulation parameters
+        PT.num_ray_hits = 1e3
+        PT.max_rays_traced = PT.num_ray_hits*100
+        PT.is_sunshape = True 
+        PT.is_surface_errors = True
+
+        PT.run(-1, True, 1)
 
 if __name__ == '__main__':
     # print(f'\n\n\n\n{found_in(dot_h)}\n\n\n\n')
