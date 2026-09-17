@@ -10,7 +10,7 @@
 
 namespace analysis {
 
-/// Options to the flux map baking process
+/// Options for rasterizing ray/surface hits into a flux-map image.
 struct FluxMapBakeOptions {
     // TODO: change to support UV aspect ratio
     glm::uvec2 image_resolution = { 1024, 1024 };
@@ -20,16 +20,22 @@ struct FluxMapBakeOptions {
 
     /// The color map to use. If null, uses a classic blue to red map.
     QImage color_map;
+
+    /// Solar direct normal irradiance in W/m^2.
+    double dni = 1000.0;
 };
 
-/// Class to manage the baking of flux maps. These are piecewise continuous
-/// triangle rasters
+/// Asynchronous flux-map generator for simulation results.
+///
+/// The input mesh is expected to be a UV-unwrapped receiver surface. Generated
+/// maps are piecewise-continuous triangle rasters emitted by signal when ready.
 class FluxMapComputer : public QObject {
     Q_OBJECT
 
     db::SimulationResultPtr m_database;
 
 public:
+    /// Create a flux-map computer with no attached result set.
     explicit FluxMapComputer(QObject* parent);
     ~FluxMapComputer() override;
 
@@ -50,7 +56,7 @@ signals:
     /// Issued when the computation has failed.
     void image_failed(db::Entity, QString reason);
 
-    /// Issued as the map is being generated, 0-100
+    /// Issued as the map is being generated, 0-100.
     void image_progress(db::Entity, int);
 
     /// Issued (or can be issued externally) to cancel all map generation.

@@ -1,6 +1,7 @@
 #include "flux_module.h"
 #include "analysis/ray_volume_raster.h"
 #include "analysis/volume_to_mesh.h"
+#include "database/components.h"
 #include "utilities/asynctask.h"
 
 #include <QQmlEngine>
@@ -20,9 +21,9 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
 
     m_ray_iso_volume->setParent(this);
 
-    auto provider = m_pending_flux_maps->make_new_provider();
+    m_image_provider = m_pending_flux_maps->make_new_provider();
 
-    engine->addImageProvider("fluxmap", provider);
+    engine->addImageProvider("fluxmap", m_image_provider);
 
     connect(m_pending_flux_maps,
             &db::PendingFluxMapModel::ready,
@@ -39,6 +40,11 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
             m_flux_map_world_model,
             &db::FluxMapWorldModel::on_reset);
 
+    connect(
+        m_pending_flux_maps,
+        &db::PendingFluxMapModel::failed,
+        [this](QString reason) { this->notify(ANotification::error(reason)); });
+
     connect(m_pending_flux_maps, &db::PendingFluxMapModel::cleared, this, [this] {
         set_current_flux_stats({});
     });
@@ -48,8 +54,11 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
     m_results = p;
     set_current_entity({});
     set_current_entity_name(QString());
+    set_current_entity_position({});
     set_current_flux_stats({});
+    set_current_image(QString());
     m_entity_model->reset(nullptr);
+    m_computed_maps_model->reset(nullptr);
     m_pending_flux_maps->reset(nullptr);
     m_ray_iso_volume->set_current_mesh({});
 
@@ -58,11 +67,11 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
     auto mptr = const_cast<db::Database*>(p->database.get());
 
     m_entity_model->reset(mptr);
+    m_computed_maps_model->reset(mptr);
     m_pending_flux_maps->reset(p);
     m_ray_iso_volume->set_current_mesh({});
 
-    // HACK HACK HACK
-
+    // Default to the entity with the most ray hits.
     entt::entity largest = entt::null;
     size_t       best    = 0;
 
@@ -81,11 +90,23 @@ void FluxModule::select_entity(db::Entity entity) {
 
     if (!m_results || !m_results->database || !entity.is_valid()) {
         set_current_entity_name(QString());
+        set_current_entity_position({});
         set_current_flux_stats({});
         return;
     }
 
     set_current_entity_name(m_results->database->name_of(entity));
+
+    auto* database = m_results->database.get();
+    auto* global   = database->global_transform.get(entity);
+    auto  transform =
+        global ? *global
+               : db::GlobalTransformComponent::compute_for(database->as_registry(),
+                                                           entity);
+    set_current_entity_position(QVector3D(transform.position.x,
+                                          transform.position.y,
+                                          transform.position.z));
+
     refresh_current_flux_stats();
 }
 
@@ -93,36 +114,39 @@ void FluxModule::refresh_current_flux_stats() {
     for (auto const& item : m_flux_map_world_model->vector()) {
         if (item.flux_entity == current_entity()) {
             set_current_flux_stats(item.flux_stats);
+            set_current_image(item.flux_image_path);
             return;
         }
     }
 
     set_current_flux_stats({});
+    set_current_image(QString());
 }
 
 void FluxModule::flux_map_ready(db::Entity              entity,
-                                analysis::BakedFluxMapPtr image,
+                                analysis::BakedFluxMapPtr,
                                 db::Database const*) {
     if (entity != current_entity()) return;
 
-    set_current_flux_stats(image ? image->stats
-                                 : analysis::BakedFluxMapStats {});
+    refresh_current_flux_stats();
 }
 
 void FluxModule::start_generate() {
     qDebug() << Q_FUNC_INFO << "Starting fluxmap generation for current entity";
+
     if (!m_results) {
         emit notify(ANotification::warning(
-            "Run a simulation before generating a flux map."));
+            "Run a trace before generating a flux map."));
         return;
     }
 
     if (!current_entity().is_valid()) {
         emit notify(ANotification::warning(
-            "Select an element before generating a flux map."));
+            "Select an element to generate a flux map."));
         return;
     }
 
+    m_pending_flux_maps->set_dni(dni());
     m_pending_flux_maps->start_generate_for(current_entity());
 }
 
@@ -135,7 +159,7 @@ void FluxModule::start_generate_volume_flux(unsigned resolution) {
 
     if (!m_results) {
         emit notify(ANotification::warning(
-            "Run a simulation before generating volume flux."));
+            "Run a trace before generating volume flux."));
         return;
     }
 
@@ -173,6 +197,38 @@ void FluxModule::start_generate_isosurface(float value) {
                                          analysis::volume_to_mesh,
                                          m_results->ray_volume,
                                          value);
+}
+
+void FluxModule::save_image(QString requested_image, QUrl path) {
+    static constexpr char TO_REMOVE[]    = "image://fluxmap/";
+    static constexpr auto TO_REMOTE_SIZE = std::size(TO_REMOVE) - 1;
+
+    requested_image = requested_image.mid(TO_REMOTE_SIZE);
+
+    qDebug() << Q_FUNC_INFO << requested_image << path;
+    if (!m_image_provider) {
+        emit notify(ANotification::error(
+            "Internal error trying to save image: missing image provider"));
+        return;
+    }
+
+    QSize img_size;
+
+    auto image =
+        m_image_provider->requestImage(requested_image, &img_size, QSize());
+
+    if (image.isNull()) {
+        emit notify(ANotification::error("Internal error trying to save image: "
+                                         "unable to fetch requested image"));
+        return;
+    }
+
+
+    if (!image.save(path.toLocalFile())) {
+        emit notify(ANotification::error("Internal error trying to save image: "
+                                         "unable to save image to given path"));
+        return;
+    }
 }
 
 void FluxModule::flux_vol_ready(QUuid const&                  id,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "analysis/ray_geometry.h"
+#include "database/models/element_models.h"
 #include "database/simulationresult.h"
 #include "module_common.h"
 #include "utilities/qt_helpers.h"
@@ -15,8 +16,8 @@ namespace SolTrace::GUI::App {
  * @brief Ray intersection analysis module.
  *
  * Provides access to intersection results from the simulation.
- * Holds non-owning references to both the shared results backend
- * and the intersections-specific backend.
+ * Owns the RayGeometry adapter used by the 3D viewport and points it at the
+ * currently selected simulation result.
  *
  * QML access pattern: App.intersections.results
  */
@@ -25,15 +26,14 @@ class IntersectionsModule : public QObject {
 
     db::SimulationResultPtr m_results;
 
+    QOBJECT_READONLY_PROPERTY(db::AllElementsModel, entity_model)
     QOBJECT_READONLY_PROPERTY(analysis::RayGeometry, ray_geometry)
 
 public:
     explicit IntersectionsModule(QObject* parent = nullptr);
 
-
 public slots:
+    /// Set the result set whose rays should be visualized.
     void set_results(db::SimulationResultPtr);
 };
-
-
 } // namespace SolTrace::GUI::App

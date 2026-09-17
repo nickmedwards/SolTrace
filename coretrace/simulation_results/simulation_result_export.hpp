@@ -7,6 +7,7 @@
 using SolTrace::Result::interaction_ptr;
 using SolTrace::Result::ElementRecord;
 using SolTrace::Result::element_record_ptr;
+using SolTrace::Result::GroupResult;
 using SolTrace::Result::InteractionRecord;
 using SolTrace::Result::interaction_ptr;
 using SolTrace::Result::ray_id;
