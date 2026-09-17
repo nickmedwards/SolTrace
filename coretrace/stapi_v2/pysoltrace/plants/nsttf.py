@@ -1,4 +1,6 @@
-import ctypes, os, sys
+import os, sys
+from pathlib import Path
+from zoneinfo import ZoneInfo
 import numpy as np
 sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 
@@ -14,6 +16,16 @@ stapi = api()
 DNI = 930 # [W/m^2]
 LATITUDE  = 35.962278    # [deg], NSTTF original tower latitude (approximate)
 LONGITUDE = -106.5122622 # [deg], NSTTF original tower longitude (approximate)
+TZ     = 'MST'
+TZINFO = ZoneInfo("America/Denver")
+ST_LOC = dot_h.args_sun_location(LATITUDE, LONGITUDE, -7.0)
+# TODO: util to convert built-in datetime to st_datetime
+ST_DT  = dot_h.args_sun_datetime(2025, # year
+                                 6,    # month
+                                 20,   # day
+                                 12,   # hour
+                                 34,   # minute
+                                 56)   # second
 
 """
 convert between (+x: west, +y: zenith, +z: north)
@@ -23,10 +35,12 @@ CONVERT_COORDS = np.array([[-1., 0., 0.],
                            [ 0., 0., 1.],
                            [ 0., 1., 0.]])
 
-# TODO: make container spoof to mirror id calculations
-
-"""dummy variables for batch calls"""
-dummy_uint64 = ctypes.c_uint64()
+# file set up
+current_dir = Path(__file__).parent
+data_dir    = current_dir / 'nsttf_data'
+coords_f    = current_dir / 'nsttf_data' / 'coordinates.csv'
+ids_f       = current_dir / 'nsttf_data' / 'ids.csv'
+canting_dir = current_dir / 'nsttf_data' / 'internal_canting'
 
 def pretty(struct):
     s = type(struct).__name__ + ': {\n'
@@ -34,6 +48,9 @@ def pretty(struct):
         s += f'  {field[0]}: {getattr(struct, field[0])}\n'
     s += '}\n'
     return s
+
+# TODO: def create_nsttf(stapi, sun_pos): stapi.clear() .. stapi.batch.clear() ...
+#       def update_nsttf(stapi, sun_pos): stapi.batch.clear() ...
 
 ################################
 # set up optical property sets #
@@ -79,10 +96,6 @@ g3p3_unstager = math_utils.get_unstager(g3p3_stage_pos, g3p3_stage_aim, 0)
 
 G3P3_GROUP = 0
 G3P3 = {}
-
-# all G3P3 elements have flat surfaces, so make one and reuse it
-flat_params = (ctypes.c_double * 8)()
-make_c_double_8 = lambda *args: (ctypes.c_double * 8)(*args)
 
 # aperture
 APERTURE_ID = len(G3P3)
@@ -246,7 +259,15 @@ G3P3[SHIELD_SOUTHWEST_ID] = stapi.batch.data.element.add(ssw_el_args,
 
 # measurement plane
 # curtain
- 
+
+# heliostat and facet information
+PED_HEIGHT = 4.02           # [m], heliostat pedistal height
+TRACK_ERR  = 0.0005         # [rad], heliostat tracking error
+PIV_OFFSET = 0.1778         # [m], facet pivot offset
+RECT_AP    = 1.2192         # [m], facet side length
+PARA_SURF  = .5 / 0.0034203 # [m], parabolic focal length
+CANT_ERR   = 0.0017         # [rad], facet canting error
+
 if __name__ == '__main__':
     # print(pretty(ap_el_args))
     # print(type(ap_el_args))
@@ -256,14 +277,19 @@ if __name__ == '__main__':
     # print(test_unstager(CONVERT_COORDS @ np.array([0, 0, 0.662347])))
     # print(test_unstager(CONVERT_COORDS @ np.array([0, 0, 0.662347])))
 
-    print(math_utils.zrot_from_azel([0, 1, 0]))
-    # test batch
-    stapi.batch(True)
+    print(__file__)
+    # print(Path(__file__).parent / 'nsttf_data')
+    # print(Path(__file__).parent / 'nsttf_data' / 'coordinates.csv')
+    # print(Path(__file__).parent / 'nsttf_data' / 'ids.csv')
 
-    print(stapi.data.optic.num())
-    print(stapi.data.element.num())
+    # print(math_utils.zrot_from_azel([0, 1, 0]))
+    # # test batch
+    # stapi.batch(True)
 
-    print(stapi.data.element.get(1)[0])
-    print(stapi.data.element.get(2)[0])
-    print(stapi.data.element.get(2)[1])
-    print(stapi.data.element.get(3)[0])
+    # print(stapi.data.optic.num())
+    # print(stapi.data.element.num())
+
+    # print(stapi.data.element.get(1)[0])
+    # print(stapi.data.element.get(2)[0])
+    # print(stapi.data.element.get(2)[1])
+    # print(stapi.data.element.get(3)[0])

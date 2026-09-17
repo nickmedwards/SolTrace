@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from typing import Literal
 from numpy import array, ndarray
 
@@ -463,7 +464,7 @@ class Point:
         # return (self.x*self.x + self.y*self.y + self.z*self.z)**0.5
         return (self.dot(self))**0.5
 
-    def unitize(self, inplace : bool = False) -> Point:
+    def unitize(self, inplace: bool = False) -> Point:
         """
         Converts current point into a unit vector with magnitude 1
 
@@ -497,3 +498,75 @@ class Point:
     @staticmethod
     def from_list(l: list) -> Point:
         return Point(l[0], l[1], l[2])
+
+def unitizer(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        func(self, *args, **kwargs)
+        self.unitize(inplace=True)
+    return wrapper
+
+class UnitVector(Point):
+    @unitizer
+    def __init__(self, x = 0, y = 0, z = 0):
+        super().__init__(x, y, z)
+
+    @unitizer
+    def __setitem__(self, i, value: float | int) -> None:
+        super().__setitem__(i, value)
+
+    @unitizer
+    def __add__(self, obj: Point | float | int | list) -> Point:
+        super().__add__(obj)
+    
+    @unitizer
+    def __iadd__(self, obj: Point | float | int | list) -> Point:
+        super().__iadd__(obj)
+
+    @unitizer
+    def __sub__(self, obj: Point | float | int | list) -> Point:
+        super().__sub__(obj)
+    
+    @unitizer
+    def __rsub__(self, obj: Point | float | int | list) -> Point:
+        super().__rsub__(obj)
+
+    @unitizer
+    def __isub__(self, obj: Point | float | int | list) -> Point:
+        super().__isub__(obj)
+
+    @unitizer
+    def __mul__(self, obj: Point | list | float | int) -> Point:
+        super().__mul__(obj)
+    
+    @unitizer
+    def __imul__(self, obj: Point | list | float | int) -> Point:
+        super().__imul__(obj)
+
+    @unitizer
+    def __floordiv__(self, obj: Point | list | float | int) -> Point:
+        super().__floordiv__(obj)
+    
+    @unitizer
+    def __ifloordiv__(self, obj: Point | list | float | int) -> Point:
+        super().__ifloordiv__(obj)
+
+    @unitizer
+    def __truediv__(self, obj: Point | list | float | int) -> Point:
+        super().__truediv__(obj)
+    
+    @unitizer
+    def __itruediv__(self, obj: Point | list | float | int) -> Point:
+        super().__itruediv__(obj)
+
+    @unitizer
+    def __matmul__(self, obj: Point | list) -> Point:
+        super().__matmul__(obj)
+    
+    @unitizer
+    def __imatmul__(self, obj: Point | list) -> Point:
+        super().__imatmul__(obj)
+
+    @staticmethod
+    def from_list(l: list) -> Point:
+        return UnitVector(l[0], l[1], l[2])

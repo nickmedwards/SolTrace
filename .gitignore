@@ -329,3 +329,4 @@ google-tests/*.csv
 
 **/.venv
 **/*.whl
+**/plants/**/internal_*/

@@ -1,4 +1,4 @@
-import ctypes, warnings
+import ctypes, functools, warnings
 from colorama import just_fix_windows_console, Fore, Back, Style
 just_fix_windows_console()
 
@@ -38,6 +38,7 @@ def check_return_code(code, batch_i = None):
         raise STAPIv2Exception(code, 'UNKNOWN', 'Unknown return code received.')
 
 def st_function(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         code_rt = func(*args, **kwargs)
         if isinstance(code_rt, tuple):
