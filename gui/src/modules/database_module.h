@@ -77,6 +77,10 @@ public slots:
     void save_db_at_index(int, QUrl);
     void save_current(QUrl path);
 
+    /// Export current_database to a JSON file path.
+    bool export_current_json(QString path);
+
+    /// Remove current_database from the open database list.
     void delete_current();
 
     /// Add a new blank database to the open database list.

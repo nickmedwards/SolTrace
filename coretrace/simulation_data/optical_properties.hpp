@@ -96,9 +96,12 @@ namespace SolTrace::Data
                 slope_error(slope_err),
                 specularity_error(spec_err)
             {
+                validate();
             }
 
             OpticalPropertiesFace(const nlohmann::ordered_json& jnode);
+
+            void validate() const;
 
             // TODO: What should the error settings be with the below?
             void write_json(nlohmann::ordered_json& jnode) const;
@@ -181,9 +184,15 @@ namespace SolTrace::Data
             };
 
             if (side == OpticalSide::Front || side == OpticalSide::Both)
+            {
                 set_face_props(this->front);
+                this->front.validate();
+            }
             if (side == OpticalSide::Back || side == OpticalSide::Both)
+            {
                 set_face_props(this->back);
+                this->back.validate();
+            }
 
             return;
         }
@@ -236,6 +245,7 @@ namespace SolTrace::Data
                 this->front.error_distribution_type = dtype;
                 this->front.slope_error = slope;
                 this->front.specularity_error = spec;
+                this->front.validate();
             }
 
             if (side == OpticalSide::Back || side == OpticalSide::Both)
@@ -243,6 +253,7 @@ namespace SolTrace::Data
                 this->back.error_distribution_type = dtype;
                 this->back.slope_error = slope;
                 this->back.specularity_error = spec;
+                this->back.validate();
             }
         }
 
