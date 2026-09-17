@@ -50,7 +50,7 @@ ColumnLayout {
                         Layout.fillWidth: true
                         Layout.leftMargin: banner.horizontalPadding
                         Layout.rightMargin: banner.horizontalPadding
-                        Layout.bottomMargin: banner.verticalPadding
+                        Layout.bottomMargin: 8
                         text: "An optical ray tracing tool for modeling concentrating solar power systems. Define your optical geometry, trace rays through the system, and analyze the resulting flux distributions."
                         wrapMode: Text.WordWrap
                     }
