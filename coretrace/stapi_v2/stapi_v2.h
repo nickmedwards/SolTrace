@@ -586,6 +586,9 @@ typedef enum st_api_call : st_uint_t {
 	CALL_ST_SUN_XYZ,
 	CALL_ST_SUN_POSITION,
 	CALL_ST_SUN_USERDATA,
+	CALL_ST_GET_SUN_AZ_ZEN,
+	CALL_ST_GET_SUN_AZ_EL,
+	CALL_ST_GET_SUN_VECTOR,
 	// functions for writing input files for SolTrace
 	CALL_ST_EXPORT_JSON_FILE,
 	// Simlulation Runner Functions
@@ -942,11 +945,14 @@ typedef struct st_api_call_args {
 		args_st_element_optic    element_optic_args;
 		args_st_element_group    element_group_args;
 		// sun functions
-		args_st_add_sun 	 add_sun_args;
-		args_st_sun_shape 	 sun_shape_args;
-		args_st_sun_xyz 	 sun_xyz_args;
-		args_st_sun_position sun_position_args;
-		args_st_sun_userdata sun_userdata_args;
+		args_st_add_sun 	   add_sun_args;
+		args_st_sun_shape 	   sun_shape_args;
+		args_st_sun_xyz 	   sun_xyz_args;
+		args_st_sun_position   sun_position_args;
+		args_st_sun_userdata   sun_userdata_args;
+		args_st_get_sun_az_zen get_sun_az_zen_args;
+		args_st_get_sun_az_el  get_sun_az_el_args;
+		args_st_get_sun_vector get_sun_vector_args;
 		// functions for writing input files for SolTrace
 		args_st_export_json_file export_json_file_args;
 		// Simlulation Runner Functions

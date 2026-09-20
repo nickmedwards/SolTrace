@@ -717,6 +717,7 @@ class SunTests(STAPIv2TestCase):
         self.bad_intensities  = [0, -1]
         self.args_sun = dot_h.args_sun(3, 608, 303, 1000, 5, b' ')
 
+        self.calc = dot_h.SolarPositionCalculationMethod.SPA
         self.loc = dot_h.args_sun_location(40.0, -105.0, -7.0)
         self.dt  = dot_h.args_sun_datetime(2025, 6, 20)
         self.az = 178.61128380
@@ -776,17 +777,17 @@ class SunTests(STAPIv2TestCase):
         self.stapi.data.sun.userdata(3, self.good_angles, self.good_intensities)
 
     def test_sun_az_zen(self):
-        az, zen = self.stapi.data.sun.az_zen(dot_h.SolarPositionCalculationMethod.SPA, self.loc, self.dt)
+        az, zen = self.stapi.data.sun.az_zen(self.calc, self.loc, self.dt)
         self.assertAlmostEqual(az, self.az, 7)
         self.assertAlmostEqual(zen, self.zen, 7)
 
     def test_sun_az_el(self):
-        az, el = self.stapi.data.sun.az_el(dot_h.SolarPositionCalculationMethod.SPA, self.loc, self.dt)
+        az, el = self.stapi.data.sun.az_el(self.calc, self.loc, self.dt)
         self.assertAlmostEqual(az, self.az, 7)
         self.assertAlmostEqual(el, self.el, 7)
 
     def test_sun_vector(self):
-        v = self.stapi.data.sun.vector(dot_h.SolarPositionCalculationMethod.SPA, self.loc, self.dt)
+        v = self.stapi.data.sun.vector(self.calc, self.loc, self.dt)
         self.assertAlmostEqual((v - self.sun_vector).radius(), 0, 6)
 
 class RunnerTests(STAPIv2TestCase):
@@ -960,6 +961,14 @@ class BatchTests(STAPIv2TestCase):
         self.opt_id   = 0
         self.a_params = [2]
         self.s_params = [2, 2]
+
+        self.calc = dot_h.SolarPositionCalculationMethod.SPA
+        self.loc = dot_h.args_sun_location(40.0, -105.0, -7.0)
+        self.dt  = dot_h.args_sun_datetime(2025, 6, 20)
+        self.az = 178.61128380
+        self.el = 73.439035265
+        self.zen = 90 - self.el
+        self.sun_vector = Point(0.006908, -0.2849516, 0.9585169)
 
     def test_simple(self):
         self.stapi.batch.data.json.load('./pysoltrace/sample.json')
@@ -1276,6 +1285,38 @@ class BatchTests(STAPIv2TestCase):
         self.assertEqual(sun['npoints'], 3)
         self.assertEqual(sun['shape'], b'd')
 
+    def test_call_st_get_sun_az_zen(self):
+        rec = self.stapi.batch.data.sun.az_zen(self.calc, self.loc, self.dt)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        self.stapi.batch()
+        az, zen = rec.value
+        self.assertAlmostEqual(az, self.az, 7)
+        self.assertAlmostEqual(zen, self.zen, 7)
+
+    def test_call_st_get_sun_az_el(self):
+        rec = self.stapi.batch.data.sun.az_el(self.calc, self.loc, self.dt)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        self.stapi.batch()
+        az, el = rec.value
+        self.assertAlmostEqual(az, self.az, 7)
+        self.assertAlmostEqual(el, self.el, 7)
+
+    def test_call_st_get_sun_vector(self):
+        rec = self.stapi.batch.data.sun.vector(self.calc, self.loc, self.dt)
+
+        # test value is None before batching
+        self.assertEqual(rec.value, None)
+
+        self.stapi.batch()
+        v = rec.value
+        self.assertAlmostEqual((v - self.sun_vector).radius(), 0, 6)
+    
     # functions for SolTrace runner management
     def test_call_st_sim_setup(self):
         self.stapi.data.json.load('./pysoltrace/sample.json')

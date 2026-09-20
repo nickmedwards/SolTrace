@@ -1887,6 +1887,37 @@ STAPI_V2 st_return_t st_batch(st_context_v2_t  pcxt,
                                            call_args->payload.sun_userdata_args.intensity);
                     break;
                 }
+                case st_api_call::CALL_ST_GET_SUN_AZ_ZEN:
+                {
+                    code = st_get_sun_az_zen(pcxt,
+                                             call_args->payload.get_sun_az_zen_args.calc,
+                                             call_args->payload.get_sun_az_zen_args.loc,
+                                             call_args->payload.get_sun_az_zen_args.dt,
+                                             call_args->payload.get_sun_az_zen_args.azimuth,
+                                             call_args->payload.get_sun_az_zen_args.zenith);
+                    break;
+                }
+                case st_api_call::CALL_ST_GET_SUN_AZ_EL:
+                { 
+                    code = st_get_sun_az_el(pcxt,
+                                            call_args->payload.get_sun_az_el_args.calc,
+                                            call_args->payload.get_sun_az_el_args.loc,
+                                            call_args->payload.get_sun_az_el_args.dt,
+                                            call_args->payload.get_sun_az_el_args.azimuth,
+                                            call_args->payload.get_sun_az_el_args.elevation);
+                    break;
+                }
+                case st_api_call::CALL_ST_GET_SUN_VECTOR:
+                {
+                    code = st_get_sun_vector(pcxt,
+                                             call_args->payload.get_sun_vector_args.calc,
+                                             call_args->payload.get_sun_vector_args.loc,
+                                             call_args->payload.get_sun_vector_args.dt,
+                                             call_args->payload.get_sun_vector_args.sun_x,
+                                             call_args->payload.get_sun_vector_args.sun_y,
+                                             call_args->payload.get_sun_vector_args.sun_z);
+                    break;
+                }
                 // functions for writing input files for SolTrace
                 case st_api_call::CALL_ST_EXPORT_JSON_FILE:
                 {
