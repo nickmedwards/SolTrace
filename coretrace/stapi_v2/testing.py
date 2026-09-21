@@ -363,6 +363,48 @@ class ConstantsTests(STAPIv2TestCase):
             with self.assertWarns(UserWarning):
                 check_return_code(i)
 
+    def test_args_simulation_parameters(self):
+        args = (1, 100, .1, 35.962278, -106.5122622, True, True, False)
+        params = _STC.args_simulation_parameters(*args)
+        c_params = dot_h.args_simulation_parameters(*args)
+        self.assertStructEqual(params.ctype, c_params)
+
+    def test_args_optical_properties_face(self):
+        args = (.5, .5, 5, 5, b'g')
+        face = _STC.args_optical_properties_face(*args)
+        c_face = dot_h.args_optical_properties_face(*args)
+        self.assertStructEqual(face.ctype, c_face)
+
+    def test_args_optical_properties_set(self):
+        args = (b'test', 1.1, 1.1, 2)
+        opt_set = _STC.args_optical_properties_set(*args)
+        c_opt_set = dot_h.args_optical_properties_set(*args)
+        self.assertStructEqual(opt_set.ctype, c_opt_set)
+
+    def test_args_element(self):
+        args = (2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
+        el = _STC.args_element(*args)
+        c_el = dot_h.args_element(*args)
+        self.assertStructEqual(el.ctype, c_el)
+
+    def test_args_sun(self):
+        args = (0, 2, 2, 2, .5, b'b')
+        sun = _STC.args_sun(*args)
+        c_sun = dot_h.args_sun(*args)
+        self.assertStructEqual(sun.ctype, c_sun)
+
+    def test_args_sun_location(self):
+        args = (40.0, -105.0, -7.0)
+        loc = _STC.args_sun_location(*args)
+        c_loc = dot_h.args_sun_location(*args)
+        self.assertStructEqual(loc.ctype, c_loc)
+
+    def test_args_sun_datetime(self):
+        args = (2025, 6, 20)
+        dt = _STC.args_sun_datetime(*args)
+        c_dt = dot_h.args_sun_datetime(*args)
+        self.assertStructEqual(dt.ctype, c_dt)
+
 class ParametersTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()

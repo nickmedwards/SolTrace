@@ -43,6 +43,7 @@ class sun(batcher):
     #                                 ctypes.byref(ctypes.pointer(intensity)))
     #     return code, args.value, angle, intensity
 
+    # TODO:
     def shape(self,
               shape: bytes,
               sigma_halfwidth_csr: float) -> None:
@@ -93,7 +94,7 @@ class sun(batcher):
                                  ctypes.pointer(dt),
                                  ctypes.pointer(az),
                                  ctypes.pointer(zen))
-        return self.adder(call, lambda: az.value, zen.value)
+        return self.adder(call, lambda: (az.value, zen.value))
 
     def az_el(self,
               calc: int,
@@ -107,7 +108,7 @@ class sun(batcher):
                                  ctypes.pointer(dt),
                                  ctypes.pointer(az),
                                  ctypes.pointer(el))
-        return self.adder(call, lambda: az.value, el.value)
+        return self.adder(call, lambda: (az.value, el.value))
 
     def vector(self,
                calc: int,

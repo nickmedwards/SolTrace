@@ -90,16 +90,148 @@ ST_RETURN_CODE_WARNING_MSG = {
 _CTYPES_RE = re.compile(r"(?<=<class 'ctypes\.)[A-Za-z_0-9.<>]+(?='>)")
 
 # reexport structs in constants so it can be used in type hinting
-class args_simulation_parameters(dot_h.args_simulation_parameters): pass
-class args_optical_properties_set(dot_h.args_optical_properties_set): pass
-class args_optical_properties_face(dot_h.args_optical_properties_face): pass
-class args_element(dot_h.args_element): pass
-class args_sun(dot_h.args_sun): pass
-class args_sun_location(dot_h.args_sun_location): pass
-class args_sun_datetime(dot_h.args_sun_datetime): pass
-class st_api_call_args(dot_h.st_api_call_args): pass
+class base_args:
+    @property
+    def ctype(self): return NotImplemented
 
 @dataclass
-class st_api_pair():
-    func: ctypes._CFuncPtr
-    args: st_api_call_args
+class args_simulation_parameters(base_args):
+    number_of_rays:           int
+    max_number_of_rays:       int
+    tolerance:                float
+    latitude:                 float
+    longitude:                float
+    include_sun_shape_errors: bool
+    include_optical_errors:   bool
+    as_power_tower:           bool
+
+    @property
+    def ctype(self):
+        return dot_h.args_simulation_parameters(self.number_of_rays,
+                                                self.max_number_of_rays,
+                                                self.tolerance,
+                                                self.latitude,
+                                                self.longitude,
+                                                self.include_sun_shape_errors,
+                                                self.include_optical_errors,
+                                                self.as_power_tower)
+@dataclass
+class args_optical_properties_face(base_args):
+    transmissivity: float
+    reflectivity: float
+    slope_error: float
+    specularity_error: float
+    error_distribution_type: str
+
+    @property
+    def ctype(self):
+        return dot_h.args_optical_properties_face(self.transmissivity,
+                                                 self.reflectivity,
+                                                 self.slope_error,
+                                                 self.specularity_error,
+                                                 self.error_distribution_type)
+
+@dataclass
+class args_optical_properties_set(base_args):
+    name:                   str
+    refraction_index_front: float
+    refraction_index_back:  float
+    type:                   int
+
+    @property
+    def ctype(self):
+        return dot_h.args_optical_properties_set(self.name,
+                                                  self.refraction_index_front,
+                                                  self.refraction_index_back,
+                                                  self.type)
+    
+@dataclass
+class args_element(base_args):
+    x:            float
+    y:            float
+    z:            float
+    ax:           float
+    ay:           float
+    az:           float
+    zrot:         float
+    enabled_flag: bool
+    virtual_flag: bool
+    ap:           str
+    surf:         str
+    group:        int = -1
+
+    @property
+    def ctype(self):
+        return dot_h.args_element(self.x,
+                                  self.y,
+                                  self.z,
+                                  self.ax,
+                                  self.ay,
+                                  self.az,
+                                  self.zrot,
+                                  self.enabled_flag,
+                                  self.virtual_flag,
+                                  self.ap,
+                                  self.surf,
+                                  self.group)
+
+@dataclass
+class args_sun(base_args):
+    npoints:             int
+    x:                   float
+    y:                   float
+    z:                   float
+    sigma_halfwidth_csr: float
+    shape:               str
+
+    @property
+    def ctype(self):
+        return dot_h.args_sun(self.npoints,
+                              self.x,
+                              self.y,
+                              self.z,
+                              self.sigma_halfwidth_csr,
+                              self.shape)
+
+@dataclass
+class args_sun_location(base_args):
+    latitude:  float
+    longitude: float
+    timeZone:  float
+    altitude:  float = 0
+
+    @property
+    def ctype(self):
+        return dot_h.args_sun_location(self.latitude,
+                                       self.longitude,
+                                       self.timeZone,
+                                       self.altitude)
+
+@dataclass
+class args_sun_datetime(base_args):
+    year:   int
+    month:  int
+    day:    int
+    hour:   int = 12
+    minute: int = 0
+    second: int = 0
+
+    @property
+    def ctype(self):
+        return dot_h.args_sun_datetime(self.year,
+                                       self.month,
+                                       self.day,
+                                       self.hour,
+                                       self.minute,
+                                       self.second)
+
+# @dataclass
+# class st_api_call_args(base_args):
+#     @property
+#     def ctype(self):
+#         return dot_h.st_api_call_args()
+
+# @dataclass
+# class st_api_pair():
+#     func: ctypes._CFuncPtr
+#     args: st_api_call_args
