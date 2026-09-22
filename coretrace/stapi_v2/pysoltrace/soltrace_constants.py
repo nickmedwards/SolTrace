@@ -51,7 +51,7 @@ class surface(Enum):
 # st_return_code name/message set up #
 ######################################
 
-ST_RETURN_CODE_NAME = { code: code.name for code in dot_h.st_return_code }
+ST_RETURN_CODE_NAME = { code.value: code.name for code in dot_h.st_return_code }
 
 # messages for return codes
 ST_RETURN_CODE_ERROR_MSG = {
