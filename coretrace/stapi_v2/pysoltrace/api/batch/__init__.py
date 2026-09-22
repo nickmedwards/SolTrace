@@ -22,7 +22,7 @@ class batch_record:
 
     def __repr__(self):
         call = dot_h.st_api_call(self.batch_call.type)
-        return f'{call.name} ({call.value}): {self.ready}'
+        return f'{call.name} ({call.ready}): {self.value}'
 
 class batch(context):
     def __init__(self, pdll, pcxt):
