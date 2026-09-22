@@ -35,6 +35,7 @@ class batch(context):
         self.legacy     = legacy(self.add)
 
         self.__called = 0
+        # TODO: speed test without the internal list, ie make __call__ take a list
         self.__calls: list[batch_record] = []
 
     def add(self, api_call, get_res = None):
@@ -53,7 +54,7 @@ class batch(context):
         callable_brs = self.__calls[self.__called:]
         void_cast = lambda c: ctypes.cast(ctypes.byref(c), ctypes.c_void_p)
         arr = lambda calls, num: (ctypes.c_void_p * num)(*[
-            void_cast(br.batch_call) for br in calls
+            ctypes.cast(ctypes.byref(br.batch_call), ctypes.c_void_p) for br in calls
         ])
         fail_iteration = ctypes.c_uint(0)
 

@@ -42,11 +42,11 @@ def _highlight_int(val: int, buf: int, color_bounds: tuple[list[float], list[flo
         return f'{Fore.MAGENTA}{right_int(val, buf)}{Style.RESET_ALL}'
     else: return right_int(val, buf)
 
-def _highlight(toggle: bool, val: float | int, buf: int, p: int = 7, color_bounds: tuple[list[float], list[float], float, float] = None):
+def _highlight(toggle: bool, val: float | int, buf: int, p: int = 7, color_bounds: list[tuple[list[float], list[float], float, float]] = None, color_i: int = 0):
     is_float = isinstance(val, float)
     if toggle:
         buf_func = _highlight_float if is_float else _highlight_int
-        _args = (val, buf, p, color_bounds) if is_float else (val, buf, color_bounds)
+        _args = (val, buf, p, color_bounds[color_i]) if is_float else (val, buf, color_bounds[color_i])
     else:
         buf_func = right_float if is_float else right_int
         _args = (val, buf, p) if is_float else (val, buf)
@@ -88,11 +88,11 @@ class timer():
         for i in range(stats.shape[0]):
             vals = stats[i, :]
             report_line = [f"  {timed_keys[i]:<{max_key_len}}  "]
-            report_line.append(_highlight(color_toggle, vals[0], max_sum_len, self.precision, colored_values[0] if color_toggle else None))
+            report_line.append(_highlight(color_toggle, vals[0], max_sum_len, self.precision, colored_values, 0)) # [0] if color_toggle else None
             if (count := int(vals[-1])) > 1:
-                report_line.extend([_highlight(color_toggle, vals[j], max_sum_len, self.precision, colored_values[j])
+                report_line.extend([_highlight(color_toggle, vals[j], max_sum_len, self.precision, colored_values, j)
                                     for j in range(1, stats.shape[1] - 1)])
-                report_line.append(_highlight(color_toggle, count, max_sum_len, self.precision, colored_values[-1]))
+                report_line.append(_highlight(color_toggle, count, max_sum_len, self.precision, colored_values, -1))
             formatted_lines.append(''.join(report_line))
 
         # add total row and footer

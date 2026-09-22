@@ -9,8 +9,6 @@ from pysoltrace.api import api, STAPIv2Exception # soltrace_constants
 
 from pysoltrace.legacy import legacy as PySolTrace # api, dot_h, soltrace_json, math_utils, Point
 
-# _api = api.STAPIv2()
-
 __all__ = [
     'dot_h',
     'found_in',

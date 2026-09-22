@@ -3,7 +3,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 
 import numpy as np
 
-from pysoltrace import PySolTrace as pst, Point, STAPIv2
+from pysoltrace import PySolTrace as pst, Point
 
 CONVERT_GLOBAL = np.array([[-1., 0., 0.],
                            [ 0., 0., 1.],

@@ -58,22 +58,10 @@ try:
     from timer import timer, benchmark_store # pyright: ignore[reportMissingModuleSource]
     from api.utils import check_return_code
     from api.batch.utils import generate_api_call
-    # from chedder import dot_h, found_in
-    # import soltrace_constants as _STC
-    # import soltrace_json as _stjson
-    # from point import Point
-    # from stapi_v2 import STAPIv2, STAPIv2Exception
-    # from legacy import legacy
 except ImportError:
     from .timer import timer, benchmark_store
     from .api.utils import check_return_code
     from .api.batch.utils import generate_api_call
-    # from .chedder import dot_h, found_in
-    # from . import soltrace_constants as _STC
-    # from . import soltrace_json as _stjson
-    # from .point import Point
-    # from .stapi_v2 import STAPIv2, STAPIv2Exception
-    # from .legacy import legacy
 
 from pysoltrace import api, dot_h, soltrace_json as _stjson
 
