@@ -43,7 +43,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from pysoltrace import api, dot_h, soltrace_json as st_json, math_utils, Point
+from pysoltrace import api, dot_h, soltrace_json as st_json, math_utils, Point, soltrace_constants as _STC
 
 _default_cls_arg = lambda arg, default_cls, *args: arg if arg != None else default_cls(*args)
 
@@ -179,16 +179,16 @@ class _Optics:
         else:            return new_optics
 
     def Create(self, stapi: api, _do: bool = False):
-        opt_set = dot_h.args_optical_properties_set(self.name.encode(), 
+        opt_set = _STC.optical_properties_set(self.name.encode(), 
                                                     self.front.refraction_real,
                                                     self.back.refraction_real,
                                                     self.type)
-        front   = dot_h.args_optical_properties_face(self.front.transmissivity,
+        front   = _STC.optical_properties_face(self.front.transmissivity,
                                                      self.front.reflectivity,
                                                      self.front.slope_error,
                                                      self.front.spec_error,
                                                      self.front.dist_type[0].encode())
-        back    = dot_h.args_optical_properties_face(self.back.transmissivity,
+        back    = _STC.optical_properties_face(self.back.transmissivity,
                                                      self.back.reflectivity,
                                                      self.back.slope_error,
                                                      self.back.spec_error,
@@ -256,7 +256,7 @@ class _Sun:
 
     def Create(self, stapi: api, _do: bool = False):
         npoints = len(self.user_intensity_table)
-        args = dot_h.args_sun(npoints,
+        args = _STC.sun(npoints,
                               self.position.x,
                               self.position.y,
                               self.position.z,
@@ -390,7 +390,7 @@ class _Element:
 
     def Create(self, stapi: api, unstager: callable | None = None, _do: bool = False):
         # TODO: unstage element position/aim
-        el_args = dot_h.args_element(*(unstager(self.position) if unstager else self.position),
+        el_args = _STC.element(*(unstager(self.position) if unstager else self.position),
                                      *(unstager(self.aim) if unstager else self.aim),
                                      self.zrot,
                                      self.enabled,

@@ -365,50 +365,50 @@ class ConstantsTests(STAPIv2TestCase):
 
     def test_args_simulation_parameters(self):
         args = (1, 100, .1, 35.962278, -106.5122622, True, True, False)
-        params = _STC.args_simulation_parameters(*args)
+        params = _STC.simulation_parameters(*args)
         c_params = dot_h.args_simulation_parameters(*args)
         self.assertStructEqual(params.ctype, c_params)
 
     def test_args_optical_properties_face(self):
         args = (.5, .5, 5, 5, b'g')
-        face = _STC.args_optical_properties_face(*args)
+        face = _STC.optical_properties_face(*args)
         c_face = dot_h.args_optical_properties_face(*args)
         self.assertStructEqual(face.ctype, c_face)
 
     def test_args_optical_properties_set(self):
         args = (b'test', 1.1, 1.1, 2)
-        opt_set = _STC.args_optical_properties_set(*args)
+        opt_set = _STC.optical_properties_set(*args)
         c_opt_set = dot_h.args_optical_properties_set(*args)
         self.assertStructEqual(opt_set.ctype, c_opt_set)
 
     def test_args_element(self):
         args = (2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
-        el = _STC.args_element(*args)
+        el = _STC.element(*args)
         c_el = dot_h.args_element(*args)
         self.assertStructEqual(el.ctype, c_el)
 
     def test_args_sun(self):
         args = (0, 2, 2, 2, .5, b'b')
-        sun = _STC.args_sun(*args)
+        sun = _STC.sun(*args)
         c_sun = dot_h.args_sun(*args)
         self.assertStructEqual(sun.ctype, c_sun)
 
     def test_args_sun_location(self):
         args = (40.0, -105.0, -7.0)
-        loc = _STC.args_sun_location(*args)
+        loc = _STC.sun_location(*args)
         c_loc = dot_h.args_sun_location(*args)
         self.assertStructEqual(loc.ctype, c_loc)
 
     def test_args_sun_datetime(self):
         args = (2025, 6, 20)
-        dt = _STC.args_sun_datetime(*args)
+        dt = _STC.sun_datetime(*args)
         c_dt = dot_h.args_sun_datetime(*args)
         self.assertStructEqual(dt.ctype, c_dt)
 
 class ParametersTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()
-        self.params = dot_h.args_simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
+        self.params = _STC.simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
 
     def test_set_parameters(self):
         self.stapi.parameters.set(self.params)
@@ -417,7 +417,7 @@ class ParametersTests(STAPIv2TestCase):
         self.stapi.parameters.set(self.params)
 
         rt_params = self.stapi.parameters.get()
-        self.assertDictEqual(rt_params, self.params.value)
+        self.assertDictEqual(rt_params, self.params.ctype.value)
 
     def test_set_ray_parameters(self):
         self.stapi.parameters.rays(10, 1000)
@@ -496,21 +496,21 @@ class DataJSONTests(STAPIv2TestCase):
 class OpticalPropertiesTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()
-        self.opt_set = dot_h.args_optical_properties_set(b'test', 1.1, 1.1, 2)
-        self.front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, b'g')
-        self.back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, b'g')
+        self.opt_set = _STC.optical_properties_set(b'test', 1.1, 1.1, 2)
+        self.front   = _STC.optical_properties_face(.5, .5, 5, 5, b'g')
+        self.back    = _STC.optical_properties_face(.25, .25, 2, 2, b'g')
 
     def test_add_optic(self):
         optical_id = self.stapi.data.optic.add(self.opt_set, self.front, self.back)
         self.assertEqual(optical_id, 0)
 
         with self.assertRaises(STAPIv2Exception) as ex:
-            bad_front = dot_h.args_optical_properties_face(.5, .5, 5, 5, b'z')
+            bad_front = _STC.optical_properties_face(.5, .5, 5, 5, b'z')
             self.stapi.data.optic.add(self.opt_set, bad_front, self.back)
         self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
         with self.assertRaises(STAPIv2Exception) as ex:
-            bad_back = dot_h.args_optical_properties_face(.25, .25, 2, 2, b'z')
+            bad_back = _STC.optical_properties_face(.25, .25, 2, 2, b'z')
             self.stapi.data.optic.add(self.opt_set, self.front, bad_back)
         self.assertEqual(ex.exception.code, dot_h.st_return_code.INVALID_ARGUMENTS)
 
@@ -520,9 +520,9 @@ class OpticalPropertiesTests(STAPIv2TestCase):
 
         _opt_set, _front, _back = self.stapi.data.optic.get(optical_id)
 
-        self.assertDictEqual(_opt_set, self.opt_set.value)
-        self.assertDictEqual(_front, self.front.value)
-        self.assertDictEqual(_back, self.back.value)
+        self.assertDictEqual(_opt_set, self.opt_set.ctype.value)
+        self.assertDictEqual(_front, self.front.ctype.value)
+        self.assertDictEqual(_back, self.back.ctype.value)
 
         with self.assertRaises(STAPIv2Exception) as ex:
             self.stapi.data.optic.get(optical_id + 1)
@@ -555,12 +555,12 @@ class ElementTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()
         # set up dummy optical set
-        opt_set = dot_h.args_optical_properties_set(b'dummy', 1.1, 1.1, 0)
-        front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, b'g')
-        back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, b'g')
+        opt_set = _STC.optical_properties_set(b'dummy', 1.1, 1.1, 0)
+        front   = _STC.optical_properties_face(.5, .5, 5, 5, b'g')
+        back    = _STC.optical_properties_face(.25, .25, 2, 2, b'g')
         
         self.stapi.data.optic.add(opt_set, front, back)
-        self.el_args = dot_h.args_element(2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
+        self.el_args = _STC.element(2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
         self.opt_id = 0
         self.a_params = [2]
         self.s_params = [2, 2]
@@ -609,7 +609,7 @@ class ElementTests(STAPIv2TestCase):
 
         args, optic_id, a_params, s_params = self.stapi.data.element.get(id)
 
-        self.assertDictEqual(args, self.el_args.value)
+        self.assertDictEqual(args, self.el_args.ctype.value)
         self.assertEqual(optic_id, self.opt_id)
         self.assertEqual(a_params[0], self.a_params[0])
         self.assertEqual(s_params[0], 1 / (2 * self.s_params[0]))
@@ -757,11 +757,11 @@ class SunTests(STAPIv2TestCase):
         self.good_angles      = [0, 1, 2]
         self.good_intensities = [0, 1, 2]
         self.bad_intensities  = [0, -1]
-        self.args_sun = dot_h.args_sun(3, 608, 303, 1000, 5, b' ')
+        self.args_sun = _STC.sun(3, 608, 303, 1000, 5, b' ')
 
         self.calc = dot_h.SolarPositionCalculationMethod.SPA
-        self.loc = dot_h.args_sun_location(40.0, -105.0, -7.0)
-        self.dt  = dot_h.args_sun_datetime(2025, 6, 20)
+        self.loc = _STC.sun_location(40.0, -105.0, -7.0)
+        self.dt  = _STC.sun_datetime(2025, 6, 20)
         self.az = 178.61128380
         self.el = 73.439035265
         self.zen = 90 - self.el
@@ -789,11 +789,11 @@ class SunTests(STAPIv2TestCase):
         self.stapi.data.sun.add(self.args_sun, self.good_angles, self.good_intensities)
 
     def test_get_sun(self):
-        sun_args = dot_h.args_sun(0, 608, 303, 1000, .5, b'b')
+        sun_args = _STC.sun(0, 608, 303, 1000, .5, b'b')
         self.stapi.data.sun.add(sun_args)
 
         rt_sun_args, rt_angle, rt_intensity = self.stapi.data.sun.get()
-        self.assertDictEqual(rt_sun_args, sun_args.value)
+        self.assertDictEqual(rt_sun_args, sun_args.ctype.value)
         # TODO: test userdata
 
     def test_sun_shape(self):
@@ -988,25 +988,25 @@ class BatchTests(STAPIv2TestCase):
     def setUp(self):
         super().setUp()
         # set up dummy values
-        self.sim_params = dot_h.args_simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
+        self.sim_params = _STC.simulation_parameters(1, 100, .1, 35.962278, -106.5122622, True, True, False)
 
-        self.args_sun_buie = dot_h.args_sun(0, 2, 2, 2, .5, b'b')
-        self.args_sun_user = dot_h.args_sun(3, 608, 303, 1000, 5, b' ')
+        self.args_sun_buie = _STC.sun(0, 2, 2, 2, .5, b'b')
+        self.args_sun_user = _STC.sun(3, 608, 303, 1000, 5, b' ')
         self.good_angles      = [0, 1, 2]
         self.good_intensities = [0, 1, 2]
         
-        self.opt_set = dot_h.args_optical_properties_set(b'dummy', 1.1, 1.1, 2)
-        self.front   = dot_h.args_optical_properties_face(.5, .5, 5, 5, b'g')
-        self.back    = dot_h.args_optical_properties_face(.25, .25, 2, 2, b'g')
+        self.opt_set = _STC.optical_properties_set(b'dummy', 1.1, 1.1, 2)
+        self.front   = _STC.optical_properties_face(.5, .5, 5, 5, b'g')
+        self.back    = _STC.optical_properties_face(.25, .25, 2, 2, b'g')
         
-        self.el_args  = dot_h.args_element(2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
+        self.el_args  = _STC.element(2, 2, 2, 2, 2, 2, 2, False, True, b'c', b'p')
         self.opt_id   = 0
         self.a_params = [2]
         self.s_params = [2, 2]
 
         self.calc = dot_h.SolarPositionCalculationMethod.SPA
-        self.loc = dot_h.args_sun_location(40.0, -105.0, -7.0)
-        self.dt  = dot_h.args_sun_datetime(2025, 6, 20)
+        self.loc = _STC.sun_location(40.0, -105.0, -7.0)
+        self.dt  = _STC.sun_datetime(2025, 6, 20)
         self.az = 178.61128380
         self.el = 73.439035265
         self.zen = 90 - self.el
@@ -1046,7 +1046,7 @@ class BatchTests(STAPIv2TestCase):
         # batch call and get/test record value 
         self.stapi.batch()
         rt_params = self.stapi.parameters.get()
-        self.assertDictEqual(rt_params, self.sim_params.value)
+        self.assertDictEqual(rt_params, self.sim_params.ctype.value)
 
     def test_call_st_sim_rays(self):
         self.stapi.batch.parameters.rays(10, 1000)
@@ -1269,7 +1269,7 @@ class BatchTests(STAPIv2TestCase):
         self.stapi.data.optic.add(self.opt_set, self.front, self.back)
         id = self.stapi.data.element.add(self.el_args, self.opt_id, self.a_params, self.s_params)
 
-        other_opt = dot_h.args_optical_properties_set(b'other', 1.1, 1.1, 0)
+        other_opt = _STC.optical_properties_set(b'other', 1.1, 1.1, 0)
         other_id = self.stapi.data.optic.add(other_opt, self.front, self.back)
 
         self.stapi.batch.data.element.optic(id, other_id)
@@ -1304,7 +1304,7 @@ class BatchTests(STAPIv2TestCase):
 
         self.stapi.batch()
         sun, *_ = self.stapi.data.sun.get()
-        self.assertDictEqual(sun, self.args_sun_buie.value)
+        self.assertDictEqual(sun, self.args_sun_buie.ctype.value)
 
     def test_call_st_sun_xyz(self):
         self.stapi.data.sun.add(self.args_sun_buie)
@@ -1499,7 +1499,7 @@ class LegacyTests(STAPIv2TestCase):
         self.sun.position = Point(608, 303, 1000)
         self.sun.shape = 'b'
         self.sun.sigma = .5
-        self.sun_args = dot_h.args_sun(0, 608, 303, 1000, .5, 'b'.encode())
+        self.sun_args = _STC.sun(0, 608, 303, 1000, .5, 'b'.encode())
 
         # optical property set
         self.opt = self.legacy.add_optic('dummy')
@@ -1520,9 +1520,9 @@ class LegacyTests(STAPIv2TestCase):
         self.opt.back.slope_error     = 2
         self.opt.back.spec_error      = 2
 
-        self.opt_args   = dot_h.args_optical_properties_set("dummy".encode(), 1.6, 1.2, 2)
-        self.front_args = dot_h.args_optical_properties_face(.6, .6, 6, 6, 'f'.encode())
-        self.back_args  = dot_h.args_optical_properties_face(.2, .2, 2, 2, 'p'.encode())
+        self.opt_args   = _STC.optical_properties_set("dummy".encode(), 1.6, 1.2, 2)
+        self.front_args = _STC.optical_properties_face(.6, .6, 6, 6, 'f'.encode())
+        self.back_args  = _STC.optical_properties_face(.2, .2, 2, 2, 'p'.encode())
 
         # dummy element (e is 5th letter)
         self.stage = self.legacy.add_stage()
@@ -1535,7 +1535,7 @@ class LegacyTests(STAPIv2TestCase):
         self.el.aperture_circle(5)
         self.el.surface_parabolic(5, 5)
 
-        self.el_args = dot_h.args_element(5, 5, 5, 5, 5, 5, 5, True, False, 'c'.encode(), 'p'.encode())
+        self.el_args = _STC.element(5, 5, 5, 5, 5, 5, 5, True, False, 'c'.encode(), 'p'.encode())
         self.opt_id = 0
         self.a_params = [5]
         self.s_params = [5, 5]
@@ -1544,15 +1544,15 @@ class LegacyTests(STAPIv2TestCase):
         self.sun.Create(self.stapi, _do = True)
 
         rt_sun_args, *_ = self.stapi.data.sun.get()
-        self.assertDictEqual(rt_sun_args, self.sun_args.value)
+        self.assertDictEqual(rt_sun_args, self.sun_args.ctype.value)
 
     def test_legacy_optic(self):
         self.opt.Create(self.stapi, _do = True)
 
         _opt_set, _front, _back = self.stapi.data.optic.get(0)
-        self.assertDictEqual(_opt_set, self.opt_args.value)
-        self.assertDictEqual(_front, self.front_args.value)
-        self.assertDictEqual(_back, self.back_args.value)
+        self.assertDictEqual(_opt_set, self.opt_args.ctype.value)
+        self.assertDictEqual(_front, self.front_args.ctype.value)
+        self.assertDictEqual(_back, self.back_args.ctype.value)
 
     def test_legacy_element(self):
         self.opt.Create(self.stapi, _do = True)
@@ -1560,7 +1560,7 @@ class LegacyTests(STAPIv2TestCase):
 
         args, optic_id, a_params, s_params = self.stapi.data.element.get(1)
         
-        self.assertDictEqual(args, self.el_args.value)
+        self.assertDictEqual(args, self.el_args.ctype.value)
         self.assertEqual(optic_id, self.opt_id)
         self.assertEqual(a_params[0], self.a_params[0])
         self.assertEqual(s_params[0], 1 / (2 * self.s_params[0]))

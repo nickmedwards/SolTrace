@@ -95,7 +95,7 @@ class base_args:
     def ctype(self): return NotImplemented
 
 @dataclass
-class args_simulation_parameters(base_args):
+class simulation_parameters(base_args):
     number_of_rays:           int
     max_number_of_rays:       int
     tolerance:                float
@@ -116,7 +116,7 @@ class args_simulation_parameters(base_args):
                                                 self.include_optical_errors,
                                                 self.as_power_tower)
 @dataclass
-class args_optical_properties_face(base_args):
+class optical_properties_face(base_args):
     transmissivity: float
     reflectivity: float
     slope_error: float
@@ -132,7 +132,7 @@ class args_optical_properties_face(base_args):
                                                  self.error_distribution_type)
 
 @dataclass
-class args_optical_properties_set(base_args):
+class optical_properties_set(base_args):
     name:                   str
     refraction_index_front: float
     refraction_index_back:  float
@@ -146,7 +146,7 @@ class args_optical_properties_set(base_args):
                                                   self.type)
     
 @dataclass
-class args_element(base_args):
+class element(base_args):
     x:            float
     y:            float
     z:            float
@@ -176,7 +176,7 @@ class args_element(base_args):
                                   self.group)
 
 @dataclass
-class args_sun(base_args):
+class sun(base_args):
     npoints:             int
     x:                   float
     y:                   float
@@ -194,7 +194,7 @@ class args_sun(base_args):
                               self.shape)
 
 @dataclass
-class args_sun_location(base_args):
+class sun_location(base_args):
     latitude:  float
     longitude: float
     timeZone:  float
@@ -208,7 +208,7 @@ class args_sun_location(base_args):
                                        self.altitude)
 
 @dataclass
-class args_sun_datetime(base_args):
+class sun_datetime(base_args):
     year:   int
     month:  int
     day:    int

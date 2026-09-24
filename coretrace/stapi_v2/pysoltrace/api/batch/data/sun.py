@@ -17,7 +17,7 @@ _VEC = dot_h.st_api_call.CALL_ST_GET_SUN_VECTOR
 ###################################
 class sun(batcher):
     def add(self,
-            args: _STC.args_sun,
+            args: _STC.sun,
             angle: list[float] = [],
             intensity: list[float] = []) -> None:
         args.npoints = len(angle)
@@ -28,12 +28,12 @@ class sun(batcher):
         _angle     = (ctypes.c_double * len(angle))(*angle)
         _intensity = (ctypes.c_double * len(angle))(*intensity)
         return self.adder(generate_api_call(_ADD,
-                                            ctypes.pointer(args),
+                                            ctypes.pointer(args.ctype),
                                             _angle,
                                             _intensity))
 
     # TODO:
-    # def get(self) -> tuple[_STC.args_sun, list[float], list[float]]:
+    # def get(self) -> tuple[_STC.sun, list[float], list[float]]:
     #     args = dot_h.args_sun()
     #     angle = ctypes.c_double()
     #     intensity = ctypes.c_double()
@@ -84,43 +84,43 @@ class sun(batcher):
 
     def az_zen(self,
                calc: int,
-               loc:  _STC.args_sun_location,
-               dt:   _STC.args_sun_datetime) -> tuple[float, float]:
+               loc:  _STC.sun_location,
+               dt:   _STC.sun_datetime) -> tuple[float, float]:
         az  = ctypes.c_double()
         zen = ctypes.c_double()
         call = generate_api_call(_AZ,
                                  calc,
-                                 ctypes.pointer(loc),
-                                 ctypes.pointer(dt),
+                                 ctypes.pointer(loc.ctype),
+                                 ctypes.pointer(dt.ctype),
                                  ctypes.pointer(az),
                                  ctypes.pointer(zen))
         return self.adder(call, lambda: (az.value, zen.value))
 
     def az_el(self,
               calc: int,
-              loc:  _STC.args_sun_location,
-              dt:   _STC.args_sun_datetime) -> tuple[float, float]:
+              loc:  _STC.sun_location,
+              dt:   _STC.sun_datetime) -> tuple[float, float]:
         az = ctypes.c_double()
         el = ctypes.c_double()
         call = generate_api_call(_AE,
                                  calc,
-                                 ctypes.pointer(loc),
-                                 ctypes.pointer(dt),
+                                 ctypes.pointer(loc.ctype),
+                                 ctypes.pointer(dt.ctype),
                                  ctypes.pointer(az),
                                  ctypes.pointer(el))
         return self.adder(call, lambda: (az.value, el.value))
 
     def vector(self,
                calc: int,
-               loc:  _STC.args_sun_location,
-               dt:   _STC.args_sun_datetime) -> Point:
+               loc:  _STC.sun_location,
+               dt:   _STC.sun_datetime) -> Point:
         sun_x = ctypes.c_double()
         sun_y = ctypes.c_double()
         sun_z = ctypes.c_double()
         call = generate_api_call(_VEC,
                                  calc,
-                                 ctypes.pointer(loc),
-                                 ctypes.pointer(dt),
+                                 ctypes.pointer(loc.ctype),
+                                 ctypes.pointer(dt.ctype),
                                  ctypes.pointer(sun_x),
                                  ctypes.pointer(sun_y),
                                  ctypes.pointer(sun_z))

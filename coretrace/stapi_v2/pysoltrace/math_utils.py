@@ -59,6 +59,8 @@ def euler_angles(origin:   Point | list | np.ndarray,
         if d == 0:
             return
         dv /= d
+            # math.atan2(-dv[0], math.sqrt(dv[1]**2 + dv[2]**2)),
+            # math.atan2(-dv[1], dv[2]),
         euler = np.array([
             math.atan2(dv[0], dv[2]),
             math.asin(dv[1]),
@@ -361,7 +363,7 @@ def get_unstager(pos: Point | list | np.ndarray, aim: Point | list | np.ndarray,
     significant_translation = np.linalg.norm(_pos) > 1e-7
 
     if significant_rotation:
-        transform = euler_transforms(euler)['rreftoloc']
+        transform = euler_transforms(euler)['rloctoref'] # ['rreftoloc']
         if significant_translation:
             unstager = lambda v: transform @ v + _pos
         else:

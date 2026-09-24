@@ -19,21 +19,21 @@ class optic(batcher):
         return self.adder(call, lambda: pcount.value)
 
     def add(self,
-            opt_set: _STC.args_optical_properties_set,
-            front:   _STC.args_optical_properties_face,
-            back:    _STC.args_optical_properties_face) -> int:
+            opt_set: _STC.optical_properties_set,
+            front:   _STC.optical_properties_face,
+            back:    _STC.optical_properties_face) -> int:
         opt_id = ctypes.c_uint64()
         call = generate_api_call(_ADD,
-                                 ctypes.pointer(opt_set),
-                                 ctypes.pointer(front),
-                                 ctypes.pointer(back),
+                                 ctypes.pointer(opt_set.ctype),
+                                 ctypes.pointer(front.ctype),
+                                 ctypes.pointer(back.ctype),
                                  ctypes.pointer(opt_id))
         return self.adder(call, lambda: opt_id.value)
 
     # TODO:
-    # def get(self, optic_id: int) -> tuple[_STC.args_optical_properties_set, 
-    #                                       _STC.args_optical_properties_face, 
-    #                                       _STC.args_optical_properties_face]:
+    # def get(self, optic_id: int) -> tuple[_STC.optical_properties_set, 
+    #                                       _STC.optical_properties_face, 
+    #                                       _STC.optical_properties_face]:
     #     opt_set = dot_h.args_optical_properties_set()
     #     front = dot_h.args_optical_properties_face()
     #     back = dot_h.args_optical_properties_face()

@@ -23,7 +23,7 @@ class element(context):
 
     @st_function
     def add(self,
-            args: _STC.args_element,
+            args: _STC.element,
             opt_id: int,
             a_params: list[float],
             s_params: list[float]) -> int:
@@ -31,7 +31,7 @@ class element(context):
         _s_params = make_c_double_8(s_params)
         pid = ctypes.c_uint64()
         code = self._pdll.st_add_element(self._pcxt,
-                                         ctypes.byref(args),
+                                         ctypes.byref(args.ctype),
                                          opt_id,
                                          _a_params,
                                          _s_params,
@@ -39,7 +39,7 @@ class element(context):
         return code, pid.value
 
     @st_function
-    def get(self, id: int) -> tuple[_STC.args_element,
+    def get(self, id: int) -> tuple[_STC.element,
                                     int,
                                     list[float],
                                     list[float]]:

@@ -10,9 +10,9 @@ from pysoltrace.api.dll import context
 ##################################################
 class parameters(context):
     @st_function
-    def set(self, params: _STC.args_simulation_parameters) -> None:
+    def set(self, params: _STC.simulation_parameters) -> None:
         return self._pdll.st_set_simulation_parameters(self._pcxt,
-                                                       ctypes.byref(params))
+                                                       ctypes.byref(params.ctype))
 
     @st_function
     def rays(self, raycount: int, maxcount: int) -> None:
@@ -36,7 +36,7 @@ class parameters(context):
         return self._pdll.st_sim_tolerance(self._pcxt, tolerance)
 
     @st_function
-    def get(self) -> _STC.args_simulation_parameters:
+    def get(self) -> _STC.simulation_parameters:
         params = dot_h.args_simulation_parameters()
         code = self._pdll.st_get_simulation_parameters(self._pcxt,
                                                         ctypes.byref(params))

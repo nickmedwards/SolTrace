@@ -10,7 +10,7 @@ from pysoltrace.api.dll import context
 class sun(context):
     @st_function
     def add(self,
-            args: _STC.args_sun,
+            args: _STC.sun,
             angle: list[float] = [],
             intensity: list[float] = []) -> None:
         args.npoints = len(angle)
@@ -21,12 +21,12 @@ class sun(context):
         _angle     = (ctypes.c_double * len(angle))(*angle)
         _intensity = (ctypes.c_double * len(angle))(*intensity)
         return self._pdll.st_add_sun(self._pcxt,
-                                    ctypes.byref(args),
+                                    ctypes.byref(args.ctype),
                                     _angle,
                                     _intensity)
 
     @st_function
-    def get(self) -> tuple[_STC.args_sun, list[float], list[float]]:
+    def get(self) -> tuple[_STC.sun, list[float], list[float]]:
         args = dot_h.args_sun()
         angle = ctypes.c_double()
         intensity = ctypes.c_double()
@@ -81,14 +81,14 @@ class sun(context):
     @st_function
     def az_zen(self,
                calc: int,
-               loc:  _STC.args_sun_location,
-               dt:   _STC.args_sun_datetime) -> tuple[float, float]:
+               loc:  _STC.sun_location,
+               dt:   _STC.sun_datetime) -> tuple[float, float]:
         az  = ctypes.c_double()
         zen = ctypes.c_double()
         code = self._pdll.st_get_sun_az_zen(self._pcxt,
                                            calc,
-                                           ctypes.byref(loc),
-                                           ctypes.byref(dt),
+                                           ctypes.byref(loc.ctype),
+                                           ctypes.byref(dt.ctype),
                                            ctypes.byref(az),
                                            ctypes.byref(zen))
         return code, az.value, zen.value
@@ -96,14 +96,14 @@ class sun(context):
     @st_function
     def az_el(self,
               calc: int,
-              loc:  _STC.args_sun_location,
-              dt:   _STC.args_sun_datetime) -> tuple[float, float]:
+              loc:  _STC.sun_location,
+              dt:   _STC.sun_datetime) -> tuple[float, float]:
         az = ctypes.c_double()
         el = ctypes.c_double()
         code = self._pdll.st_get_sun_az_el(self._pcxt,
                                           calc,
-                                          ctypes.byref(loc),
-                                          ctypes.byref(dt),
+                                          ctypes.byref(loc.ctype),
+                                          ctypes.byref(dt.ctype),
                                           ctypes.byref(az),
                                           ctypes.byref(el))
         return code, az.value, el.value
@@ -111,15 +111,15 @@ class sun(context):
     @st_function
     def vector(self,
                calc: int,
-               loc:  _STC.args_sun_location,
-               dt:   _STC.args_sun_datetime) -> Point:
+               loc:  _STC.sun_location,
+               dt:   _STC.sun_datetime) -> Point:
         sun_x = ctypes.c_double()
         sun_y = ctypes.c_double()
         sun_z = ctypes.c_double()
         code = self._pdll.st_get_sun_vector(self._pcxt,
                                            calc,
-                                           ctypes.byref(loc),
-                                           ctypes.byref(dt),
+                                           ctypes.byref(loc.ctype),
+                                           ctypes.byref(dt.ctype),
                                            ctypes.byref(sun_x),
                                            ctypes.byref(sun_y),
                                            ctypes.byref(sun_z))

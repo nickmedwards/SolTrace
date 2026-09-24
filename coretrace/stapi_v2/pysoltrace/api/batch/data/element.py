@@ -30,7 +30,7 @@ class element(batcher):
         return self.adder(call, lambda: pcount.value)
 
     def add(self,
-            args: _STC.args_element,
+            args: _STC.element,
             opt_id: int,
             a_params: list[float],
             s_params: list[float]) -> int:
@@ -38,7 +38,7 @@ class element(batcher):
         _s_params = make_c_double_8(s_params)
         pid = ctypes.c_uint64()
         call = generate_api_call(_AE,
-                                 ctypes.pointer(args),
+                                 ctypes.pointer(args.ctype),
                                  opt_id,
                                  _a_params,
                                  _s_params,
@@ -46,7 +46,7 @@ class element(batcher):
         return self.adder(call, lambda: pid.value)
 
     # TODO:
-    # def get(self, id: int) -> tuple[_STC.args_element,
+    # def get(self, id: int) -> tuple[_STC.element,
     #                                 int,
     #                                 list[float],
     #                                 list[float]]:

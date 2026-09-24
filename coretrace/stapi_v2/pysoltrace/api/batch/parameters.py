@@ -15,8 +15,8 @@ _TOL  = dot_h.st_api_call.CALL_ST_SIM_TOLERANCE
 # functions for simulation parameters management #
 ##################################################
 class parameters(batcher):
-    def set(self, params: _STC.args_simulation_parameters) -> None:
-        return self.adder(generate_api_call(_SET, ctypes.pointer(params)))
+    def set(self, params: _STC.simulation_parameters) -> None:
+        return self.adder(generate_api_call(_SET, ctypes.pointer(params.ctype)))
 
     def rays(self, raycount: int, maxcount: int) -> None:
         return self.adder(generate_api_call(_RAYS, raycount, maxcount))
@@ -34,7 +34,7 @@ class parameters(batcher):
         return self.adder(generate_api_call(_TOL, tolerance))
 
     # TODO:
-    # def get(self) -> _STC.args_simulation_parameters:
+    # def get(self) -> _STC.simulation_parameters:
     #     params = dot_h.args_simulation_parameters()
     #     code = self._pdll.st_get_simulation_parameters(self._pcxt,
     #                                                     ctypes.byref(params))
