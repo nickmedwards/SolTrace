@@ -253,6 +253,9 @@ class Heliostat():
             self.tracking[2],
         ])
 
+    def set_optical_property(self, opt_id: int):
+        for f in self: f.opt_id = opt_id
+
     def set_target_global(self, new_target: np.ndarray[Literal[3], float]):
         _tar = new_target
         if not isinstance(_tar, np.ndarray): _tar = np.array(_tar)

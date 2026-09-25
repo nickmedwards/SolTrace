@@ -1,6 +1,6 @@
-from pysoltrace.cst_templates.arbitrary_heliostat import Heliostat as AbritraryHeliostat, Facet
+from pysoltrace.cst_templates.arbitrary_heliostat import Heliostat as ArbitraryHeliostat, Facet
 
 __all__ = [
-    'AbritraryHeliostat',
+    'ArbitraryHeliostat',
     'Facet'
 ]

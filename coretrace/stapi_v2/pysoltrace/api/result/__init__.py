@@ -86,6 +86,6 @@ class result(context):
                                        stage_map,
                                        ray_numbers)
         code = self._pdll.st_get_results_data(self._pcxt, ctypes.byref(args))
-        return code, args.value
+        return code, { k: v[:n] for k, v in args.value.items() }
 
 __all__ = ['result']
