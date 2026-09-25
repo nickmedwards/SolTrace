@@ -96,14 +96,14 @@ class base_args:
 
 @dataclass
 class simulation_parameters(base_args):
-    number_of_rays:           int
-    max_number_of_rays:       int
-    tolerance:                float
     latitude:                 float
     longitude:                float
-    include_sun_shape_errors: bool
-    include_optical_errors:   bool
-    as_power_tower:           bool
+    number_of_rays:           int   = 1_000_000
+    max_number_of_rays:       int   = 100_000_000
+    tolerance:                float = .01
+    include_sun_shape_errors: bool  = True
+    include_optical_errors:   bool  = True
+    as_power_tower:           bool  = False
 
     @property
     def ctype(self):

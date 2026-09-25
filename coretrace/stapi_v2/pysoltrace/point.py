@@ -115,7 +115,7 @@ class Point:
             return Point(self.x + obj, 
                          self.y + obj,
                          self.z + obj)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(self.x + obj[0], 
                          self.y + obj[1],
                          self.z + obj[2])
@@ -133,7 +133,7 @@ class Point:
             self.x += obj
             self.y += obj
             self.z += obj
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             self.x += obj[0]
             self.y += obj[1]
             self.z += obj[2]
@@ -162,7 +162,7 @@ class Point:
             return Point(self.x - obj, 
                          self.y - obj, 
                          self.z - obj)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(self.x - obj[0], 
                          self.y - obj[1],
                          self.z - obj[2])
@@ -177,7 +177,7 @@ class Point:
             return Point(obj - self.x, 
                          obj - self.y, 
                          obj - self.z)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(obj[0] - self.x, 
                          obj[1] - self.y,
                          obj[2] - self.z)
@@ -192,7 +192,7 @@ class Point:
             self.x -= obj
             self.y -= obj
             self.z -= obj
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             self.x -= obj[0]
             self.y -= obj[1]
             self.z -= obj[2]
@@ -217,7 +217,7 @@ class Point:
             return Point(self.x * obj.x,
                          self.y * obj.y,
                          self.z * obj.z)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(self.x * obj[0],
                          self.y * obj[1],
                          self.z * obj[2])
@@ -235,7 +235,7 @@ class Point:
             self.x *= obj.x
             self.y *= obj.y
             self.z *= obj.z
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             self.x *= obj[0]
             self.y *= obj[1]
             self.z *= obj[2]
@@ -249,7 +249,7 @@ class Point:
     def __can_div(self, obj: Point | list | float | int) -> bool:
         if isinstance(obj, Point): 
             return obj.no_zeros
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return obj[0] != 0 and obj[1] != 0 and obj[2] != 0
         elif isinstance(obj, (float, int)):
             return obj != 0
@@ -274,7 +274,7 @@ class Point:
             return Point(self.x // obj.x,
                          self.y // obj.y,
                          self.z // obj.z)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(self.x // obj[0],
                          self.y // obj[1],
                          self.z // obj[2])
@@ -290,7 +290,7 @@ class Point:
             self.x //= obj.x
             self.y //= obj.y
             self.z //= obj.z
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             self.x //= obj[0]
             self.y //= obj[1]
             self.z //= obj[2]
@@ -320,7 +320,7 @@ class Point:
             return Point(self.x / obj.x,
                          self.y / obj.y,
                          self.z / obj.z)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(self.x / obj[0],
                          self.y / obj[1],
                          self.z / obj[2])
@@ -336,7 +336,7 @@ class Point:
             self.x /= obj.x
             self.y /= obj.y
             self.z /= obj.z
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             self.x /= obj[0]
             self.y /= obj[1]
             self.z /= obj[2]
@@ -364,7 +364,7 @@ class Point:
             return Point(self.y * obj.z - self.z * obj.y,
                          self.z * obj.x - self.x * obj.z,
                          self.x * obj.y - self.y * obj.x)
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return Point(self.y * obj[2] - self.z * obj[1],
                          self.z * obj[0] - self.x * obj[2],
                          self.x * obj[1] - self.y * obj[0])
@@ -397,7 +397,7 @@ class Point:
             self.x = tmp.y * obj.z - tmp.z * obj.y
             self.y = tmp.z * obj.x - tmp.x * obj.z
             self.z = tmp.x * obj.y - tmp.y * obj.x
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             self.x = tmp.y * obj[2] - tmp.z * obj[1]
             self.y = tmp.z * obj[0] - tmp.x * obj[2]
             self.z = tmp.x * obj[1] - tmp.y * obj[0]
@@ -407,7 +407,7 @@ class Point:
     def __eq__(self, obj: Point | list) -> bool:
         if isinstance(obj, Point):
             return self.x == obj.x and self.y == obj.y and self.z == obj.z
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return self.x == obj[0] and self.y == obj[1] and self.z == obj[2]
         return NotImplemented
 
@@ -415,28 +415,28 @@ class Point:
         return not self == obj
 
     def __lt__(self, obj: Point | list) -> bool:
-        if isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        if isinstance(obj, (list, ndarray)):
             obj = self.from_list(obj)
         if isinstance(obj, Point):
             return self.radius() < obj.radius()
         return NotImplemented
 
     def __gt__(self, obj: Point | list) -> bool:
-        if isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        if isinstance(obj, (list, ndarray)):
             obj = self.from_list(obj)
         if isinstance(obj, Point):
             return self.radius() > obj.radius()
         return NotImplemented
 
     def __le__(self, obj: Point | list) -> bool:
-        if isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        if isinstance(obj, (list, ndarray)):
             obj = self.from_list(obj)
         if isinstance(obj, Point):
             return self.radius() <= obj.radius()
         return NotImplemented
 
     def __ge__(self, obj: Point | list) -> bool:
-        if isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        if isinstance(obj, (list, ndarray)):
             obj = self.from_list(obj)
         if isinstance(obj, Point):
             return self.radius() >= obj.radius()
@@ -445,7 +445,7 @@ class Point:
     def dot(self, obj: Point | list) -> float:
         if isinstance(obj, Point):
             return self.x * obj.x + self.y * obj.y + self.z * obj.z
-        elif isinstance(obj, list) or hasattr(obj, '__getitem__'):
+        elif isinstance(obj, (list, ndarray)):
             return self.x * obj[0] + self.y * obj[1] + self.z * obj[2]
         raise NotImplementedError
 

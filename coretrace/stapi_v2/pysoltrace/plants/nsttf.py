@@ -9,6 +9,7 @@ from pysoltrace import api, dot_h, math_utils
 import pysoltrace.soltrace_constants as _STC
 import pysoltrace.soltrace_json as stJSON
 from pysoltrace.point import Point
+from pysoltrace.cst_templates import AbritraryHeliostat
 
 """init api"""
 stapi = api()
@@ -277,7 +278,7 @@ solar_1_el_args = _STC.element(*SOLAR_1_TARGET,
                                _STC.surface.FLAT.value,
                                SOLAR_1_GROUP)
 SOLAR_1_ID = \
-    stapi.data.element.add(ssw_el_args,
+    stapi.data.element.add(solar_1_el_args,
                            RECEIVER_OPTICAL_REF,
                            [2, 2], [])
 
@@ -286,8 +287,66 @@ PED_HEIGHT = 4.02           # [m], heliostat pedistal height
 TRACK_ERR  = 0.0005         # [rad], heliostat tracking error
 PIV_OFFSET = 0.1778         # [m], facet pivot offset
 RECT_AP    = 1.2192         # [m], facet side length
-PARA_SURF  = .5 / 0.0034203 # [m], parabolic focal length
+# PARA_SURF  = .5 / 0.0034203 # [m], parabolic focal length
+PARA_SURF  = 0.0034203 # [m], parabolic focal length
 CANT_ERR   = 0.0017         # [rad], facet canting error
+
+
+# something something for loop thru all coord/ids in those files
+
+# read in and combine coords and ids
+coords_file = open(coords_f)
+ids_file = open(ids_f)
+
+# coordinates files has x-y as ground plane
+coord, id = coords_file.readline(), ids_file.readline()
+# first coord has weird first 3 characters
+coord = coord[3:]
+
+HELIOSTATS: list[AbritraryHeliostat] = []
+
+HELIOSTAT_GROUP = SOLAR_1_GROUP + 1
+# TODO: add element.set_name()
+while len(coord):
+    temp = [*map(float, coord.split(','))]
+
+    h = AbritraryHeliostat(id[1:-1], temp, SOLAR_1_TARGET, [0, 0, 1000], TRACK_ERR, HELIOSTAT_GROUP)
+
+    canting_f = canting_dir / f'{h.name}_Off_Axis_Canting_Details_TowerTop_Target.csv'
+
+    f = open(canting_f)
+    canting_details = np.genfromtxt(f, delimiter=',', skip_header=1)
+    canting_details = np.array([
+        canting_details[:, 0],
+        canting_details[:, 1],
+        canting_details[:, 2],
+        canting_details[:, 3] + PIV_OFFSET,
+        canting_details[:, 6],
+        canting_details[:, 7],
+        canting_details[:, 8],
+    ]).T
+    f.close()
+
+    h.add_facets_local(canting_details,
+                       HELIOSTAT_OPTICAL_REF,
+                       _STC.aperture.RECTANGLE.value, [RECT_AP, RECT_AP],
+                       _STC.surface.PARABOLA.value, [PARA_SURF, PARA_SURF],
+                       CANT_ERR)
+
+    HELIOSTATS.append(h)
+
+    coord, id = coords_file.readline(), ids_file.readline()
+
+coords_file.close()
+ids_file.close()
+
+def add_heliostats(stapi: api, target: np.array, sun: np.array):
+    heliostats = {}
+    for h in HELIOSTATS:
+        h.set_target_global(target)
+        h.reaim(sun)
+        heliostats[h.name] = h.add(stapi)
+    return heliostats
 
 # debugging plotting utils
 def _plot_projection(ax, pairs, axis_pair, labels):
@@ -369,6 +428,28 @@ def plot_all_projections(pairs, show=True, save_prefix=None):
 
 
 if __name__ == '__main__':
+    print(SOLAR_1_ID)
+    print(stapi.data.element.get(SOLAR_1_ID))
+
+    # i think its no stage
+    stapi.data.element.add(_STC.element(0, -10, 60, 0, 1, 60, 0, True, False, _STC.aperture.RECTANGLE.value, _STC.surface.FLAT.value),
+                           RECEIVER_OPTICAL_REF, [1200, 1200], [])
+
+    test_f = current_dir / 'test.json'
+    
+    sim_params = _STC.simulation_parameters(latitude=LATITUDE, longitude=LONGITUDE)
+    stapi.parameters.set(sim_params)
+    
+    calc = dot_h.SolarPositionCalculationMethod.SPA
+    loc  = _STC.sun_location(40.0, -105.0, -7.0)
+    dt   = _STC.sun_datetime(2025, 6, 20)
+
+    sun_pos = 1000 * stapi.data.sun.vector(calc, loc, dt)
+    buie = _STC.sun(0, *sun_pos, .05, b'b')
+    stapi.data.sun.add(buie)
+
+    helios = add_heliostats(stapi, SOLAR_1_TARGET, sun_pos)
+
     # print(pretty(ap_el_args))
     # print(type(ap_el_args))
     # print(type(ctypes.pointer(ap_el_args)))
@@ -394,10 +475,12 @@ if __name__ == '__main__':
     # print(stapi.data.element.get(2)[1])
     # print(stapi.data.element.get(3)[0])
 
+    stapi.data.json.dump(str(test_f))
+
     pairs = [
         ([el.x, el.y, el.z], [el.ax, el.ay, el.az])
         for el in G3P3.values()
     ]
     # pairs.append(([solar_1_el_args.x, solar_1_el_args.y, solar_1_el_args.z], [solar_1_el_args.ax, solar_1_el_args.ay, solar_1_el_args.az]))
 
-    plot_all_projections(pairs)
+    # plot_all_projections(pairs)
