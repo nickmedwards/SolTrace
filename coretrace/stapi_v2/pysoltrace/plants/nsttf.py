@@ -23,11 +23,11 @@ TZINFO = ZoneInfo("America/Denver")
 ST_LOC = _STC.sun_location(LATITUDE, LONGITUDE, -7.0)
 # TODO: util to convert built-in datetime to st_datetime
 ST_DT  = _STC.sun_datetime(2025, # year
-                                 6,    # month
-                                 20,   # day
-                                 12,   # hour
-                                 34,   # minute
-                                 56)   # second
+                           6,    # month
+                           20,   # day
+                           12,   # hour
+                           34,   # minute
+                           56)   # second
 
 """
 convert between (+x: west, +y: zenith, +z: north)
@@ -39,6 +39,7 @@ CONVERT_COORDS = np.array([[-1., 0., 0.],
 
 # file set up
 current_dir = Path(__file__).parent
+json_f      = current_dir / 'nsttf.json'
 data_dir    = current_dir / 'nsttf_data'
 coords_f    = data_dir / 'coordinates.csv'
 ids_f       = data_dir / 'ids.csv'
@@ -81,6 +82,19 @@ snout_front = _STC.optical_properties_face(0, 0.2, 0.95, 0.2, _STC.optical_error
 snout_back  = _STC.optical_properties_face(0, 0, 0.95, 0.2, _STC.optical_error_dist.GAUSSIAN.value)
 SNOUT_OPTICAL_REF = stapi.data.optic.add(snout_set, snout_front, snout_back)
 
+################
+# set up tower #
+################
+
+tower_args = _STC.element(*[0, 0, 30.05],
+                          *[0, 1, 30.05],
+                          0, True, False,
+                          _STC.aperture.RECTANGLE.value,
+                          _STC.surface.FLAT.value)
+TOWER_ID = \
+    stapi.data.element.add(tower_args,
+                           TOWER_OPTICAL_REF,
+                           [10, 60.1], [])
 ########################
 # set up G3P3 receiver #
 ########################
@@ -90,176 +104,166 @@ g3p3_stage_aim = np.array([0,   122, 44.8177])
 g3p3_unstager = math_utils.get_unstager(g3p3_stage_pos, g3p3_stage_aim, 0)
 
 G3P3_GROUP = 0
-G3P3 = {}
+def add_G3P3() -> dict[int, _STC.element]:
+    g3p3 = {}
 
-# aperture
-ap_el_args = _STC.element(*g3p3_unstager([0, 0, 0.662347]),
-                          *g3p3_unstager([0, 1, 0.662347]),
-                          0, True, False,
-                          _STC.aperture.RECTANGLE.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-APERTURE_ID = \
-    stapi.data.element.add(ap_el_args,
-                           APERTURE_OPTICAL_REF,
-                           [1.32475, 1.32475], [])
-G3P3[APERTURE_ID] = ap_el_args
+    # aperture
+    ap_el_args = _STC.element(*g3p3_unstager([0, 0, 0.662347]),
+                              *g3p3_unstager([0, 1, 0.662347]),
+                              0, True, False,
+                              _STC.aperture.RECTANGLE.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    ap_id = stapi.data.element.add(ap_el_args,
+                                   APERTURE_OPTICAL_REF,
+                                   [1.32475, 1.32475], [])
+    g3p3['aperture'] = (ap_id, ap_el_args)
 
-# tunnel bottom
-tb_el_args = _STC.element(*g3p3_unstager([0, 0, 0]),
-                          *g3p3_unstager([0, 0.608432, 0.793606]),
-                          0, True, False,
-                          _STC.aperture.IRREGULAR_QUADRILATERAL.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-TUNNEL_BOTTOM_ID = \
-    stapi.data.element.add(tb_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [0.662347, 0, -0.662347, 0, -1.65, -0.945053, 1.65, -0.945053], [])
-G3P3[TUNNEL_BOTTOM_ID] = tb_el_args
+    # tunnel bottom
+    tb_el_args = _STC.element(*g3p3_unstager([0, 0, 0]),
+                              *g3p3_unstager([0, 0.608432, 0.793606]),
+                              0, True, False,
+                              _STC.aperture.IRREGULAR_QUADRILATERAL.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    tb_id = stapi.data.element.add(tb_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [0.662347, 0, -0.662347, 0, -1.65, -0.945053, 1.65, -0.945053], [])
+    g3p3['tunnel bottom'] = (tb_id, tb_el_args)
 
-# tunnel east
-te_el_args = _STC.element(*g3p3_unstager([0.662347, 0, 0]),
-                          *g3p3_unstager([0.057569, 0.796394, 0]),
-                          0, True, False,
-                          _STC.aperture.IRREGULAR_QUADRILATERAL.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-TUNNEL_EAST_ID = \
-    stapi.data.element.add(te_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [0, 1.32475, -1.24012, 1.175, -1.24012, -0.575, 0, 0], [])
-G3P3[TUNNEL_EAST_ID] = te_el_args
+    # tunnel east
+    te_el_args = _STC.element(*g3p3_unstager([0.662347, 0, 0]),
+                              *g3p3_unstager([0.057569, 0.796394, 0]),
+                              0, True, False,
+                              _STC.aperture.IRREGULAR_QUADRILATERAL.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    te_id = stapi.data.element.add(te_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [0, 1.32475, -1.24012, 1.175, -1.24012, -0.575, 0, 0], [])
+    g3p3['tunnel east'] = (te_id, te_el_args)
 
-# tunnel west
-tw_el_args = _STC.element(*g3p3_unstager([-0.662347, 0, 0]),
-                          *g3p3_unstager([-0.057569, 0.796394, 0]),
-                          0, True, False,
-                          _STC.aperture.IRREGULAR_QUADRILATERAL.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-TUNNEL_WEST_ID = \
-    stapi.data.element.add(tw_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [1.24012, 1.175, 0, 1.32475, 0, 0, 1.24012, -0.575], [])
-G3P3[TUNNEL_WEST_ID] = tw_el_args
+    # tunnel west
+    tw_el_args = _STC.element(*g3p3_unstager([-0.662347, 0, 0]),
+                              *g3p3_unstager([-0.057569, 0.796394, 0]),
+                              0, True, False,
+                              _STC.aperture.IRREGULAR_QUADRILATERAL.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    tw_id = stapi.data.element.add(tw_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [1.24012, 1.175, 0, 1.32475, 0, 0, 1.24012, -0.575], [])
+    g3p3['tunnel west'] = (tw_id, tw_el_args)
 
-# tunnel top
-tt_el_args = _STC.element(*g3p3_unstager([0, 0, 1.32475]),
-                          *g3p3_unstager([0, 0.195795, 0.344105]),
-                          0, True, False,
-                          _STC.aperture.IRREGULAR_QUADRILATERAL.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-TUNNEL_TOP_ID = \
-    stapi.data.element.add(tt_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [0.662347, 0, -0.662347, 0, -1.65, -0.764803, 1.65, -0.764803], [])
-G3P3[TUNNEL_TOP_ID] = tt_el_args
+    # tunnel top
+    tt_el_args = _STC.element(*g3p3_unstager([0, 0, 1.32475]),
+                              *g3p3_unstager([0, 0.195795, 0.344105]),
+                              0, True, False,
+                              _STC.aperture.IRREGULAR_QUADRILATERAL.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    tt_id = stapi.data.element.add(tt_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [0.662347, 0, -0.662347, 0, -1.65, -0.764803, 1.65, -0.764803], [])
+    g3p3['tunnel top'] = (tt_id, tt_el_args)
 
-# shield northeast
-sne_el_args = _STC.element(*g3p3_unstager([2.65, 0.75, 2.175]),
-                           *g3p3_unstager([2.65, 1.75, 2.175]),
-                           0, True, False,
-                           _STC.aperture.RECTANGLE.value,
-                           _STC.surface.FLAT.value,
-                           G3P3_GROUP)
-SHIELD_NORTHEAST_ID = \
-    stapi.data.element.add(sne_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [2, 2], [])
-G3P3[SHIELD_NORTHEAST_ID] = sne_el_args
+    # shield northeast
+    sne_el_args = _STC.element(*g3p3_unstager([2.65, 0.75, 2.175]),
+                               *g3p3_unstager([2.65, 1.75, 2.175]),
+                               0, True, False,
+                               _STC.aperture.RECTANGLE.value,
+                               _STC.surface.FLAT.value,
+                               G3P3_GROUP)
+    sne_id = stapi.data.element.add(sne_el_args,
+                                    SNOUT_OPTICAL_REF,
+                                    [2, 2], [])
+    g3p3['shield northeast'] = (sne_id, sne_el_args)
 
-# shield north
-sn_el_args = _STC.element(*g3p3_unstager([0, 0.75, 2.175]),
-                          *g3p3_unstager([0, 1.75, 2.175]),
-                          0, True, False,
-                          _STC.aperture.RECTANGLE.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-SHIELD_NORTH_ID = \
-    stapi.data.element.add(sn_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [3.3, 2], [])
-G3P3[SHIELD_NORTH_ID] = sn_el_args
+    # shield north
+    sn_el_args = _STC.element(*g3p3_unstager([0, 0.75, 2.175]),
+                              *g3p3_unstager([0, 1.75, 2.175]),
+                              0, True, False,
+                              _STC.aperture.RECTANGLE.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    sn_id = stapi.data.element.add(sn_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [3.3, 2], [])
+    g3p3['shield north'] = (sn_id, sn_el_args)
 
-# shield northwest
-snw_el_args = _STC.element(*g3p3_unstager([-2.65, 0.75, 2.175]),
-                           *g3p3_unstager([-2.65, 1.75, 2.175]),
-                           0, True, False,
-                           _STC.aperture.RECTANGLE.value,
-                           _STC.surface.FLAT.value,
-                           G3P3_GROUP)
-SHIELD_NORTHWEST_ID = \
-    stapi.data.element.add(snw_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [2, 2], [])
-G3P3[SHIELD_NORTHWEST_ID] = snw_el_args
+    # shield northwest
+    snw_el_args = _STC.element(*g3p3_unstager([-2.65, 0.75, 2.175]),
+                               *g3p3_unstager([-2.65, 1.75, 2.175]),
+                               0, True, False,
+                               _STC.aperture.RECTANGLE.value,
+                               _STC.surface.FLAT.value,
+                               G3P3_GROUP)
+    snw_id = stapi.data.element.add(snw_el_args,
+                                    SNOUT_OPTICAL_REF,
+                                    [2, 2], [])
+    g3p3['shield northwest'] = (snw_id, snw_el_args)
 
-# shield east
-se_el_args = _STC.element(*g3p3_unstager([2.65, 0.75, 0.375]),
-                          *g3p3_unstager([2.65, 1.75, 0.245313]),
-                          0, True, False,
-                          _STC.aperture.RECTANGLE.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-SHIELD_EAST_ID = \
-    stapi.data.element.add(se_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [2, 1.75], [])
-G3P3[SHIELD_EAST_ID] = se_el_args
+    # shield east
+    se_el_args = _STC.element(*g3p3_unstager([2.65, 0.75, 0.375]),
+                              *g3p3_unstager([2.65, 1.75, 0.245313]),
+                              0, True, False,
+                              _STC.aperture.RECTANGLE.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    se_id = stapi.data.element.add(se_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [2, 1.75], [])
+    g3p3['shield east'] = (se_id, se_el_args)
 
-# shield west
-sw_el_args = _STC.element(*g3p3_unstager([-2.65, 0.75, 0.375]),
-                          *g3p3_unstager([-2.65, 1.75, 0.245313]),
-                          0, True, False,
-                          _STC.aperture.RECTANGLE.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-SHIELD_WEST_ID = \
-    stapi.data.element.add(sw_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [2, 1.75], [])
-G3P3[SHIELD_WEST_ID] = sw_el_args
+    # shield west
+    sw_el_args = _STC.element(*g3p3_unstager([-2.65, 0.75, 0.375]),
+                              *g3p3_unstager([-2.65, 1.75, 0.245313]),
+                              0, True, False,
+                              _STC.aperture.RECTANGLE.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    sw_id = stapi.data.element.add(sw_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [2, 1.75], [])
+    g3p3['shield west'] = (sw_id, sw_el_args)
 
-# shield southeast
-sse_el_args = _STC.element(*g3p3_unstager([2.65, 0.75, -1.575]),
-                           *g3p3_unstager([2.65, 1.75, -1.575]),
-                           0, True, False,
-                           _STC.aperture.RECTANGLE.value,
-                           _STC.surface.FLAT.value,
-                           G3P3_GROUP)
-SHIELD_SOUTHEAST_ID = \
-    stapi.data.element.add(sse_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [2, 2], [])
-G3P3[SHIELD_SOUTHEAST_ID] = sse_el_args
+    # shield southeast
+    sse_el_args = _STC.element(*g3p3_unstager([2.65, 0.75, -1.575]),
+                               *g3p3_unstager([2.65, 1.75, -1.575]),
+                               0, True, False,
+                               _STC.aperture.RECTANGLE.value,
+                               _STC.surface.FLAT.value,
+                               G3P3_GROUP)
+    sse_id = stapi.data.element.add(sse_el_args,
+                                    SNOUT_OPTICAL_REF,
+                                    [2, 2], [])
+    g3p3['shield southeast'] = (sse_id, sse_el_args)
 
-# shield south
-ss_el_args = _STC.element(*g3p3_unstager([0, 0.75, -1.575]),
-                          *g3p3_unstager([0, 1.75, -1.575]),
-                          0, True, False,
-                          _STC.aperture.RECTANGLE.value,
-                          _STC.surface.FLAT.value,
-                          G3P3_GROUP)
-SHIELD_SOUTH_ID = \
-    stapi.data.element.add(ss_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [3.3, 2], [])
-G3P3[SHIELD_SOUTH_ID] = ss_el_args
+    # shield south
+    ss_el_args = _STC.element(*g3p3_unstager([0, 0.75, -1.575]),
+                              *g3p3_unstager([0, 1.75, -1.575]),
+                              0, True, False,
+                              _STC.aperture.RECTANGLE.value,
+                              _STC.surface.FLAT.value,
+                              G3P3_GROUP)
+    ss_id = stapi.data.element.add(ss_el_args,
+                                   SNOUT_OPTICAL_REF,
+                                   [3.3, 2], [])
+    g3p3['shield south'] = (ss_id, ss_el_args)
 
-# shield southwest
-ssw_el_args = _STC.element(*g3p3_unstager([-2.65, 0.75, -1.575]),
-                           *g3p3_unstager([-2.65, 1.75, -1.575]),
-                           0, True, False,
-                           _STC.aperture.RECTANGLE.value,
-                           _STC.surface.FLAT.value,
-                           G3P3_GROUP)
-SHIELD_SOUTHWEST_ID = \
-    stapi.data.element.add(ssw_el_args,
-                           SNOUT_OPTICAL_REF,
-                           [2, 2], [])
-G3P3[SHIELD_SOUTHWEST_ID] = ssw_el_args
+    # shield southwest
+    ssw_el_args = _STC.element(*g3p3_unstager([-2.65, 0.75, -1.575]),
+                               *g3p3_unstager([-2.65, 1.75, -1.575]),
+                               0, True, False,
+                               _STC.aperture.RECTANGLE.value,
+                               _STC.surface.FLAT.value,
+                               G3P3_GROUP)
+    ssw_id = stapi.data.element.add(ssw_el_args,
+                                    SNOUT_OPTICAL_REF,
+                                    [2, 2], [])
+    g3p3['shield southwest'] = (ssw_id, ssw_el_args)
+
+    return g3p3
 
 # measurement plane
 # curtain
@@ -271,16 +275,19 @@ G3P3[SHIELD_SOUTHWEST_ID] = ssw_el_args
 SOLAR_1_TARGET  = [5.65, 4.25, 64.54]
 target_aim      = [5.65, 100, 64.54] # looking directly north
 SOLAR_1_GROUP   = G3P3_GROUP + 1
-solar_1_el_args = _STC.element(*SOLAR_1_TARGET, 
-                               *target_aim,
-                               0, True, False,
-                               _STC.aperture.RECTANGLE.value,
-                               _STC.surface.FLAT.value,
-                               SOLAR_1_GROUP)
-SOLAR_1_ID = \
-    stapi.data.element.add(solar_1_el_args,
-                           RECEIVER_OPTICAL_REF,
-                           [2, 2], [])
+
+def add_solar_1() -> dict[int, _STC.element]:
+    solar_1_el_args = _STC.element(*SOLAR_1_TARGET, 
+                                *target_aim,
+                                0, True, False,
+                                _STC.aperture.RECTANGLE.value,
+                                _STC.surface.FLAT.value,
+                                SOLAR_1_GROUP)
+    
+    solar_1_id = stapi.data.element.add(solar_1_el_args,
+                                  RECEIVER_OPTICAL_REF,
+                                  [2, 2], [])
+    return { solar_1_id: solar_1_el_args }
 
 # heliostat and facet information
 PED_HEIGHT = 4.02           # [m], heliostat pedistal height
@@ -428,6 +435,7 @@ def plot_all_projections(pairs, show=True, save_prefix=None):
 
 
 if __name__ == '__main__':
+    SOLAR_1_ID = add_solar_1()
     print(SOLAR_1_ID)
     print(stapi.data.element.get(SOLAR_1_ID))
 
@@ -459,6 +467,10 @@ if __name__ == '__main__':
     # print(test_unstager(CONVERT_COORDS @ np.array([0, 0, 0.662347])))
 
     print(__file__)
+
+    G3P3 = add_G3P3()
+
+    print(G3P3['tunnel bottom'])
     # print(Path(__file__).parent / 'nsttf_data')
     # print(Path(__file__).parent / 'nsttf_data' / 'coordinates.csv')
     # print(Path(__file__).parent / 'nsttf_data' / 'ids.csv')
@@ -475,11 +487,11 @@ if __name__ == '__main__':
     # print(stapi.data.element.get(2)[1])
     # print(stapi.data.element.get(3)[0])
 
-    stapi.data.json.dump(str(test_f))
+    stapi.data.json.dump(json_f)
 
     pairs = [
         ([el.x, el.y, el.z], [el.ax, el.ay, el.az])
-        for el in G3P3.values()
+        for _, el in G3P3.values()
     ]
     # pairs.append(([solar_1_el_args.x, solar_1_el_args.y, solar_1_el_args.z], [solar_1_el_args.ax, solar_1_el_args.ay, solar_1_el_args.az]))
 

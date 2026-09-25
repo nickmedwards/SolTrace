@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, WindowsPath
 import orjson
 
 from pysoltrace import dot_h
@@ -28,4 +28,10 @@ class json(context):
 
     @st_function
     def dump(self, filename: str):
-        return self._pdll.st_export_json_file(self._pcxt, filename.encode())
+        assert isinstance(filename, (str, Path, bytes)), f'filename must be a str, bytes, or Path, got {type(filename)}'
+
+        _filename = filename
+        if isinstance(_filename, str): _filename = _filename.encode()
+        elif isinstance(_filename, Path): _filename = str(_filename).encode()
+
+        return self._pdll.st_export_json_file(self._pcxt, _filename)
