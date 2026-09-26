@@ -16,7 +16,7 @@ void ProcessInteraction(
     TSystem*                                  System,
     MTRand&                                   myrng,
     const bool                                IncludeSunShape,
-    const SolTrace::Data::OpticalPropertySet* optics,
+    SolTrace::Data::optical_set_ptr optics,
     const bool                                LastHitBackSide,
     const bool                                IncludeErrors,
     // stage info
@@ -50,7 +50,7 @@ void ProcessInteraction(
         if (IncludeErrors)
         {
             LastDFXYZ =
-                ApplySlopeError(myrng, LastDFXYZ, *optics, LastHitBackSide);
+                ApplySlopeError(myrng, LastDFXYZ, optics, LastHitBackSide);
         }
 
         Interaction(myrng,
@@ -78,7 +78,7 @@ void ProcessInteraction(
                                          : CosRayOutElement;
 
             CosRayOutElement = ApplySpecularityError(
-                myrng, CosIn, *optics, LastHitBackSide, LastDFXYZ);
+                myrng, CosIn, optics, LastHitBackSide, LastDFXYZ);
         }
     }
 }
@@ -90,7 +90,7 @@ void Interaction(MTRand&                                   myrng,
                  const glm::dvec3&                         PosXYZ,
                  const glm::dvec3&                         CosKLM,
                  const glm::dvec3&                         DFXYZ,
-                 const SolTrace::Data::OpticalPropertySet* Opticl,
+                 SolTrace::Data::optical_set_ptr Opticl,
                  const bool                                LastHitBackSide,
                  double                                    Wavelength,
                  glm::dvec3&                               PosOut,

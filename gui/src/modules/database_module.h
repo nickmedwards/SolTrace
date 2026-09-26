@@ -63,13 +63,9 @@ public:
     DatabaseModule(QObject* parent = nullptr);
 
 public slots:
-    /// Open a native file picker and load the selected SolTrace input file.
     bool open_file_dialog();
-
-    /// Open a native file picker and save the current database.
     bool save_current_dialog();
 
-    /// Load a database from a URL. name_override is used for display only.
     void load_url(QUrl, QString name_override = "");
 
     /// Replace the current selection with a new blank database.
@@ -78,10 +74,7 @@ public slots:
     /// Select the open database at model row index.
     bool set_current(int);
 
-    /// Save a specific open database to path.
     void save_db_at_index(int, QUrl);
-
-    /// Save current_database to path.
     void save_current(QUrl path);
 
     /// Export current_database to a JSON file path.
