@@ -126,7 +126,7 @@ _HEADER_FILENAME = "stapi_v2.h"
 
 _ENV_HEADER_PATH = "PROJECT_HEADER_PATH"       # explicit full-path override
 
-_STAPI_V2_DIR = Path(__file__).resolve().parent.parent
+_STAPI_V2_DIR = Path(__file__).resolve().parent
 
 
 def _dev_search_paths(filename: str) -> List[Path]:
@@ -134,8 +134,8 @@ def _dev_search_paths(filename: str) -> List[Path]:
     return [
         _STAPI_V2_DIR / filename,
         _STAPI_V2_DIR / "include" / filename,
+        _STAPI_V2_DIR.parent / filename,
         _STAPI_V2_DIR.parent / "include" / filename,
-        _STAPI_V2_DIR.parent / "cpp" / "include" / filename,
         Path.cwd() / "include" / filename,
     ]
 
@@ -144,7 +144,7 @@ def _prod_search_paths(filename: str) -> List[Path]:
     """Locations to check for a pip/whl-installed production deployment."""
     return [
         # Header shipped alongside this module as package data.
-        _STAPI_V2_DIR / "_include" / filename,
+        _STAPI_V2_DIR / "include" / "SolTrace" / "stapi_v2" / filename,
         # Common "installed into the environment" locations.
         Path(sys.prefix) / "include" / filename,
         Path(sys.prefix) / "share" / "project" / "include" / filename,

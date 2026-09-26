@@ -4,12 +4,13 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pysoltrace"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python wrapper for stapi_v2 shared library"
 requires-python = ">=3.8"
 dependencies = [
     "colorama >= 0.4.6",
     "numpy >= 2.5.2", 
+    "matplotlib >= 3.11.2", 
     "orjson >= 3.10,<4",
     "pandas >= 3.0.5"]
 
@@ -28,16 +29,12 @@ cmake.build-type = "RelWithDebInfo"
 cmake.define = { SOLTRACE_BUILD_API = "ON", SOLTRACE_BUILD_GUI = "OFF", SOLTRACE_BUILD_TESTS = "OFF", SOLTRACE_BUILD_EMBREE_SUPPORT = "OFF", SOLTRACE_BUILD_OPTIX_SUPPORT = "ON" }
 
 wheel.packages = ["pysoltrace"]
+wheel.install-dir = "pysoltrace"
 
 sdist.include = [
-    "../../CMakeLists.txt",
-    "../CMakeLists.txt",
-    "./**",
-    "pysoltrace/**/*.py",
-    "../simulation_data/**",
-    "../simulation_results/**",
-    "../simulation_runner/simulation_runner.hpp",
-    "../simulation_runner/native_runner/**",
-    "../simulation_runner/embree_runner/**",
-    "../simulation_runner/optix_runner/**"
+    "./stapi_v2.hpp"
+]
+
+sdist.exclude = [
+    "./pysoltrace/.venv"
 ]

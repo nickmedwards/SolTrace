@@ -16,7 +16,9 @@ def __get_dll(path: str = '') -> ctypes.CDLL:
     else: return ctypes.CDLL(path)
 
 def find_dll() -> pathlib.Path:
-    _here = pathlib.Path(__file__).parent.parent.resolve()
+    _dir = pathlib.Path(__file__).parent.parent.resolve()
+    _prod_path = _dir / 'bin'
+    _path = _prod_path if _prod_path.exists() else _dir
                 
     if sys.platform == "win32":
         _lib_name = "stapi_v2.dll"
@@ -25,7 +27,7 @@ def find_dll() -> pathlib.Path:
     else:
         _lib_name = "stapi_v2.so" # Note: CMake typically prepends "lib" on Linux/macOS
 
-    return _here / _lib_name
+    return _path / _lib_name
 
 def setup_dll(path: str = ''):
     pdll = __get_dll(path)

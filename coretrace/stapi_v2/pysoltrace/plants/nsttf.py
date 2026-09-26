@@ -1,3 +1,8 @@
+"""
+nsttf example function based approach
+TODO: class based with PySolTrace
+"""
+
 import os, sys
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -17,16 +22,9 @@ from pysoltrace.cst_templates import ArbitraryHeliostat
 DNI = 930 # [W/m^2]
 LATITUDE  = 35.962278    # [deg], NSTTF original tower latitude (approximate)
 LONGITUDE = -106.5122622 # [deg], NSTTF original tower longitude (approximate)
-TZ     = 'MST'
-TZINFO = ZoneInfo("America/Denver")
-ST_LOC = _STC.sun_location(LATITUDE, LONGITUDE, -7.0)
-# TODO: util to convert built-in datetime to st_datetime
-ST_DT  = _STC.sun_datetime(2025, # year
-                           6,    # month
-                           20,   # day
-                           12,   # hour
-                           34,   # minute
-                           56)   # second
+TZ        = 'MST'
+TZINFO    = ZoneInfo("America/Denver")
+NSTTF_LOC = _STC.sun_location(LATITUDE, LONGITUDE, -7.0)
 
 """
 convert between (+x: west, +y: zenith, +z: north)
@@ -44,16 +42,6 @@ coords_f    = data_dir / 'coordinates.csv'
 ids_f       = data_dir / 'ids.csv'
 canting_dir = data_dir / 'internal_canting'
 
-def pretty(struct):
-    s = type(struct).__name__ + ': {\n'
-    for field in struct._fields_:
-        s += f'  {field[0]}: {getattr(struct, field[0])}\n'
-    s += '}\n'
-    return s
-
-# TODO: def create_nsttf(stapi, sun_pos): stapi.clear() .. stapi.batch.clear() ...
-#       def update_nsttf(stapi, sun_pos): stapi.batch.clear() ...
-
 ################################
 # set up optical property sets #
 ################################
@@ -64,9 +52,10 @@ def add_optical_property_sets(stapi: api, ) -> dict[str,
                                                                 _STC.optical_properties_face]]]:
     optical_property_sets = {}
 
+    # TODO: make date classes genuinely expect str and the normal IntEnum -> convert on .ctype
     rec_set  = _STC.optical_properties_set(b'receiver',
                                            1.1, 1.1,
-                                           _STC.optical_interaction.REFLECTION.value)
+                                           _STC.optical_interaction.REFLECTION.value)   
     rec_face = _STC.optical_properties_face(0, 0, .95, .2,
                                             _STC.optical_error_dist.GAUSSIAN.value)
     rec_id = stapi.data.optic.add(rec_set, rec_face, rec_face)
@@ -116,7 +105,7 @@ def add_optical_property_sets(stapi: api, ) -> dict[str,
 # set up tower #
 ################
 
-def add_tower(stapi: api, optical_id: int) -> dict[str, tuple[int, _STC.element]]:
+def add_tower(stapi: api, optical_id: int) -> tuple[int, _STC.element]:
     tower_args = _STC.element(*[0, 0, 30.05],
                               *[0, 1, 30.05],
                               0, True, False,
@@ -125,7 +114,7 @@ def add_tower(stapi: api, optical_id: int) -> dict[str, tuple[int, _STC.element]
     tower_id = stapi.data.element.add(tower_args,
                                       optical_id,
                                       [10, 60.1], [])
-    return { 'tower': (tower_id, tower_args) }
+    return (tower_id, tower_args)
 ########################
 # set up G3P3 receiver #
 ########################
@@ -134,12 +123,21 @@ g3p3_stage_pos = np.array([-40, 8.5, 44.8177])
 g3p3_stage_aim = np.array([0,   122, 44.8177])
 g3p3_unstager = math_utils.get_unstager(g3p3_stage_pos, g3p3_stage_aim, 0)
 
+G3P3_TARGET = g3p3_unstager([0, 0, 0.662347])
+
 G3P3_GROUP = 0
 def add_G3P3(stapi: api, aperture_optical_id: int, snout_optical_id: int) -> dict[str, tuple[int, _STC.element]]:
+    """add G3P3 elements 
+    
+    elements added:
+        aperture
+        tunnel bottom, east, west, top
+        shield northeast, north, northwest, east, west, southeast, south, southwest
+    """
     g3p3 = {}
 
     # aperture
-    ap_el_args = _STC.element(*g3p3_unstager([0, 0, 0.662347]),
+    ap_el_args = _STC.element(*G3P3_TARGET,
                               *g3p3_unstager([0, 1, 0.662347]),
                               0, True, False,
                               _STC.aperture.RECTANGLE.value,
@@ -307,30 +305,27 @@ SOLAR_1_TARGET  = [5.65, 4.25, 64.54]
 target_aim      = [5.65, 100, 64.54] # looking directly north
 SOLAR_1_GROUP   = G3P3_GROUP + 1
 
-def add_solar_1(stapi: api, optical_id: int) -> dict[int, _STC.element]:
+def add_solar_1(stapi: api, optical_id: int) -> tuple[int, _STC.element]:
+    # create element arguments object
     solar_1_el_args = _STC.element(*SOLAR_1_TARGET, 
                                    *target_aim,
                                    0, True, False,
                                    _STC.aperture.RECTANGLE.value,
                                    _STC.surface.FLAT.value,
                                    SOLAR_1_GROUP)
-    
+    # add element arguments, including optical property id and aperture/surface parameters
     solar_1_id = stapi.data.element.add(solar_1_el_args,
                                         optical_id,
-                                        [2, 2], [])
-    return { 'solar 1': (solar_1_id, solar_1_el_args) }
+                                        [2, 2], []) # 2x2 [m] square, flat has no parameters
+    return (solar_1_id, solar_1_el_args)
 
 # heliostat and facet information
-PED_HEIGHT = 4.02           # [m], heliostat pedistal height
+PED_HEIGHT = 4.02           # [m],   heliostat pedistal height
 TRACK_ERR  = 0.0005         # [rad], heliostat tracking error
-PIV_OFFSET = 0.1778         # [m], facet pivot offset
-RECT_AP    = 1.2192         # [m], facet side length
-# PARA_SURF  = .5 / 0.0034203 # [m], parabolic focal length
-PARA_SURF  = 0.0034203 # [m], parabolic focal length
+PIV_OFFSET = 0.1778         # [m],   facet pivot offset
+RECT_AP    = 1.2192         # [m],   facet side length
+PARA_SURF  = 0.0034203      # [m],   parabolic focal length
 CANT_ERR   = 0.0017         # [rad], facet canting error
-
-
-# something something for loop thru all coord/ids in those files
 
 # read in and combine coords and ids
 coords_file = open(coords_f)
@@ -378,14 +373,50 @@ while len(coord):
 coords_file.close()
 ids_file.close()
 
-def add_heliostats(stapi: api, optical_id: int, target: np.array, sun: np.array):
+def add_heliostats(stapi: api,
+                   optical_id: int,
+                   target: np.array,
+                   sun: np.array) -> dict[str, list[tuple[int, _STC.element]]]:
     heliostats = {}
     for h in HELIOSTATS:
+        # set optical property to heliostat
         h.set_optical_property(optical_id)
+        # set the heliostats target (in global coordinates)
         h.set_target_global(target)
+        # recalculate facet positions based on solar position
         h.reaim(sun)
+        # add heliostat's facets' elements and track information
         heliostats[h.name] = h.add(stapi)
     return heliostats
+
+def make_NSTTF(stapi: api, sun_pos: np.ndarray, use_G3P3: bool = True):
+    # add optical properties to simulation data 
+    OPTICAL = add_optical_property_sets(stapi)
+
+    # get ids that were assigned
+    RECEIVER_OPTICAL_REF  = OPTICAL['receiver'][0]
+    HELIOSTAT_OPTICAL_REF = OPTICAL['heliostat'][0]
+    APERTURE_OPTICAL_REF  = OPTICAL['aperture'][0]
+    TOWER_OPTICAL_REF     = OPTICAL['tower'][0]
+    SNOUT_OPTICAL_REF     = OPTICAL['snout'][0]
+
+    return {
+        # add tower element to cast shadow
+        'tower': add_tower(stapi, TOWER_OPTICAL_REF),
+        # add heliostats aiming at G3P3 or Solar 1 based on 
+        # toggle argument, and based on solar position passed
+        **add_heliostats(stapi,
+                         HELIOSTAT_OPTICAL_REF,
+                         G3P3_TARGET if use_G3P3 else SOLAR_1_TARGET,
+                         sun_pos),
+        # add G3P3 or solar 1 elements based on toggle 
+        'G3P3': add_G3P3(stapi, APERTURE_OPTICAL_REF, SNOUT_OPTICAL_REF)
+                         if use_G3P3 else
+                         None,
+        'solar 1': add_solar_1(stapi, RECEIVER_OPTICAL_REF)
+                   if not use_G3P3 else
+                   None,
+    }
 
 # debugging plotting utils
 def _plot_projection(ax, pairs, axis_pair, labels):
@@ -465,99 +496,15 @@ def plot_all_projections(pairs, show=True, save_prefix=None):
  
     return figures
 
-
-if __name__ == '__main__':
-    """init api"""
-    stapi = api()
-    
-    OPTICAL = add_optical_property_sets(stapi)
-
-    RECEIVER_OPTICAL_REF  = OPTICAL['receiver'][0]
-    HELIOSTAT_OPTICAL_REF = OPTICAL['heliostat'][0]
-    APERTURE_OPTICAL_REF  = OPTICAL['aperture'][0]
-    TOWER_OPTICAL_REF     = OPTICAL['tower'][0]
-    SNOUT_OPTICAL_REF     = OPTICAL['snout'][0]
-
-    TOWER = add_tower(stapi, TOWER_OPTICAL_REF)
-
-    SOLAR_1 = add_solar_1(stapi, RECEIVER_OPTICAL_REF)
-    print(SOLAR_1)
-    print(stapi.data.element.get(SOLAR_1['solar 1'][0]))
-
-    # i think its no stage
-    # stapi.data.element.add(_STC.element(0, -10, 60, 0, 1, 60, 0, True, False, _STC.aperture.RECTANGLE.value, _STC.surface.FLAT.value),
-    #                        RECEIVER_OPTICAL_REF, [1200, 1200], [])
-    
-    sim_params = _STC.simulation_parameters(latitude=LATITUDE, longitude=LONGITUDE)
-    stapi.parameters.set(sim_params)
-    
-    calc = dot_h.SolarPositionCalculationMethod.SPA
-    loc  = _STC.sun_location(40.0, -105.0, -7.0)
-    dt   = _STC.sun_datetime(2025, 6, 20, 12)
-
-    sun_pos = 1000 * stapi.data.sun.vector(calc, loc, dt)
-    buie = _STC.sun(0, *sun_pos, .05, b'b')
-    stapi.data.sun.add(buie)
-
-    helios = add_heliostats(stapi, HELIOSTAT_OPTICAL_REF, SOLAR_1_TARGET, sun_pos)
-
-    # print(pretty(ap_el_args))
-    # print(type(ap_el_args))
-    # print(type(ctypes.pointer(ap_el_args)))
-    # test_unstager = math_utils.get_unstager(CONVERT_COORDS @ g3p3_stage_pos, CONVERT_COORDS @ g3p3_stage_aim, 0)
-
-    # print(test_unstager(CONVERT_COORDS @ np.array([0, 0, 0.662347])))
-    # print(test_unstager(CONVERT_COORDS @ np.array([0, 0, 0.662347])))
-
-    print(__file__)
-
-    G3P3 = add_G3P3(stapi, APERTURE_OPTICAL_REF, SNOUT_OPTICAL_REF)
-
-    print(G3P3['tunnel bottom'])
-    # print(Path(__file__).parent / 'nsttf_data')
-    # print(Path(__file__).parent / 'nsttf_data' / 'coordinates.csv')
-    # print(Path(__file__).parent / 'nsttf_data' / 'ids.csv')
-
-    # print(math_utils.zrot_from_azel([0, 1, 0]))
-    # # test batch
-    # stapi.batch(True)
-
-    # print(stapi.data.optic.num())
-    # print(stapi.data.element.num())
-
-    # print(stapi.data.element.get(1)[0])
-    # print(stapi.data.element.get(2)[0])
-    # print(stapi.data.element.get(2)[1])
-    # print(stapi.data.element.get(3)[0])
-
-    stapi.data.json.dump(json_f)
-
-    stapi.runner.setup(dot_h.st_runner_type_t.OPTIX)
-    # stapi.runner.setup(dot_h.st_runner_type_t.EMBREE)
-    stapi.runner.run()
-    stapi.runner.report()
-
-    print(len(stapi.result))
-
-    results = pd.DataFrame(stapi.result.get(len(stapi.result)))
-
-    hits = results[results['element_map'] == SOLAR_1['solar 1'][0]]
+def plot_heat_map(fig, ax, hits):
     xs = hits['loc_x'].to_numpy()
     zs = hits['loc_z'].to_numpy()
-    print(hits)
     bin_x = math_utils.freedman_diaconis_np(xs)
     bin_z = math_utils.freedman_diaconis_np(zs)
     bins = max(bin_x, bin_z)
-    print(bin_x)
-    print(bin_z)
 
-    mpl.rcParams['font.size'] = 22
-    mpl.rcParams['figure.figsize'] = [16, 9]
-    plt.style.use('seaborn-v0_8-colorblind')
-
-    fig, ax = plt.subplots(1, 1)
     _, _, _, im = ax.hist2d(xs, zs, bins=bins, cmap='YlOrRd')
-    ax.scatter(SOLAR_1['solar 1'][1].x, SOLAR_1['solar 1'][1].z, marker='x', label='Target(s)', s=40)
+    ax.scatter(NSTTF['solar 1'][1].x, NSTTF['solar 1'][1].z, marker='x', label='Target(s)', s=40)
 
     ax.set_xlabel('x')
     ax.set_ylabel('z')
@@ -566,16 +513,101 @@ if __name__ == '__main__':
     x_bin_len = (xs.max() - xs.min()) / bins
     z_bin_len = (zs.max() - zs.min()) / bins
 
-
     fig.colorbar(im, ax=ax, label=f'Rays in ({x_bin_len:.3f} x {z_bin_len:.3f})')
 
+if __name__ == '__main__':
+    """init api"""
+    stapi = api()
+
+    """
+    set up simulation parameters
+    
+    defaults:
+        number_of_rays:           int  =   1,000,000
+        max_number_of_rays:       int  = 100,000,000
+        include_sun_shape_errors: bool = True
+        include_optical_errors:   bool = True
+    
+    override by passing a keyword argument 
+    to _STC.simulation_parameters
+    NOTE: if using NATIVE runner decrease the number of rays to ~10,000
+    """
+
+    # create simulation parameters
+    sim_params = _STC.simulation_parameters(latitude=LATITUDE, longitude=LONGITUDE)
+    # set simulation parameters
+    stapi.parameters.set(sim_params)
+
+    """
+    set up sun for simulation
+
+    dot_h usually references structs defined in stapi_v2.cpp
+    however the solar calculator methods are defined in solar_position_calculator.hpp
+    
+    available methods: LEGACY, DUFFIE, SOLPOS, SPA_ORIGINAL, SPA
+    """
+    calc = dot_h.SolarPositionCalculationMethod.SPA
+
+    # NOTE: change time that is simulated
+    #       (year, month, day, hour, minute, second)
+    dt   = _STC.sun_datetime(2025, 6, 20, 12)
+
+    # api.data.sun.vector returns unit vector so multiply
+    # by 1000 to place sun plane above geometry
+    sun_pos = 1000 * stapi.data.sun.vector(calc, NSTTF_LOC, dt)
+    # using Buie sun shape with CSR = .05
+    # 0 as first arg signifies that it's not a user defined sun shape
+    buie = _STC.sun(0, *sun_pos, .05, _STC.sun_shape.BUIE_CSR.value)
+    # add sun shape
+    stapi.data.sun.add(buie)
+
+    # create NSTTF geometry based on sun position
+    # (i.e., need to set up sun first to aim heliostats)
+    NSTTF = make_NSTTF(stapi, sun_pos, False)
+   
+    # save data as SolTrace JSON
+    stapi.data.json.dump(json_f)
+
+    """
+    set up simulation runner
+
+    available runners in dot_h.st_runner_type_t object:
+    EMBREE, OPTIX, NATIVE
+    """
+    stapi.runner.setup(dot_h.st_runner_type_t.OPTIX)
+    
+    # run simulation and report simulation results
+    stapi.runner.run()
+    stapi.runner.report()
+
+    print(len(stapi.result))
+
+    # create DataFrame of the results for easier manipulation
+    # need to pass the number of interactions
+    results = pd.DataFrame(stapi.result.get(len(stapi.result)))
+
+    # get rays that intersected target
+    hits = results[results['element_map'] == NSTTF['solar 1'][0]]
+
+    # set up plot parameters
+    mpl.rcParams['font.size'] = 22
+    mpl.rcParams['figure.figsize'] = [16, 9]
+    plt.style.use('seaborn-v0_8-colorblind')
+
+    # make and show plots
+    fig, ax = plt.subplots(1, 1)
+    plot_heat_map(fig, ax, hits)
+    
     plt.show()
 
-    
-    pairs = [
-        ([el.x, el.y, el.z], [el.ax, el.ay, el.az])
-        for _, el in G3P3.values()
-    ]
+    # trying to debug gui thing, i think its that i did add a stage
+    # stapi.data.element.add(_STC.element(0, -10, 60, 0, 1, 60, 0, True, False, _STC.aperture.RECTANGLE.value, _STC.surface.FLAT.value),
+    #                        RECEIVER_OPTICAL_REF, [1200, 1200], [])
+
+    # pairs = [
+    #     ([el.x, el.y, el.z], [el.ax, el.ay, el.az])
+    #     for _, el in G3P3.values()
+    # ]
     # pairs.append(([solar_1_el_args.x, solar_1_el_args.y, solar_1_el_args.z], [solar_1_el_args.ax, solar_1_el_args.ay, solar_1_el_args.az]))
 
     # plot_all_projections(pairs)

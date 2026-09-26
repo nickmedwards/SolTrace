@@ -1,6 +1,5 @@
-import ctypes, re
+import re
 from dataclasses import dataclass
-
 
 # chedder finds constants defined in stapi_v2.h and exposes
 # them as dot_h. soltrace_constants holds constant information
@@ -117,10 +116,10 @@ class simulation_parameters(base_args):
                                                 self.as_power_tower)
 @dataclass
 class optical_properties_face(base_args):
-    transmissivity: float
-    reflectivity: float
-    slope_error: float
-    specularity_error: float
+    transmissivity:          float
+    reflectivity:            float
+    slope_error:             float
+    specularity_error:       float
     error_distribution_type: str
 
     @property
@@ -177,7 +176,7 @@ class element(base_args):
 
 @dataclass
 class sun(base_args):
-    npoints:             int
+    npoints:             int    # TODO: make this default 0
     x:                   float
     y:                   float
     z:                   float
@@ -207,6 +206,7 @@ class sun_location(base_args):
                                        self.timeZone,
                                        self.altitude)
 
+# TODO: util to convert built-in datetime to st_datetime
 @dataclass
 class sun_datetime(base_args):
     year:   int
@@ -224,14 +224,3 @@ class sun_datetime(base_args):
                                        self.hour,
                                        self.minute,
                                        self.second)
-
-# @dataclass
-# class st_api_call_args(base_args):
-#     @property
-#     def ctype(self):
-#         return dot_h.st_api_call_args()
-
-# @dataclass
-# class st_api_pair():
-#     func: ctypes._CFuncPtr
-#     args: st_api_call_args
