@@ -10,9 +10,6 @@ add_subdirectory(simulation_data)
 add_subdirectory(simulation_results)
 add_subdirectory(simulation_runner)
 add_subdirectory(simdriver)
-# if(SOLTRACE_BUILD_API)
-# 	add_subdirectory(stapi_v2)
-# endif()
 
 #####################################################################################################################
 #

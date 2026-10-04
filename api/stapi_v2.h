@@ -137,17 +137,17 @@ other items
 
 #include <filesystem>
 
-#include "../simulation_runner/simulation_runner.hpp"
-#include "../simulation_runner/native_runner/native_runner.hpp"
-#include "../simulation_data/simulation_data_export.hpp"
-#include "../simulation_results/simulation_result_export.hpp"
+#include "../coretrace/simulation_runner/simulation_runner.hpp"
+#include "../coretrace/simulation_runner/native_runner/native_runner.hpp"
+#include "../coretrace/simulation_data/simulation_data_export.hpp"
+#include "../coretrace/simulation_results/simulation_result_export.hpp"
 
 #ifdef STAPI_V2_EMBREE_SUPPORT
-#include "../simulation_runner/embree_runner/embree_runner.hpp"
+#include "../coretrace/simulation_runner/embree_runner/embree_runner.hpp"
 #endif
 
 #ifdef STAPI_V2_OPTIX_SUPPORT
-#include "../simulation_runner/optix_runner/optix_runner.hpp"
+#include "../coretrace/simulation_runner/optix_runner/optix_runner.hpp"
 #endif
 
 #ifdef __cplusplus

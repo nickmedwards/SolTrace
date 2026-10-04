@@ -50,7 +50,7 @@ call_stapi_v2_get_results_data             [x]      [x]      [x]    [x]
 #ifndef STAPI_V2_ACROSS_BUILDS_H
 #define STAPI_V2_ACROSS_BUILDS_H
 
-#include "../../../../coretrace/stapi_v2/stapi_v2.h"
+#include "../../../../api/stapi_v2.h"
 
 using json = nlohmann::ordered_json;
 
