@@ -4,7 +4,22 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 project(stapi_v2)
-# find_package(pybind11 CONFIG REQUIRED)
+# TODO: actaully move this to SolTrace/api
+#       make 2 targets one for cpu only and one for cpu+gpu, make arg on STAPIv2
+#       also target generation as a function e.g.
+# function(soltrace_append_license_path ARG_NAME ARG_VALUE)
+#     if(DEFINED ARG_VALUE
+#             AND NOT "${ARG_VALUE}" STREQUAL ""
+#             AND NOT "${ARG_VALUE}" MATCHES "-NOTFOUND$")
+#         list(APPEND SOLTRACE_LICENSE_DEPENDENCY_ARGS
+#             "${ARG_NAME}" "${ARG_VALUE}"
+#         )
+#         set(SOLTRACE_LICENSE_DEPENDENCY_ARGS
+#             "${SOLTRACE_LICENSE_DEPENDENCY_ARGS}"
+#             PARENT_SCOPE
+#         )
+#     endif()
+# endfunction()
 
 include_directories(
     .
@@ -69,21 +84,18 @@ if (NOT APPLE AND ENABLE_COVERAGE)
     target_link_libraries(stapi_v2 PRIVATE gcov)
 endif()
 
-if(MSVC)
-    target_compile_definitions(stapi_v2 PRIVATE STAPI_V2_EXPORTS _STAPI_V2_DLL_)
-endif()
-
 # Link Libraries and Options
 if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+    target_compile_definitions(stapi_v2 PRIVATE STAPI_V2_EXPORTS _STAPI_V2_DLL_)
 endif()
 
 add_custom_command(
     TARGET stapi_v2
     POST_BUILD
     COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/pysoltrace
-    )
+    ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/pysoltrace/bin
+)
 
 install(TARGETS stapi_v2
     EXPORT SolTraceTargets

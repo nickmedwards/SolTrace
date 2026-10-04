@@ -48,3 +48,13 @@ endif()
 install(TARGETS simdriver
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if(SOLTRACE_BUILD_API)
+    add_custom_command(
+        TARGET simdriver
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E copy $<TARGET_FILE:simdriver> ${CMAKE_CURRENT_SOURCE_DIR}/../stapi_v2/pysoltrace/bin
+        COMMENT "Copying simdriver to pysoltrace directory"
+    )
+endif()

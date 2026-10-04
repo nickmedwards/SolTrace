@@ -16,16 +16,15 @@ def __get_dll(path: str = '') -> ctypes.CDLL:
     else: return ctypes.CDLL(path)
 
 def find_dll() -> pathlib.Path:
-    _dir = pathlib.Path(__file__).parent.parent.resolve()
-    _prod_path = _dir / 'bin'
-    _path = _prod_path if _prod_path.exists() else _dir
+    _path = pathlib.Path(__file__).parent.parent.resolve() / 'bin'
+    assert _path.exists(), f"Could not find SolTrace DLL at {_path}"
                 
     if sys.platform == "win32":
         _lib_name = "stapi_v2.dll"
     elif sys.platform == "darwin":
-        _lib_name = "stapi_v2.dylib"
+        _lib_name = "libstapi_v2.dylib"
     else:
-        _lib_name = "stapi_v2.so" # Note: CMake typically prepends "lib" on Linux/macOS
+        _lib_name = "libstapi_v2.so"
 
     return _path / _lib_name
 

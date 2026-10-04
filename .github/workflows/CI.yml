@@ -184,3 +184,129 @@ jobs:
         # Runs the entire test suite, natively using the GPU!
         run: ctest --output-on-failure --build-config Release -VV
 
+      # TODO: step to build wheel use 3.14 (pip install build) actions/setup-python@v5
+      #       python -m build --wheel \
+      #         -Ccmake.define.SOLTRACE_BUILD_EMBREE_SUPPORT="ON" \
+      #         -Ccmake.define.SOLTRACE_BUILD_OPTIX_SUPPORT="ON"
+      #
+      #       step to install wheel and test it in a venv
+      #       - something like, maybe bsh?
+      #           cd coretrace/stapi_v2 # maybe working-directory: ./coretrace/stapi_v2
+      #           rm -rf venv if exists
+      #           python -m venv venv
+      #           source venv/bin/activate
+      #           pip install dist/*.whl --force-reinstall
+      #           python ./testing.py -v
+      #
+      #       step to reinstall python 3.13 -> note: actions/setup-python@v5 rewrites the PATH to use the new python version
+      #       step to install wheel and test it in a venv
+      #       step to reinstall python 3.12
+      #       step to install wheel and test it in a venv
+      #       step to reinstall python 3.11
+      #       step to install wheel and test it in a venv
+      #       step to reinstall python 3.10
+      #       step to install wheel and test it in a venv
+
+  # job to build pysoltrace wheel on different OSs, only run if the build job succeeds, i.e. the tests pass
+  # build-wheel:
+  #   needs: build
+
+  #   runs-on: ${{ matrix.os }}
+
+  #   strategy:
+  #     # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+  #     fail-fast: false
+
+  #     # Set up a matrix to run the following 3 configurations:
+  #     # 1. <Windows, Release, latest MSVC compiler toolchain>
+  #     # 2. <Linux, Release, latest GCC compiler toolchain>
+  #     # 3. <macOS, Release, latest GCC compiler toolchain>
+
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest, macOS-latest]
+  #       c_compiler: [gcc, cl]
+  #       include:
+  #         - os: windows-latest
+  #           c_compiler: cl
+  #           cpp_compiler: cl
+  #         - os: ubuntu-latest
+  #           c_compiler: gcc
+  #           cpp_compiler: g++
+  #         - os: macOS-latest
+  #           c_compiler: gcc
+  #           cpp_compiler: g++
+  #       exclude:
+  #         - os: windows-latest
+  #           c_compiler: gcc
+  #         - os: ubuntu-latest
+  #           c_compiler: cl
+  #         - os: macOS-latest
+  #           c_compiler: cl
+    
+  #   steps:
+  #   - uses: actions/checkout@v4
+  
+  #   # same install steps as the build job
+  #   - name: Install lfontconfig
+  #     if: matrix.os == 'ubuntu-latest'
+  #     run: |
+  #       sudo apt-get update
+  #       sudo apt-get install -y libfontconfig1-dev
+
+  #   - name: Install embree (Ubuntu)
+  #     if: matrix.os == 'ubuntu-latest'
+  #     run: |
+  #       sudo apt-get update
+  #       sudo apt-get install -y libembree-dev
+
+  #   - name: Install embree (macOS)
+  #     if: matrix.os == 'macOS-latest'
+  #     run: |
+  #       brew install embree
+
+  #   - name: Install embree (Windows)
+  #     if: matrix.os == 'windows-latest'
+  #     shell: pwsh
+  #     run: |
+  #       $embreeVersion = "4.4.0"
+  #       $embreeUrl = "https://github.com/embree/embree/releases/download/v$embreeVersion/embree-$embreeVersion.x64.windows.zip"
+  #       $embreeZip = "$env:TEMP\embree.zip"
+  #       $embreeDir = "C:\embree"
+        
+  #       Write-Host "Downloading Embree $embreeVersion..."
+  #       Invoke-WebRequest -Uri $embreeUrl -OutFile $embreeZip
+        
+  #       Write-Host "Extracting Embree..."
+  #       Expand-Archive -Path $embreeZip -DestinationPath $embreeDir -Force
+        
+  #       # $embreeRoot = Get-ChildItem -Path $embreeDir -Directory -Filter "embree*" | Select-Object -First 1
+  #       $embreeCMake = Join-Path $embreeDir "lib\cmake\embree-$embreeVersion"
+  #       $embreeLib = Join-Path $embreeDir "bin"
+        
+  #       # Write-Host "Embree root: $($embreeRoot.FullName)"
+  #       Write-Host "Embree CMake: $embreeCMake"
+  #       Write-Host "Embree Lib: $embreeLib"
+        
+  #       echo "embree_DIR=$embreeCMake" >> $env:GITHUB_ENV
+  #       echo "$embreeLib" >> $env:GITHUB_PATH
+    
+  #   # python specific steps for building the wheel
+  #   - uses: actions/setup-python@v6
+
+  #   - name: Install build tool
+  #     run: |
+  #       python -m pip install --upgrade pip
+  #       python -m pip install cibuildwheel==4.2.1
+
+  #   - name: Build wheel
+  #     working-directory: coretrace/stapi_v2
+  #     run: python -m cibuildwheel --output-dir wheelhouse
+  #     env:
+  #       CIBW_CONFIG_SETTINGS:
+  #         cmake.define.SOLTRACE_BUILD_EMBREE_SUPPORT="ON"
+
+  #   - uses: actions/upload-artifact@v6
+  #     with:
+  #       name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+  #       path: ./coretrace/stapi_v2/wheelhouse/*.whl
+  #       if-no-files-found: error

@@ -2,7 +2,12 @@
 
 ### Build
 
-In `~/stapi_v2`, run `python -m build --wheel`. Uses `pyproject.toml` to configure and build binaries then build the wheel. "A wheel is a ZIP-format archive with a specially formatted file name and the .whl extension." ([see here for more](https://packaging.python.org/en/latest/specifications/binary-distribution-format/)). Once built, a path is set for searching for ptx files to a temporary directory. Rebuilding the SolTrace locally will set that to the typical build path again.
+Expects coretrace with `SOLTRACE_BUILD_API="ON"` to be built and compiled before building the wheel.
+The bindings are not relient on the python interpreter, but the wheel is platform dependent because the shared libraries are shipped. 
+Need build dependancies, [build](https://build.pypa.io/en/stable/) and [hatchling](https://hatch.pypa.io/1.13/), run `pip install build hatchling`.
+In `~/stapi_v2`, run `python -m build --wheel`.
+
+Uses `pyproject.toml` build the wheel. "A wheel is a ZIP-format archive with a specially formatted file name and the .whl extension." ([see here for more](https://packaging.python.org/en/latest/specifications/binary-distribution-format/)). Once built, a path is set for searching for ptx files to a temporary directory. Rebuilding the SolTrace locally will set that to the typical build path again.
 
 When using the python wrapper, if you see `OSError: [WinError -529697949] Windows Error 0xe06d7363` means either a bad memory operation, i.e. null pointer dereference, or runtime linking error, i.e. can't locate PTX. The error number is some MSVC code, don't know   equivalent error code for gcc/clang on Linux/macOS.
 

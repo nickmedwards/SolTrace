@@ -113,7 +113,7 @@ foreach(shader ${SHADERS})
             "Generating PTX for compute_${SOLTRACE_OPTIX_COMPUTE_CAPABILITY}: ${shader}.ptx"
         VERBATIM
     )
-
+        
     list(APPEND PTX_OUTPUTS ${SHADER_PTX})
     list(APPEND SHADER_FILES ${SHADER_SRC})
 
@@ -122,6 +122,16 @@ endforeach()
 add_custom_target(OptixCSP_shaders DEPENDS ${PTX_OUTPUTS} ${SHADER_FILES}
                                    SOURCES ${SHADER_FILES}
 )
+
+if(SOLTRACE_BUILD_API)
+    add_custom_command(
+        TARGET OptixCSP_shaders
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E copy ${PTX_OUTPUTS} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../stapi_v2/pysoltrace/bin/ptx
+        COMMENT "Copying ptx to pysoltrace directory"
+    )
+endif()
 
 install(FILES ${PTX_OUTPUTS}
     DESTINATION ${CMAKE_INSTALL_BINDIR}/ptx

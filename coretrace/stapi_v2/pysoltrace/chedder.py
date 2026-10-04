@@ -203,7 +203,11 @@ class header_values:
 
 
 def locate_extras(path: Path):
-    solar_calc = header_values(path.parent.parent / 'simulation_data/solar_position_calculators/solar_position_calculator.hpp')
+    _prod_path = path.parent / 'solar_position_calculator.hpp'
+    _dev_path = path.parent.parent / 'simulation_data' / 'solar_position_calculators' / 'solar_position_calculator.hpp'
+    _path = _prod_path if _prod_path.exists() else _dev_path
+    print(_path)
+    solar_calc = header_values(_path)
     solar_calc.add_enum('SolarPositionCalculationMethod')
     return [solar_calc]
 # ---------------------------------------------------------------------------

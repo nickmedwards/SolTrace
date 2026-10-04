@@ -78,18 +78,6 @@ if(MSVC)
     target_compile_definitions(stapi_v2_all_runners_dll PRIVATE STAPI_V2_EXPORTS _STAPI_V2_DLL_)
 endif()
 
-install(TARGETS stapi_v2_all_runners_dll
-    EXPORT SolTraceTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-install(FILES ${STAPI_HEADERS}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/stapi_v2_all_runners_dll
-)
-
 ######################################
 # linking/installing test executable #
 ######################################
