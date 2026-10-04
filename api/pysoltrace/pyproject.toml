@@ -7,14 +7,41 @@ build-backend = "hatchling.build"
 name = "pysoltrace"
 version = "0.0.1"
 description = "Python bindings and utilities for the NLR SolTrace(TM) ray-tracing engine."
-readme = "./pysoltrace/README.md"
+readme = "./README.md"
+license-files = ["LICENSE.md"]
+keywords = ["SolTrace", "Concentrating Solar", "CSP", "CST"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: GPU :: NVIDIA CUDA :: 13",
+    "Framework :: Hatch",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
 requires-python = ">=3.10"
 dependencies = [
     "colorama >= 0.4.6",
     "numpy >= 2.5.2", 
     "matplotlib >= 3.11.2", 
     "orjson >= 3.10,<4",
-    "pandas >= 3.0.5"
+    "pandas >= 3.0.5",
+]
+
+[project.optional-dependencies]
+optix = [
+  "nvsoltrace",
 ]
 
 [project.urls]
@@ -27,34 +54,17 @@ Repository = "https://github.com/NLR-SolTrace/SolTrace.git"
 # exclude development virtual environment and local data files
 include = ["pysoltrace"]
 exclude = [
-    "pysoltrace/.venv",
     "**.csv",
     "**.json",
     "**.pickle",
-    # don't need headers or lib because using ctypes
-    # "pysoltrace/include",
-    # "pysoltrace/lib",
 ]
 
 [tool.hatch.build.targets.wheel.force-include]
 # include build targets
 "./pysoltrace/bin" = "pysoltrace/bin"
 # include headers for dot_h generation
-"./stapi_v2.h" = "pysoltrace/include/stapi_v2.h"
-"../simulation_data/solar_position_calculators/solar_position_calculator.hpp" = "pysoltrace/include/solar_position_calculator.hpp"
+"../stapi_v2.h" = "pysoltrace/include/stapi_v2.h"
+"../../coretrace/simulation_data/solar_position_calculators/solar_position_calculator.hpp" = "pysoltrace/include/solar_position_calculator.hpp"
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "pysoltrace/_whl_tag.py"
-
-
-# [tool.cibuildwheel]
-# build = ["cp310-*"]
-# 
-# [tool.cibuildwheel.linux]
-# archs = "x86_64"
-# 
-# [tool.cibuildwheel.macos]
-# archs = "arm64"
-# 
-# [tool.cibuildwheel.windows]
-# archs = "AMD64"

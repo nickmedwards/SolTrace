@@ -7,9 +7,8 @@ build-backend = "hatchling.build"
 name = "nvsoltrace"
 version = "0.0.1"
 description = "NVIDIA Optix plugin for PySolTrace, the python bindings for the NLR SolTrace(TM) ray-tracing engine."
-readme = "README.md"
+readme = "./README.md"
 license-files = ["LICENSE.md"]
-requires-python = ">=3.10"
 keywords = ["SolTrace", "Concentrating Solar", "CSP", "CST"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,6 +30,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Physics"
 ]
+requires-python = ">=3.10"
 
 [project.urls]
 Homepage = "https://github.com/NLR-SolTrace/SolTrace"

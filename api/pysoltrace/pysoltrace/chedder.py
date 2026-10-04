@@ -142,7 +142,7 @@ def _prod_search_paths(filename: str) -> List[Path]:
     """Locations to check for a pip/whl-installed production deployment."""
     return [
         # Header shipped alongside this module as package data.
-        _STAPI_V2_DIR / "include" / "SolTrace" / "stapi_v2" / filename,
+        _STAPI_V2_DIR / "include" / filename,
         # Common "installed into the environment" locations.
         Path(sys.prefix) / "include" / filename,
         Path(sys.prefix) / "share" / "project" / "include" / filename,

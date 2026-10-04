@@ -2,10 +2,11 @@
 
 ### Build
 
-Expects coretrace with `SOLTRACE_BUILD_API="ON"` to be built and compiled before building the wheel.
+Expects SolTrace with `SOLTRACE_BUILD_API="ON"` to be built and compiled before building the wheel.
 The bindings are not relient on the python interpreter, but the wheel is platform dependent because the shared libraries are shipped. 
 Need build dependancies, [build](https://build.pypa.io/en/stable/) and [hatchling](https://hatch.pypa.io/1.13/), run `pip install build hatchling`.
-In `~/stapi_v2`, run `python -m build --wheel`.
+In `SolTrace/api/pysoltrace`, run `py -m build --wheel --outdir ..\dist\`.
+For `nvsoltrace`, expects SolTrace to be built with `SOLTRACE_BUILD_OPTIX_SUPPORT="ON`. In `SolTrace/api/nvsoltrace`, run `py -m build --wheel --outdir ..\dist\`.
 
 Uses `pyproject.toml` build the wheel. "A wheel is a ZIP-format archive with a specially formatted file name and the .whl extension." ([see here for more](https://packaging.python.org/en/latest/specifications/binary-distribution-format/)). Once built, a path is set for searching for ptx files to a temporary directory. Rebuilding the SolTrace locally will set that to the typical build path again.
 
