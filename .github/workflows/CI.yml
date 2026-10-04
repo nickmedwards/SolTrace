@@ -143,6 +143,7 @@ jobs:
   # New Dedicated GPU Run Job (Runs in parallel with the CPU Matrix)
   build-gpu:
     name: build-gpu (ubuntu-24.04-gpu, Release, gcc, OptiX)
+    # cross-compile windows - sudo apt install gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 -> x86_64-w64-mingw32-gcc/x86_64-w64-mingw32-g++
     runs-on: gpu-runner
     container:
       image: ghcr.io/nlr-soltrace/soltrace-build-env:latest

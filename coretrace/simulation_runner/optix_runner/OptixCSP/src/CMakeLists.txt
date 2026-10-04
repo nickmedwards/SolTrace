@@ -123,13 +123,14 @@ add_custom_target(OptixCSP_shaders DEPENDS ${PTX_OUTPUTS} ${SHADER_FILES}
                                    SOURCES ${SHADER_FILES}
 )
 
+# if building the API, copy the PTX files to the API directory for use by the Python bindings
 if(SOLTRACE_BUILD_API)
     add_custom_command(
         TARGET OptixCSP_shaders
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy ${PTX_OUTPUTS} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../stapi_v2/pysoltrace/bin/ptx
-        COMMENT "Copying ptx to pysoltrace directory"
+        ARGS -E copy ${PTX_OUTPUTS} ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../api/nvsoltrace/nvsoltrace/bin/ptx
+        COMMENT "Copying ptx to nvsoltrace directory"
     )
 endif()
 

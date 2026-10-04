@@ -12,7 +12,7 @@ include_directories(
 )
 
 set(STAPI_V2_NATIVE_SRC
-    ../../../../coretrace/stapi_v2/stapi_v2.h
+    ../../../../api/stapi_v2.h
     ../across_builds/across_builds.cpp
 	data_tests.cpp
     json_io.cpp
@@ -27,12 +27,12 @@ add_executable(stapi_v2_native ${STAPI_V2_NATIVE_SRC})
 ############
 
 set(STAPI_V2_NATIVE_DLL_SRC
-	../../../../coretrace/stapi_v2/stapi_v2.cpp
+	../../../../api/stapi_v2.cpp
 )
 
 # Add header files for IDE visibility
 set(STAPI_V2_NATIVE_HEADERS
-    ../../../../coretrace/stapi_v2/stapi_v2.h
+    ../../../../api/stapi_v2.h
     ../../../../coretrace/simulation_runner/simulation_runner.hpp
 )
 

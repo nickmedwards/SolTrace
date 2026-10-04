@@ -84,3 +84,7 @@ endif()
 if(SOLTRACE_BUILD_GUI)
 	add_subdirectory(gui)
 endif()
+
+if(SOLTRACE_BUILD_API)
+	add_subdirectory(api)
+endif()
