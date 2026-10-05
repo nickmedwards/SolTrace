@@ -325,27 +325,34 @@ jobs:
     - name: Get Binaries (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        mkdir ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.build-output-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/Release
         ls ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/Release/api
         cp ${{ steps.strings.outputs.build-output-dir }}/Release/api/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.py-bin-dir }}
 
     - name: Get Binaries (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
+        mkdir ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/api
         cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.dylib ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.py-bin-dir }}
 
     - name: Get Binaries (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        mkdir ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/api
         cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.so ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.py-bin-dir }}
 
     # python specific steps for building the wheel, need to copy files from build, need to make venv
     - uses: actions/setup-python@v6
