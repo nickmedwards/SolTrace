@@ -245,7 +245,7 @@ jobs:
             c_compiler: cl
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
   
     # same install steps as the build job
     - name: Install lfontconfig
@@ -310,7 +310,7 @@ jobs:
         -DSOLTRACE_BUILD_GUI=OFF
         -DSOLTRACE_BUILD_EMBREE_SUPPORT=ON
         -DSOLTRACE_BUILD_API=ON
-        -SOLTRACE_BUILD_TESTS=OFF
+        -DSOLTRACE_BUILD_TESTS=OFF
         -S ${{ github.workspace }}
 
     - name: Build
@@ -325,23 +325,32 @@ jobs:
     - name: Get Binaries (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        ls ${{ steps.strings.outputs.build-output-dir }}/Release
+        ls ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.build-output-dir }}/Release/api
         cp ${{ steps.strings.outputs.build-output-dir }}/Release/api/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
 
     - name: Get Binaries (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
+        ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.build-output-dir }}/api
         cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.dylib ${{ steps.strings.outputs.py-bin-dir }}
 
     - name: Get Binaries (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.build-output-dir }}/api
         cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.so ${{ steps.strings.outputs.py-bin-dir }}
 
     # python specific steps for building the wheel, need to copy files from build, need to make venv
     - uses: actions/setup-python@v6
+      with:
+          python-version: '3.14'
 
     - name: Install build tools
       run: |
@@ -375,7 +384,7 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
