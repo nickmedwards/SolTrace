@@ -332,7 +332,7 @@ jobs:
 
     - name: Build wheel
       working-directory: ${{ github.workspace }}/api/pysoltrace
-      run: py -m build --wheel
+      run: python -m build --wheel
 
     - uses: actions/upload-artifact@v6
       with:
