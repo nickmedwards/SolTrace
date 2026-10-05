@@ -297,6 +297,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "py-bin-dir=${{ github.workspace }}/api/pysoltrace/pysoltrace/bin" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -312,16 +313,34 @@ jobs:
         -SOLTRACE_BUILD_TESTS=OFF
         -S ${{ github.workspace }}
 
-    - name: Build-Windows
+    - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      # if: matrix.os == 'windows-latest'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+
+    # - name: Build-Mac-Linux
+    #   if: matrix.os != 'windows-latest'
+    #   run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+    
+    - name: Get Binaries (Windows)
       if: matrix.os == 'windows-latest'
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
-      
-    - name: Build-Mac-Linux
-      if: matrix.os != 'windows-latest'
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
-  
-    # python specific steps for building the wheel
+      run: |
+        cp ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
+        cp ${{ steps.strings.outputs.build-output-dir }}/Release/api/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
+
+    - name: Get Binaries (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: |
+        cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
+        cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.dylib ${{ steps.strings.outputs.py-bin-dir }}
+
+    - name: Get Binaries (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
+        cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.so ${{ steps.strings.outputs.py-bin-dir }}
+
+    # python specific steps for building the wheel, need to copy files from build, need to make venv
     - uses: actions/setup-python@v6
 
     - name: Install build tools
@@ -367,11 +386,12 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         pattern: pysoltrace-wheels-${{ matrix.os }}-${{ strategy.job-index }}
-        path: ./dist
+        path: ${{ github.workspace }}/dist
         merge-multiple: true
 
     - name: Install/test wheel
       run: |
+        ls ${{ github.workspace }}/dist
         python -m pip install --upgrade pip
-        python -m pip install --no-index --find-links=${{ github.workspace }}/dist/ pysoltrace
+        python -m pip install --no-index --find-links=${{ github.workspace }}/dist pysoltrace
         python ${{ github.workspace }}/api/pysoltrace/testing.py -v --locals
