@@ -209,105 +209,169 @@ jobs:
       #       step to install wheel and test it in a venv
 
   # job to build pysoltrace wheel on different OSs, only run if the build job succeeds, i.e. the tests pass
-  # build-wheel:
-  #   needs: build
+  build-wheel:
+    needs: build
 
-  #   runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
-  #   strategy:
-  #     # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
-  #     fail-fast: false
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: false
 
-  #     # Set up a matrix to run the following 3 configurations:
-  #     # 1. <Windows, Release, latest MSVC compiler toolchain>
-  #     # 2. <Linux, Release, latest GCC compiler toolchain>
-  #     # 3. <macOS, Release, latest GCC compiler toolchain>
+      # Set up a matrix to run the following 3 configurations:
+      # 1. <Windows, Release, latest MSVC compiler toolchain>
+      # 2. <Linux, Release, latest GCC compiler toolchain>
+      # 3. <macOS, Release, latest GCC compiler toolchain>
 
-  #     matrix:
-  #       os: [ubuntu-latest, windows-latest, macOS-latest]
-  #       c_compiler: [gcc, cl]
-  #       include:
-  #         - os: windows-latest
-  #           c_compiler: cl
-  #           cpp_compiler: cl
-  #         - os: ubuntu-latest
-  #           c_compiler: gcc
-  #           cpp_compiler: g++
-  #         - os: macOS-latest
-  #           c_compiler: gcc
-  #           cpp_compiler: g++
-  #       exclude:
-  #         - os: windows-latest
-  #           c_compiler: gcc
-  #         - os: ubuntu-latest
-  #           c_compiler: cl
-  #         - os: macOS-latest
-  #           c_compiler: cl
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        c_compiler: [gcc, cl]
+        include:
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: macOS-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+        exclude:
+          - os: windows-latest
+            c_compiler: gcc
+          - os: ubuntu-latest
+            c_compiler: cl
+          - os: macOS-latest
+            c_compiler: cl
     
-  #   steps:
-  #   - uses: actions/checkout@v4
+    steps:
+    - uses: actions/checkout@v4
   
-  #   # same install steps as the build job
-  #   - name: Install lfontconfig
-  #     if: matrix.os == 'ubuntu-latest'
-  #     run: |
-  #       sudo apt-get update
-  #       sudo apt-get install -y libfontconfig1-dev
+    # same install steps as the build job
+    - name: Install lfontconfig
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libfontconfig1-dev
 
-  #   - name: Install embree (Ubuntu)
-  #     if: matrix.os == 'ubuntu-latest'
-  #     run: |
-  #       sudo apt-get update
-  #       sudo apt-get install -y libembree-dev
+    - name: Install embree (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libembree-dev
 
-  #   - name: Install embree (macOS)
-  #     if: matrix.os == 'macOS-latest'
-  #     run: |
-  #       brew install embree
+    - name: Install embree (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: |
+        brew install embree
 
-  #   - name: Install embree (Windows)
-  #     if: matrix.os == 'windows-latest'
-  #     shell: pwsh
-  #     run: |
-  #       $embreeVersion = "4.4.0"
-  #       $embreeUrl = "https://github.com/embree/embree/releases/download/v$embreeVersion/embree-$embreeVersion.x64.windows.zip"
-  #       $embreeZip = "$env:TEMP\embree.zip"
-  #       $embreeDir = "C:\embree"
+    - name: Install embree (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $embreeVersion = "4.4.0"
+        $embreeUrl = "https://github.com/embree/embree/releases/download/v$embreeVersion/embree-$embreeVersion.x64.windows.zip"
+        $embreeZip = "$env:TEMP\embree.zip"
+        $embreeDir = "C:\embree"
         
-  #       Write-Host "Downloading Embree $embreeVersion..."
-  #       Invoke-WebRequest -Uri $embreeUrl -OutFile $embreeZip
+        Write-Host "Downloading Embree $embreeVersion..."
+        Invoke-WebRequest -Uri $embreeUrl -OutFile $embreeZip
         
-  #       Write-Host "Extracting Embree..."
-  #       Expand-Archive -Path $embreeZip -DestinationPath $embreeDir -Force
+        Write-Host "Extracting Embree..."
+        Expand-Archive -Path $embreeZip -DestinationPath $embreeDir -Force
         
-  #       # $embreeRoot = Get-ChildItem -Path $embreeDir -Directory -Filter "embree*" | Select-Object -First 1
-  #       $embreeCMake = Join-Path $embreeDir "lib\cmake\embree-$embreeVersion"
-  #       $embreeLib = Join-Path $embreeDir "bin"
+        # $embreeRoot = Get-ChildItem -Path $embreeDir -Directory -Filter "embree*" | Select-Object -First 1
+        $embreeCMake = Join-Path $embreeDir "lib\cmake\embree-$embreeVersion"
+        $embreeLib = Join-Path $embreeDir "bin"
         
-  #       # Write-Host "Embree root: $($embreeRoot.FullName)"
-  #       Write-Host "Embree CMake: $embreeCMake"
-  #       Write-Host "Embree Lib: $embreeLib"
+        # Write-Host "Embree root: $($embreeRoot.FullName)"
+        Write-Host "Embree CMake: $embreeCMake"
+        Write-Host "Embree Lib: $embreeLib"
         
-  #       echo "embree_DIR=$embreeCMake" >> $env:GITHUB_ENV
-  #       echo "$embreeLib" >> $env:GITHUB_PATH
+        echo "embree_DIR=$embreeCMake" >> $env:GITHUB_ENV
+        echo "$embreeLib" >> $env:GITHUB_PATH
     
-  #   # python specific steps for building the wheel
-  #   - uses: actions/setup-python@v6
+    - name: Set reusable strings
+      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-  #   - name: Install build tool
-  #     run: |
-  #       python -m pip install --upgrade pip
-  #       python -m pip install cibuildwheel==4.2.1
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=Release
+        -DSOLTRACE_BUILD_GUI=OFF
+        -DSOLTRACE_BUILD_EMBREE_SUPPORT=ON
+        -DSOLTRACE_BUILD_API=ON
+        -SOLTRACE_BUILD_TESTS=OFF
+        -S ${{ github.workspace }}
 
-  #   - name: Build wheel
-  #     working-directory: coretrace/stapi_v2
-  #     run: python -m cibuildwheel --output-dir wheelhouse
-  #     env:
-  #       CIBW_CONFIG_SETTINGS:
-  #         cmake.define.SOLTRACE_BUILD_EMBREE_SUPPORT="ON"
+    - name: Build-Windows
+      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      if: matrix.os == 'windows-latest'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+      
+    - name: Build-Mac-Linux
+      if: matrix.os != 'windows-latest'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+  
+    # python specific steps for building the wheel
+    - uses: actions/setup-python@v6
 
-  #   - uses: actions/upload-artifact@v6
-  #     with:
-  #       name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
-  #       path: ./coretrace/stapi_v2/wheelhouse/*.whl
-  #       if-no-files-found: error
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install build
+        python -m pip install hatchling==1.32.4
+
+    - name: Build wheel
+      working-directory: ${{ github.workspace }}/api/pysoltrace
+      run: py -m build --wheel
+
+    - uses: actions/upload-artifact@v6
+      with:
+        name: pysoltrace-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+        path: ${{ github.workspace }}/api/pysoltrace/dist/*.whl
+        if-no-files-found: error
+
+  # job to test pysoltrace wheels on different OSs and different python versions
+  # made seperate steps so it isn't compiled all the time
+  test-wheel:
+    needs: build-wheel
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Download wheel artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: pysoltrace-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+        path: ./dist
+        merge-multiple: true
+
+    - name: Install/test wheel
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --no-index --find-links=${{ github.workspace }}/dist/ pysoltrace
+        python ${{ github.workspace }}/api/pysoltrace/testing.py -v --locals

@@ -1,4 +1,4 @@
-![Logo](https://github.com/NLR-SolTrace/SolTrace/tree/develop/coretrace/stapi_v2/pysoltrace/assets/logo.png)
+![Logo](https://github.com/NLR-SolTrace/SolTrace/tree/develop/api/assets/logo.png)
 
 ---
 
@@ -42,7 +42,7 @@ See [SolTrace Examples repository](https://github.com/NLR-SolTrace/SolTrace-Exam
 
 See the main [README](https://github.com/NLR-SolTrace/SolTrace/blob/develop/README.md) for building SolTrace. For pysoltrace, set the `SOLTRACE_BUILD_API` CMake option to `ON`.
 
-Navigate to `SolTrace/coretrace/stapi_v2/pysoltrace`. Create virtual environment and install dependencies:
+Navigate to `SolTrace/api`. Create virtual environment and install dependencies:
 
 ```bash
 python -m venv .venv
@@ -50,7 +50,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-To run tests, with the virtual environment activated, navigate to `SolTrace/coretrace/stapi_v2` and run:
+To run tests, with the virtual environment activated, navigate to `SolTrace/api` and run:
 
 ```bash
 python ./testing.py
@@ -60,7 +60,7 @@ python ./testing.py
 
 ## Building from Source
 
-Navigate to `SolTrace/coretrace/stapi_v2` and run:
+Navigate to `SolTrace/api/pysoltrace` and run:
 
 ```bash
 python -m build --wheel
@@ -70,9 +70,9 @@ python -m build --wheel
 
 ## SolTrace-pysoltrace Version Compatibility
 
-| SolTrace | pysoltrace | Python |
-|----------|------------|--------|
-| 4.0.0-beta_v2 | 0.1.0 | 3.10+ |
+| pysoltrace | SolTrace | Python |
+|------------|----------|--------|
+| 0.1.0 | 4.0.0-beta_v2 | 3.10+ |
 
 ---
 
