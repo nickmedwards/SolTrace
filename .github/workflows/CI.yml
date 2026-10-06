@@ -322,42 +322,32 @@ jobs:
     #   if: matrix.os != 'windows-latest'
     #   run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
     
-    - name: Get Binaries (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        ls ${{ steps.strings.outputs.py-bin-dir }}
-        file ${{ steps.strings.outputs.py-bin-dir }}
-        git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
-        cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/api
-        cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.py-bin-dir }}
+    # binaries copied in post build step on windows
+    # - name: Get Binaries (Windows)
+    #   if: matrix.os == 'windows-latest'
+    #   run: |
+    #     cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/Release/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
+    #     cp ${{ steps.strings.outputs.build-output-dir }}/api/Release/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
+
+        # ls -ld ${{ steps.strings.outputs.py-bin-dir }}
+        # file ${{ steps.strings.outputs.py-bin-dir }}
+        # git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
+        # ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
+        # ls ${{ steps.strings.outputs.build-output-dir }}/api
+        # ls ${{ steps.strings.outputs.py-bin-dir }}
+
 
     - name: Get Binaries (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
-        ls -ld ${{ steps.strings.outputs.py-bin-dir }}
-        file ${{ steps.strings.outputs.py-bin-dir }}
-        git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/api
         cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.dylib ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.py-bin-dir }}
 
     - name: Get Binaries (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        ls -ld ${{ steps.strings.outputs.py-bin-dir }}
-        file ${{ steps.strings.outputs.py-bin-dir }}
-        git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/api
         cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.so ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.py-bin-dir }}
 
     # python specific steps for building the wheel, need to copy files from build, need to make venv
     - uses: actions/setup-python@v6
