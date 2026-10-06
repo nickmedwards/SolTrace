@@ -53,7 +53,7 @@ jobs:
             c_compiler: cl
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
   
     - name: Install lfontconfig
       if: matrix.os == 'ubuntu-latest'
@@ -157,7 +157,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Dependencies
         run: |
@@ -366,7 +366,7 @@ jobs:
 
     - uses: actions/upload-artifact@v6
       with:
-        name: pysoltrace-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+        name: pysoltrace-wheels-${{ matrix.os }}
         path: ${{ github.workspace }}/api/pysoltrace/dist/*.whl
         if-no-files-found: error
 
@@ -394,15 +394,15 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Download wheel artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
-        pattern: pysoltrace-wheels-${{ matrix.os }}-${{ strategy.job-index }}
-        path: ${{ github.workspace }}/dist
+        pattern: pysoltrace-wheels-${{ matrix.os }}
+        path: ${{ github.workspace }}/dist/
         merge-multiple: true
 
     - name: Install/test wheel
       run: |
-        ls ${{ github.workspace }}/dist
+        ls ${{ github.workspace }}/dist/
         python -m pip install --upgrade pip
-        python -m pip install --no-index --find-links=${{ github.workspace }}/dist pysoltrace
+        python -m pip install --no-index --find-links=${{ github.workspace }}/dist/ pysoltrace
         python ${{ github.workspace }}/api/pysoltrace/testing.py -v --locals
