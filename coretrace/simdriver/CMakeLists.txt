@@ -56,7 +56,7 @@ if(NOT SOLTRACE_BUILD_OPTIX_SUPPORT AND SOLTRACE_BUILD_API)
         TARGET simdriver
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy $<TARGET_FILE:simdriver> ${CMAKE_CURRENT_SOURCE_DIR}/../../api/pysoltrace/pysoltrace/bin
+        ARGS -E copy $<TARGET_FILE:simdriver> ${CMAKE_CURRENT_SOURCE_DIR}/../../api/pysoltrace/pysoltrace/bin/
         COMMENT "Copying simdriver to pysoltrace directory"
     )
 endif()
@@ -68,7 +68,7 @@ if(SOLTRACE_BUILD_OPTIX_SUPPORT AND SOLTRACE_BUILD_API)
         TARGET simdriver
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy $<TARGET_FILE:simdriver> ${CMAKE_CURRENT_SOURCE_DIR}/../../api/nvsoltrace/nvsoltrace/bin
+        ARGS -E copy $<TARGET_FILE:simdriver> ${CMAKE_CURRENT_SOURCE_DIR}/../../api/nvsoltrace/nvsoltrace/bin/
         COMMENT "Copying simdriver to nvsoltrace directory"
     )
 endif()

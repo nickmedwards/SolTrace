@@ -91,21 +91,26 @@ if (MSVC)
 endif()
 
 if(NOT SOLTRACE_BUILD_OPTIX_SUPPORT)
+    set(PYSOLTRACE_BIN ${CMAKE_CURRENT_SOURCE_DIR}/pysoltrace/pysoltrace/bin/)
+    file(MAKE_DIRECTORY ${PYSOLTRACE_BIN})
     add_custom_command(
         TARGET stapi_v2
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/pysoltrace/pysoltrace/bin
+        ARGS -E copy $<TARGET_FILE:stapi_v2> ${PYSOLTRACE_BIN}
         COMMENT "Copying stapi_v2 to pysoltrace directory"
     )
 endif()
 
 if(SOLTRACE_BUILD_OPTIX_SUPPORT)
+    set(NVSOLTRACE_BIN ${CMAKE_CURRENT_SOURCE_DIR}/nvsoltrace/nvsoltrace/bin/)
+    file(MAKE_DIRECTORY ${NVSOLTRACE_BIN})
+    file(MAKE_DIRECTORY ${NVSOLTRACE_BIN}ptx/)
     add_custom_command(
         TARGET stapi_v2
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy $<TARGET_FILE:stapi_v2> ${CMAKE_CURRENT_SOURCE_DIR}/nvsoltrace/nvsoltrace/bin
+        ARGS -E copy $<TARGET_FILE:stapi_v2> ${NVSOLTRACE_BIN}
         COMMENT "Copying stapi_v2 to nvsoltrace directory"
     )
 endif()
