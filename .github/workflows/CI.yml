@@ -404,5 +404,6 @@ jobs:
       run: |
         ls ${{ github.workspace }}/dist/
         python -m pip install --upgrade pip
+        python -m pip install -r ${{ github.workspace }}/api/requirements.txt
         python -m pip install --no-index --find-links=${{ github.workspace }}/dist/ pysoltrace
         python ${{ github.workspace }}/api/pysoltrace/testing.py -v --locals
