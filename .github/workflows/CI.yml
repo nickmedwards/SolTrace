@@ -325,7 +325,6 @@ jobs:
     - name: Get Binaries (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.py-bin-dir }}
         file ${{ steps.strings.outputs.py-bin-dir }}
         git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
@@ -339,7 +338,6 @@ jobs:
     - name: Get Binaries (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
-        mkdir ${{ steps.strings.outputs.py-bin-dir }}
         ls -ld ${{ steps.strings.outputs.py-bin-dir }}
         file ${{ steps.strings.outputs.py-bin-dir }}
         git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
@@ -352,7 +350,6 @@ jobs:
     - name: Get Binaries (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        mkdir ${{ steps.strings.outputs.py-bin-dir }}
         ls -ld ${{ steps.strings.outputs.py-bin-dir }}
         file ${{ steps.strings.outputs.py-bin-dir }}
         git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
