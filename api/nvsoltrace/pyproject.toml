@@ -13,7 +13,6 @@ keywords = ["SolTrace", "Concentrating Solar", "CSP", "CST"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: GPU :: NVIDIA CUDA :: 13",
-    "Framework :: Hatch",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "Operating System :: Microsoft",
@@ -44,9 +43,9 @@ Repository = "https://github.com/NLR-SolTrace/SolTrace.git"
 [tool.hatch.build.targets.sdist]
 include = ["nvsoltrace"]
 
-[tool.hatch.build.targets.wheel.force-include]
-# include build targets
-"./nvsoltrace/bin" = "nvsoltrace/bin"
+[tool.hatch.build.targets.wheel]
+# include build artifacts in wheel target
+artifacts = ["nvsoltrace/bin/**"]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "nvsoltrace/_whl_tag.py"
