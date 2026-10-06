@@ -297,7 +297,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        echo "py-bin-dir=${{ github.workspace }}/api/pysoltrace/pysoltrace/bin" >> "$GITHUB_OUTPUT"
+        echo "py-bin-dir=${{ github.workspace }}/api/pysoltrace/pysoltrace/bin/" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -325,17 +325,22 @@ jobs:
     - name: Get Binaries (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        ls -ld ${{ steps.strings.outputs.py-bin-dir }}
+        file ${{ steps.strings.outputs.py-bin-dir }}
+        git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/Release
-        ls ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver
-        cp ${{ steps.strings.outputs.build-output-dir }}/Release/coretrace/simdriver/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
-        ls ${{ steps.strings.outputs.build-output-dir }}/Release/api
-        cp ${{ steps.strings.outputs.build-output-dir }}/Release/api/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
+        cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver.exe ${{ steps.strings.outputs.py-bin-dir }}
+        ls ${{ steps.strings.outputs.build-output-dir }}/api
+        cp ${{ steps.strings.outputs.build-output-dir }}/api/stapi_v2.dll ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.py-bin-dir }}
 
     - name: Get Binaries (macOS)
       if: matrix.os == 'macOS-latest'
       run: |
+        ls -ld ${{ steps.strings.outputs.py-bin-dir }}
+        file ${{ steps.strings.outputs.py-bin-dir }}
+        git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/api
@@ -345,6 +350,9 @@ jobs:
     - name: Get Binaries (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        ls -ld ${{ steps.strings.outputs.py-bin-dir }}
+        file ${{ steps.strings.outputs.py-bin-dir }}
+        git ls-files -s ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver
         cp ${{ steps.strings.outputs.build-output-dir }}/coretrace/simdriver/simdriver ${{ steps.strings.outputs.py-bin-dir }}
         ls ${{ steps.strings.outputs.build-output-dir }}/api
