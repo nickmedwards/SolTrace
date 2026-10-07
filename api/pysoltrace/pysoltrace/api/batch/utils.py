@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pysoltrace import dot_h
 
 def generate_api_call(call_type: int, *args):
@@ -14,5 +15,5 @@ def generate_api_call(call_type: int, *args):
     return rt
 
 class batcher:
-    def __init__(self, adder: callable):
-        self.adder: callable = adder
+    def __init__(self, adder: Callable):
+        self.adder: Callable = adder

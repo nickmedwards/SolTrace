@@ -49,6 +49,7 @@ function name | ctrl type: |   range   |   varience
 
 import ctypes, orjson, random, os, sys
 from datetime import datetime
+from collections.abc import Callable
 import numpy as np
 from pathlib import Path
 
@@ -105,14 +106,14 @@ f.close()
 
 stapi = api(testing = True, benchmarking = True)
 
-def do_benchmark(_t: timer, key: str, func: callable, args: tuple, count: int):
+def do_benchmark(_t: timer, key: str, func: Callable, args: tuple, count: int):
     for _ in range(count):
         _t.ic(key)
         func(*args)
         _t.oc(key)
     return _t.summarize(key)
 
-def generic_inner(key: str, func: callable, args: tuple, count: int = 10):
+def generic_inner(key: str, func: Callable, args: tuple, count: int = 10):
     def _inner(_t: timer):
         stapi.reset()
         for _ in range(count):
@@ -126,7 +127,7 @@ def generic_inner(key: str, func: callable, args: tuple, count: int = 10):
 # get varience from summary of timer key
 get_var = lambda _t, key: _t.summarize(key)[2] ** 2
 
-def do_var_ctrl_benchmark(_t: timer, inner: callable[[timer], str], tol: float = .001):
+def do_var_ctrl_benchmark(_t: timer, inner: Callable[[timer], str], tol: float = .001):
     # init benchmark
     key = inner(_t)
     prev_var = get_var(_t, key)

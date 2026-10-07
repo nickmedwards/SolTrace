@@ -38,6 +38,7 @@
 #     pobj.run(seed, as_pt, 0, id, no_callback)
 #     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
 import ctypes, random
+from collections.abc import Callable
 from typing import Literal
 import numpy as np
 import pandas as pd
@@ -388,7 +389,7 @@ class _Element:
         if enew != None: enew = new_el
         else:            return new_el
 
-    def Create(self, stapi: api, unstager: callable | None = None, _do: bool = False):
+    def Create(self, stapi: api, unstager: Callable | None = None, _do: bool = False):
         # TODO: unstage element position/aim
         el_args = _STC.element(*(unstager(self.position) if unstager else self.position),
                                      *(unstager(self.aim) if unstager else self.aim),
@@ -616,7 +617,7 @@ class _Stage:
         if snew != None: snew = new_stage
         else:            return new_stage
 
-    def __get_unstager(self) -> callable | None:
+    def __get_unstager(self) -> Callable | None:
         return math_utils.get_unstager(self.position, self.aim, 0)
 
     def Create(self, stapi: api, _do: bool = False):

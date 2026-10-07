@@ -1,4 +1,5 @@
 import math
+from collections.abc import Callable
 import numpy as np
 
 from pysoltrace import Point
@@ -340,7 +341,7 @@ def zrot_from_azel(vect: Point | list) -> float:
 
     return gamma * gsign * 180./math.pi
 
-def get_unstager(pos: Point | list | np.ndarray, aim: Point | list | np.ndarray, zrot: float) -> callable | None:
+def get_unstager(pos: Point | list | np.ndarray, aim: Point | list | np.ndarray, zrot: float) -> Callable | None:
     assert isinstance(pos, (Point, list, np.ndarray)), f'pos must be Point, list, or array, not {type(pos)}'
     assert isinstance(aim, (Point, list, np.ndarray)), f'aim must be Point, list, or array, not {type(aim)}'
     assert len(pos) == 3, f'pos must have 3 elements, not {len(pos)}'
