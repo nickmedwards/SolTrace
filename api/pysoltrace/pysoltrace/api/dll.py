@@ -15,18 +15,25 @@ def find_dll() -> pathlib.Path:
 
     return _path / _lib_name
 
+_find_optix_dll = None
 try:
     # search for nvsoltrace in production environment
-    from nvsoltrace import find_dll as _find_optix_dll
-    find_dll = _find_optix_dll
+    from nvsoltrace import find_dll as _nvfd
+    _find_optix_dll = _nvfd
 except (ImportError, ModuleNotFoundError):
     # search for nvsoltrace in development environment
     try:
         nvsoltrace_path = pathlib.Path(__file__).parent.parent.parent.parent / 'nvsoltrace' / 'nvsoltrace'
         sys.path.insert(1, str(nvsoltrace_path))
-        import find_dll as _find_optix_dll # pyright: ignore[reportMissingImports]
-        find_dll = _find_optix_dll.find_dll
+        import find_dll as _nvfd # pyright: ignore[reportMissingImports]
+        _find_optix_dll = _nvfd.find_dll
     except (ImportError, ModuleNotFoundError): pass # silently fail searching
+
+if _find_optix_dll != None:
+    try:
+        _find_optix_dll()
+        find_dll = _find_optix_dll
+    except AssertionError: pass
 
 STATIC_FUNC_ARGS = ['args_st_get_installed_runners', 'args_st_is_runner_installed']
 
